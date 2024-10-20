@@ -1,0 +1,323 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "API V1",
+    "version": "v1"
+  },
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "summary": "Iniciar sesión",
+        "tags": [
+          "Autenticación"
+        ],
+        "parameters": [
+
+        ],
+        "responses": {
+          "200": {
+            "description": "Inicio de sesión exitoso"
+          },
+          "401": {
+            "description": "Credenciales inválidas"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/lots": {
+      "get": {
+        "summary": "Lista todos los lotes de un proyecto",
+        "tags": [
+          "Lotes"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "description": "ID del proyecto",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lotes listados correctamente"
+          },
+          "401": {
+            "description": "No autorizado"
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear un lote para un proyecto",
+        "tags": [
+          "Lotes"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "description": "ID del proyecto",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Lote creado exitosamente"
+          },
+          "401": {
+            "description": "No autorizado"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "length": {
+                    "type": "integer"
+                  },
+                  "width": {
+                    "type": "integer"
+                  },
+                  "price": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "name",
+                  "length",
+                  "width",
+                  "price"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/lots/{id}": {
+      "get": {
+        "summary": "Mostrar un lote específico",
+        "tags": [
+          "Lotes"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "description": "ID del proyecto",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID del lote",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lote mostrado correctamente"
+          },
+          "404": {
+            "description": "Lote no encontrado"
+          },
+          "401": {
+            "description": "No autorizado"
+          }
+        }
+      },
+      "put": {
+        "summary": "Actualizar un lote",
+        "tags": [
+          "Lotes"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "description": "ID del proyecto",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID del lote",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lote actualizado exitosamente"
+          },
+          "401": {
+            "description": "No autorizado"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "length": {
+                    "type": "integer"
+                  },
+                  "width": {
+                    "type": "integer"
+                  },
+                  "price": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "name",
+                  "length",
+                  "width",
+                  "price"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar un lote",
+        "tags": [
+          "Lotes"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "description": "ID del proyecto",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID del lote",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lote eliminado exitosamente"
+          },
+          "404": {
+            "description": "Lote no encontrado"
+          },
+          "401": {
+            "description": "No autorizado"
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://{defaultHost}",
+      "variables": {
+        "defaultHost": {
+          "default": "localhost:3000"
+        }
+      }
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

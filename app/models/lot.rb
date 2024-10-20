@@ -1,15 +1,23 @@
 # app/models/lot.rb
 
 class Lot < ApplicationRecord
-  belongs_to :project
+  belongs_to :project  # Relación con el proyecto al que pertenece el lote
+  has_many :reservations, dependent: :destroy  # Relación con las reservas. Se eliminarán si el lote es eliminado.
 
   before_save :calculate_price
 
-  validates :name, :length, :width, presence: true
+  # Validaciones
+  validates :name, presence: true
+  validates :length, :width, numericality: { greater_than: 0 }, presence: true
 
   private
 
+  # Método para calcular el área del lote
+  def area
+    length * width
+  end
+
   def calculate_price
-    self.price = self.length * self.width * self.project.price_per_square_foot
+    self.price = area * project.price_per_square_foot
   end
 end

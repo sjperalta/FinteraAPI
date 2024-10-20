@@ -2,7 +2,6 @@
 
 class Api::V1::UsersController < ApplicationController
   before_action :authenticate_user!, only: [:create]
-  before_action :verify_seller_or_admin, only: [:create]
   load_and_authorize_resource
 
   # POST /api/v1/users (solo vendedores o administradores pueden crear usuarios)
@@ -39,11 +38,5 @@ class Api::V1::UsersController < ApplicationController
 
   def user_params
     params.require(:user).permit(:name, :email, :password, :password_confirmation, :role)
-  end
-
-  def verify_seller_or_admin
-    unless current_user.seller? || current_user.admin?
-      render json: { error: 'Only sellers or admins can create users' }, status: :forbidden
-    end
   end
 end

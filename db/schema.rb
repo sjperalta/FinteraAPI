@@ -10,38 +10,70 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_10_20_062529) do
+ActiveRecord::Schema[7.0].define(version: 2024_10_20_194639) do
+  create_table "active_storage_attachments", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "record_type", null: false
+    t.bigint "record_id", null: false
+    t.bigint "blob_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
+    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+  end
+
+  create_table "active_storage_blobs", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "filename", null: false
+    t.string "content_type"
+    t.text "metadata"
+    t.string "service_name", null: false
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.datetime "created_at", null: false
+    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+  end
+
+  create_table "active_storage_variant_records", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.string "variation_digest", null: false
+    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
   create_table "lots", force: :cascade do |t|
     t.integer "project_id", null: false
-    t.string "name"
-    t.decimal "length"
-    t.decimal "width"
-    t.decimal "price"
+    t.string "name", null: false
+    t.decimal "length", precision: 10, scale: 2, null: false
+    t.decimal "width", precision: 10, scale: 2, null: false
+    t.decimal "price", precision: 15, scale: 2, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["project_id"], name: "index_lots_on_project_id"
   end
 
   create_table "projects", force: :cascade do |t|
-    t.string "name"
-    t.text "description"
-    t.string "address"
-    t.integer "lot_count"
-    t.decimal "price_per_square_foot"
-    t.decimal "interest_rate"
-    t.string "guid"
+    t.string "name", null: false
+    t.text "description", null: false
+    t.string "address", null: false
+    t.integer "lot_count", null: false
+    t.decimal "price_per_square_foot", precision: 10, scale: 2, null: false
+    t.decimal "interest_rate", precision: 5, scale: 2, null: false
+    t.string "guid", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
-  create_table "reservation_requests", force: :cascade do |t|
-    t.integer "lot_id"
-    t.integer "payment_term"
-    t.string "financing_type"
-    t.string "status"
-    t.integer "user_id"
+  create_table "reservations", force: :cascade do |t|
+    t.integer "lot_id", null: false
+    t.integer "creator_id"
+    t.integer "applicant_user_id", null: false
+    t.integer "payment_term", null: false
+    t.string "financing_type", null: false
+    t.string "status", default: "pending"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["applicant_user_id"], name: "index_reservations_on_applicant_user_id"
+    t.index ["creator_id"], name: "index_reservations_on_creator_id"
+    t.index ["lot_id"], name: "index_reservations_on_lot_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -61,5 +93,10 @@ ActiveRecord::Schema[7.0].define(version: 2024_10_20_062529) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "lots", "projects"
+  add_foreign_key "reservations", "lots"
+  add_foreign_key "reservations", "users", column: "applicant_user_id"
+  add_foreign_key "reservations", "users", column: "creator_id"
 end

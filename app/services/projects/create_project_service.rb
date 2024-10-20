@@ -8,7 +8,7 @@ module Projects
     end
 
     def call
-      project = Project.new(@project_params.except(:lot_count))
+      project = Project.new(@project_params)
 
       if project.save
         create_lots(project)

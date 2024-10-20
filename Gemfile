@@ -38,12 +38,19 @@ gem "rack-cors"
 gem 'devise'
 gem 'jwt'
 gem 'rswag'
+gem 'rswag-api'
+gem 'rswag-ui'
 gem 'cancancan'
+
+#requeriments for active_storage
+gem 'mutex_m'
+gem 'bigdecimal'
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem 'rspec-rails'
   gem 'pry-rails'
+  gem 'rswag-specs'
   gem "debug", platforms: %i[ mri mingw x64_mingw ]
 end
 

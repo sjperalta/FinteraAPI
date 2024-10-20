@@ -1,6 +1,4 @@
 Rails.application.routes.draw do
-  mount Rswag::Ui::Engine => '/api-docs'
-  mount Rswag::Api::Engine => '/api-docs'
   namespace :api do
     namespace :v1 do
       post 'auth/login', to: 'auth#login'
@@ -9,14 +7,20 @@ Rails.application.routes.draw do
           post 'password', to: 'users#recover_password'
         end
       end
-      resources :projects
-      resources :reservation_requests, only: [:index, :create] do
-        member do
-          patch 'approve'
-          patch 'reject'
-          delete 'cancel'
+      resources :projects do
+        resources :lots do
+          resources :reservations, only: [:create, :index, :show, :update, :destroy] do
+            member do
+              post 'approve'
+              post 'reject'
+              post 'cancel'
+            end
+          end
         end
       end
     end
   end
+
+  mount Rswag::Ui::Engine => '/api-docs'
+  mount Rswag::Api::Engine => '/api-docs'
 end
