@@ -38,6 +38,7 @@ gem "rack-cors"
 gem 'devise'
 gem 'jwt'
 gem 'rswag'
+gem 'cancancan'
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

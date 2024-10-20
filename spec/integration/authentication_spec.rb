@@ -17,7 +17,7 @@ RSpec.describe 'Autenticación', type: :request do
       }
 
       response '200', 'Inicio de sesión exitoso' do
-        let!(:user) { User.create!(email: 'user@example.com', password: 'password123', password_confirmation: 'password123', seller: false, admin: true, confirmed_at: Time.now) }
+        let!(:user) { User.create!(email: 'user@example.com', password: 'password123', password_confirmation: 'password123', role: 'admin', confirmed_at: Time.now) }
         let(:credentials) { { email: 'user@example.com', password: 'password123' } }
         run_test!
       end

@@ -2,6 +2,7 @@
 
 class Api::V1::ProjectsController < ApplicationController
   before_action :set_project, only: [:show, :update, :destroy]
+  load_and_authorize_resource
 
   # GET /api/v1/projects
   def index

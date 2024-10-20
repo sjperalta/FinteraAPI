@@ -3,6 +3,7 @@
 class Api::V1::UsersController < ApplicationController
   before_action :authenticate_user!, only: [:create]
   before_action :verify_seller_or_admin, only: [:create]
+  load_and_authorize_resource
 
   # POST /api/v1/users (solo vendedores o administradores pueden crear usuarios)
   def create

@@ -2,6 +2,7 @@ class Api::V1::ReservationRequestsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_reservation_request, only: [:show, :update, :approve, :reject, :cancel]
   before_action :verify_seller_or_admin, only: [:create, :approve, :reject, :cancel]
+  load_and_authorize_resource
 
   # GET /api/v1/reservation_requests
   def index

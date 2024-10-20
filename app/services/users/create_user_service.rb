@@ -15,10 +15,7 @@ module Users
 
     def call
       user = User.new(@user_params)
-
-      # Asignar el rol si corresponde
-      user.seller = true if @role == 'seller'
-      user.admin = true if @role == 'admin'
+      user.role = @role
 
       if user.save
         # Enviar el correo de confirmación si Devise está configurado con confirmable
