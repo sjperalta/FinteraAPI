@@ -9,11 +9,13 @@ Rails.application.routes.draw do
       end
       resources :projects do
         resources :lots do
-          resources :reservations, only: [:create, :index, :show, :update, :destroy] do
-            member do
-              post 'approve'
-              post 'reject'
-              post 'cancel'
+          resources :contracts do
+            resources :payments, only: [:index, :show] do
+              member do
+                post 'approve'           # Aprobar un pago
+                post 'reject'            # Rechazar un pago
+                post 'upload_receipt'    # Subir comprobante de pago
+              end
             end
           end
         end

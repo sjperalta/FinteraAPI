@@ -1,0 +1,13 @@
+<p>Hola <%= @user.name %>,</p>
+
+<p>Nos complace informarte que tu pago para la reserva en el proyecto <%= @contract.lot.project.name %> ha sido aprobado.</p>
+
+<p>Detalles del pago:</p>
+<ul>
+  <li>Monto: <%= @payment.amount %></li>
+  <li>Fecha de pago: <%= @payment.payment_date %></li>
+  <li>Reserva: <%= @contract.id %></li>
+</ul>
+
+<p>Gracias por tu puntualidad,</p>
+<p>El equipo de Fintera</p>

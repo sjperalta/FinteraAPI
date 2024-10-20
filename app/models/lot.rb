@@ -2,7 +2,7 @@
 
 class Lot < ApplicationRecord
   belongs_to :project  # Relación con el proyecto al que pertenece el lote
-  has_many :reservations, dependent: :destroy  # Relación con las reservas. Se eliminarán si el lote es eliminado.
+  has_many :contracts, dependent: :destroy  # Relación con las reservas. Se eliminarán si el lote es eliminado.
 
   before_save :calculate_price
 

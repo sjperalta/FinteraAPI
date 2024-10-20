@@ -1,28 +1,31 @@
-class Api::V1::ReservationsController < ApplicationController
+class Api::V1::ContractsController < ApplicationController
   before_action :set_project
   before_action :set_lot
-  before_action :set_reservation, only: [:show, :update, :destroy, :approve, :reject, :cancel]
+  before_action :set_contract, only: [:show, :update, :destroy, :approve, :reject, :cancel]
 
-  # POST /api/v1/projects/:project_id/lots/:lot_id/reservations
+  # POST /api/v1/projects/:project_id/lots/:lot_id/contracts
   def create
-    service = Reservations::CreateReservationService.new(
+    service = Contracts::CreateContractService.new(
       lot: @lot,
-      reservation_params: reservation_params,
-      documents: reservation_documents,
+      contract_params: contract_params,
+      documents: contract_documents,
       current_user: current_user # Pasar el current_user al service
     )
     result = service.call
 
     if result[:success]
-      render json: result[:reservation], status: :created
+      render json: result[:contract], status: :created
     else
       render json: { errors: result[:errors] }, status: :unprocessable_entity
     end
   end
 
-  # POST /api/v1/projects/:project_id/lots/:lot_id/reservations/:id/approve
+  # POST /api/v1/projects/:project_id/lots/:lot_id/contracts/:id/approve
   def approve
-    service = Reservations::ApproveReservationService.new(reservation: @reservation)
+    service = Contracts::ApproveContractService.new(
+      contract: @contract,
+      current_user: current_user
+    )
     result = service.call
 
     if result[:success]
@@ -32,9 +35,9 @@ class Api::V1::ReservationsController < ApplicationController
     end
   end
 
-  # POST /api/v1/projects/:project_id/lots/:lot_id/reservations/:id/reject
+  # POST /api/v1/projects/:project_id/lots/:lot_id/contracts/:id/reject
   def reject
-    service = Reservations::RejectReservationService.new(reservation: @reservation)
+    service = Contracts::RejectContractService.new(contract: @contract)
     result = service.call
 
     if result[:success]
@@ -44,9 +47,9 @@ class Api::V1::ReservationsController < ApplicationController
     end
   end
 
-  # POST /api/v1/projects/:project_id/lots/:lot_id/reservations/:id/cancel
+  # POST /api/v1/projects/:project_id/lots/:lot_id/contracts/:id/cancel
   def cancel
-    service = Reservations::CancelReservationService.new(reservation: @reservation)
+    service = Contracts::CancelContractService.new(contract: @contract)
     result = service.call
 
     if result[:success]
@@ -66,16 +69,16 @@ class Api::V1::ReservationsController < ApplicationController
     @lot = @project.lots.find(params[:lot_id])
   end
 
-  def set_reservation
-    @reservation = @lot.reservations.find(params[:id])
+  def set_contract
+    @contract = @lot.contracts.find(params[:id])
   end
 
-  def reservation_params
-    params.require(:reservation_request).permit(:payment_term, :financing_type, :applicant_user_id)
+  def contract_params
+    params.require(:contract_request).permit(:payment_term, :financing_type, :applicant_user_id, :reserve_amount, :down_payment)
   end
 
   # Permitir la carga de múltiples documentos
-  def reservation_documents
-    params[:reservation_request][:documents] || []
+  def contract_documents
+    params[:contract_request][:documents] || []
   end
 end

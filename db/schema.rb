@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_10_20_194639) do
+ActiveRecord::Schema[7.0].define(version: 2024_10_20_211114) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -39,6 +39,23 @@ ActiveRecord::Schema[7.0].define(version: 2024_10_20_194639) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "contracts", force: :cascade do |t|
+    t.integer "lot_id", null: false
+    t.integer "creator_id"
+    t.integer "applicant_user_id", null: false
+    t.integer "payment_term", null: false
+    t.string "financing_type", null: false
+    t.string "status", default: "pending"
+    t.decimal "balance"
+    t.decimal "down_payment"
+    t.decimal "reserve_amount"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["applicant_user_id"], name: "index_contracts_on_applicant_user_id"
+    t.index ["creator_id"], name: "index_contracts_on_creator_id"
+    t.index ["lot_id"], name: "index_contracts_on_lot_id"
+  end
+
   create_table "lots", force: :cascade do |t|
     t.integer "project_id", null: false
     t.string "name", null: false
@@ -48,6 +65,17 @@ ActiveRecord::Schema[7.0].define(version: 2024_10_20_194639) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["project_id"], name: "index_lots_on_project_id"
+  end
+
+  create_table "payments", force: :cascade do |t|
+    t.integer "contracts_id", null: false
+    t.decimal "amount"
+    t.date "due_date"
+    t.date "payment_date"
+    t.string "status"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contracts_id"], name: "index_payments_on_contracts_id"
   end
 
   create_table "projects", force: :cascade do |t|
@@ -60,20 +88,6 @@ ActiveRecord::Schema[7.0].define(version: 2024_10_20_194639) do
     t.string "guid", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-  end
-
-  create_table "reservations", force: :cascade do |t|
-    t.integer "lot_id", null: false
-    t.integer "creator_id"
-    t.integer "applicant_user_id", null: false
-    t.integer "payment_term", null: false
-    t.string "financing_type", null: false
-    t.string "status", default: "pending"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["applicant_user_id"], name: "index_reservations_on_applicant_user_id"
-    t.index ["creator_id"], name: "index_reservations_on_creator_id"
-    t.index ["lot_id"], name: "index_reservations_on_lot_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -95,8 +109,9 @@ ActiveRecord::Schema[7.0].define(version: 2024_10_20_194639) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "contracts", "lots"
+  add_foreign_key "contracts", "users", column: "applicant_user_id"
+  add_foreign_key "contracts", "users", column: "creator_id"
   add_foreign_key "lots", "projects"
-  add_foreign_key "reservations", "lots"
-  add_foreign_key "reservations", "users", column: "applicant_user_id"
-  add_foreign_key "reservations", "users", column: "creator_id"
+  add_foreign_key "payments", "contracts", column: "contracts_id"
 end

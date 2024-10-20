@@ -11,8 +11,8 @@ class Ability
     elsif user.seller?
       can :read, Project   # Los vendedores pueden ver proyectos
       can :read, Lot
-      can :read, Reservation
-      can :create, Reservation   # Los vendedores pueden crear solicitudes de reserva
+      can :read, contract
+      can :create, contract   # Los vendedores pueden crear solicitudes de reserva
       can :read, User
       can :create, User
       can :update, User
@@ -20,7 +20,7 @@ class Ability
       can :read, Project   # Los usuarios normales solo pueden ver proyectos
       can :read, Lot
       can :read, User
-      can :read, Reservation
+      can :read, contract
     end
   end
 end
