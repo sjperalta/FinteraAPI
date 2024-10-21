@@ -11,7 +11,25 @@ class Api::V1::ProjectsController < ApplicationController
     else
       @projects = Project.all
     end
-    render json: @projects
+
+    # Modificar la respuesta para incluir campos calculados
+    projects_with_calculated_fields = @projects.map do |project|
+      total_area = project.lots.sum { |lot| lot.length * lot.width }
+      {
+        id: project.id,
+        name: project.name,
+        description: project.description,
+        project_type: project.project_type,
+        price_per_square_foot: project.price_per_square_foot,
+        address: project.address,
+        total_lots: project.lot_count,
+        available: project.lots.where(status: 'available').count,
+        reserved: project.lots.where(status: 'reserved').count,
+        total_area: total_area
+      }
+    end
+
+    render json: projects_with_calculated_fields
   end
 
   # GET /api/v1/projects/:id
@@ -53,6 +71,6 @@ class Api::V1::ProjectsController < ApplicationController
   end
 
   def project_params
-    params.require(:project).permit(:name, :description, :address, :lot_count, :price_per_square_foot, :interest_rate)
+    params.require(:project).permit(:name, :description, :project_type, :address, :lot_count, :price_per_square_foot, :interest_rate)
   end
 end

@@ -61,6 +61,7 @@ ActiveRecord::Schema[7.0].define(version: 202410202111149) do
   create_table "lots", force: :cascade do |t|
     t.integer "project_id", null: false
     t.string "name", null: false
+    t.string "status", default: "available"
     t.decimal "length", precision: 10, scale: 2, null: false
     t.decimal "width", precision: 10, scale: 2, null: false
     t.decimal "price", precision: 15, scale: 2, null: false
@@ -84,6 +85,7 @@ ActiveRecord::Schema[7.0].define(version: 202410202111149) do
   create_table "projects", force: :cascade do |t|
     t.string "name", null: false
     t.text "description", null: false
+    t.string "project_type", default: "residential"
     t.string "address", null: false
     t.integer "lot_count", null: false
     t.decimal "price_per_square_foot", precision: 10, scale: 2, null: false

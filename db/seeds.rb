@@ -8,12 +8,12 @@ end
 
 puts "Usuario creado/actualizado: #{user.email}"
 
-
-project = Project.find_or_create_by!(name: 'Proyecto Ejemplo') do |project|
-  project.description = 'Descripción del proyecto'
-  project.address = 'Dirección'
-  project.lot_count = 1
-  project.price_per_square_foot = 100
+project = Project.find_or_create_by!(name: 'Proyecto Wameru') do |project|
+  project.description = 'Proyecto Residencial En Sector Cieneguita'
+  project.project_type = 'Residencial'
+  project.address = 'Cieneguita, Wameru'
+  project.lot_count = 155
+  project.price_per_square_foot = 2500
   project.interest_rate = 5
 end
 
@@ -23,6 +23,26 @@ lot = Lot.find_or_create_by!(
   project: project,
   name: 'Lote 1',
   length: 30.0,
+  width: 20.0
+)
+
+puts "Lote creado/actualizado: #{lot.name} with price #{lot.price}"
+
+project = Project.find_or_create_by!(name: 'Proyecto Coral') do |project|
+  project.description = 'Proyecto Residencial En Sector Cieneguita'
+  project.project_type = 'Residencial'
+  project.address = 'Cieneguita, Wameru'
+  project.lot_count = 450
+  project.price_per_square_foot = 2500
+  project.interest_rate = 5
+end
+
+puts "Projecto creado/actualizado: #{project.name}"
+
+lot = Lot.find_or_create_by!(
+  project: project,
+  name: 'Lote 1',
+  length: 10.0,
   width: 20.0
 )
 
