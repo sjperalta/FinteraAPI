@@ -41,6 +41,7 @@ gem 'rswag'
 gem 'rswag-api'
 gem 'rswag-ui'
 gem 'cancancan'
+gem 'whenever', require: false
 
 #requeriments for active_storage
 gem 'mutex_m'
@@ -51,6 +52,7 @@ group :development, :test do
   gem 'rspec-rails'
   gem 'pry-rails'
   gem 'rswag-specs'
+  gem 'dotenv-rails'
   gem "debug", platforms: %i[ mri mingw x64_mingw ]
 end
 

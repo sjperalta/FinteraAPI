@@ -22,7 +22,7 @@ module Payments
 
     def upload_receipt
       @payment.document.attach(@receipt)
-      @payment.update!(status: 'pending')
+      @payment.update!(status: 'pending', payment_date: Date.today)
     end
 
     def notify_admin

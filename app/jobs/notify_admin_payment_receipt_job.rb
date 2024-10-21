@@ -5,7 +5,6 @@ class NotifyAdminPaymentReceiptJob < ApplicationJob
 
   def perform(payment)
     @payment = payment
-    @contract = @payment.contract
     # Llamamos al servicio que notifica al administrador
     send_admin_notification_email
   end
@@ -13,6 +12,6 @@ class NotifyAdminPaymentReceiptJob < ApplicationJob
   private
 
   def send_admin_notification_email
-    AdminMailer.with(payment: @payment, contract: @contract).payment_receipt_uploaded.deliver_now
+    Notifications::AdminPaymentReceiptNotificationService.new(@payment).call
   end
 end

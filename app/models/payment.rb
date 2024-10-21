@@ -9,9 +9,14 @@ class Payment < ApplicationRecord
   # Método para aprobar un pago
   def approve!
     self.status = 'approved'
-    self.payment_date = Date.today
+    self.approved_at = Time.current
+    #self.payment_date = Date.today
     #contract.update_balance(amount)
     save!
+  end
+
+  def pending?
+    self.status == 'pending'
   end
 
   # Método para marcar un pago como vencido si no se paga a tiempo

@@ -1,13 +1,21 @@
-<p>Hola <%= @user.name %>,</p>
+<!DOCTYPE html>
+<html>
+  <body>
+    <h1>Tu pago ha sido aprobado</h1>
+    <p>Hola <%= @user.name %>,</p>
+    <p>Nos complace informarte que tu pago ha sido aprobado. Aquí tienes los detalles de la transacción:</p>
+    
+    <ul>
+      <li><strong>Proyecto:</strong> <%= @contract.lot.project.name %></li>
+      <li><strong>Lote:</strong> <%= @contract.lot.name %></li>
+      <li><strong>Monto del pago:</strong> $<%= @payment.amount %></li>
+      <li><strong>Fecha de vencimiento:</strong> <%= @payment.due_date.strftime('%d-%m-%Y') %></li>
+      <li><strong>Fecha de aprobación:</strong> <%= @payment.approved_at.strftime('%d-%m-%Y') %></li>
+    </ul>
 
-<p>Nos complace informarte que tu pago para la reserva en el proyecto <%= @contract.lot.project.name %> ha sido aprobado.</p>
+    <p>Gracias por tu pago y por mantenerte al día con tus obligaciones.</p>
 
-<p>Detalles del pago:</p>
-<ul>
-  <li>Monto: <%= @payment.amount %></li>
-  <li>Fecha de pago: <%= @payment.payment_date %></li>
-  <li>Reserva: <%= @contract.id %></li>
-</ul>
-
-<p>Gracias por tu puntualidad,</p>
-<p>El equipo de Fintera</p>
+    <p>Saludos,</p>
+    <p>El equipo de YourApp</p>
+  </body>
+</html>

@@ -1,7 +1,19 @@
 class Api::V1::ContractsController < ApplicationController
   before_action :set_project
   before_action :set_lot
-  before_action :set_contract, only: [:show, :update, :destroy, :approve, :reject, :cancel]
+  before_action :set_contract, only: [:show, :reject, :approve, :cancel]
+  load_and_authorize_resource
+
+  # GET /api/v1/projects/:project_id/lots/:lot_id/contracts
+  def index
+    @contracts = @lot.contracts
+    render json: @contracts
+  end
+
+  # GET /api/v1/projects/:project_id/lots/:lot_id/contracts/:id
+  def show
+    render json: @contract
+  end
 
   # POST /api/v1/projects/:project_id/lots/:lot_id/contracts
   def create
@@ -74,11 +86,11 @@ class Api::V1::ContractsController < ApplicationController
   end
 
   def contract_params
-    params.require(:contract_request).permit(:payment_term, :financing_type, :applicant_user_id, :reserve_amount, :down_payment)
+    params.require(:contract).permit(:payment_term, :financing_type, :applicant_user_id, :reserve_amount, :down_payment)
   end
 
   # Permitir la carga de múltiples documentos
   def contract_documents
-    params[:contract_request][:documents] || []
+    params[:contract][:documents] || []
   end
 end

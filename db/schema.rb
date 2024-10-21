@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_10_20_211114) do
+ActiveRecord::Schema[7.0].define(version: 202410202111149) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -46,9 +46,11 @@ ActiveRecord::Schema[7.0].define(version: 2024_10_20_211114) do
     t.integer "payment_term", null: false
     t.string "financing_type", null: false
     t.string "status", default: "pending"
+    t.decimal "amount"
     t.decimal "balance"
     t.decimal "down_payment"
     t.decimal "reserve_amount"
+    t.datetime "approved_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["applicant_user_id"], name: "index_contracts_on_applicant_user_id"
@@ -68,14 +70,15 @@ ActiveRecord::Schema[7.0].define(version: 2024_10_20_211114) do
   end
 
   create_table "payments", force: :cascade do |t|
-    t.integer "contracts_id", null: false
-    t.decimal "amount"
-    t.date "due_date"
+    t.integer "contract_id", null: false
+    t.decimal "amount", precision: 10, scale: 2, null: false
+    t.date "due_date", null: false
     t.date "payment_date"
-    t.string "status"
+    t.string "status", default: "pending", null: false
+    t.datetime "approved_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["contracts_id"], name: "index_payments_on_contracts_id"
+    t.index ["contract_id"], name: "index_payments_on_contract_id"
   end
 
   create_table "projects", force: :cascade do |t|
@@ -113,5 +116,5 @@ ActiveRecord::Schema[7.0].define(version: 2024_10_20_211114) do
   add_foreign_key "contracts", "users", column: "applicant_user_id"
   add_foreign_key "contracts", "users", column: "creator_id"
   add_foreign_key "lots", "projects"
-  add_foreign_key "payments", "contracts", column: "contracts_id"
+  add_foreign_key "payments", "contracts"
 end

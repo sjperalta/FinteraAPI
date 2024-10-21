@@ -27,3 +27,25 @@ lot = Lot.find_or_create_by!(
 )
 
 puts "Lote creado/actualizado: #{lot.name} with price #{lot.price}"
+
+# Crear un contrato asociado al lote y al usuario
+contract = Contract.find_or_create_by!(
+  lot: lot,
+  applicant_user_id: user.id,
+  payment_term: 12,
+  financing_type: 'direct',
+  reserve_amount: 1000.0,
+  down_payment: 5000.0
+)
+
+puts "Contrato creado/actualizado: #{contract.id} with payment_term #{contract.payment_term}"
+
+# Crear un pago asociado al contrato
+payment = Payment.find_or_create_by!(
+  contract: contract,
+  amount: 500.0,
+  due_date: Date.today + 30.days,
+  status: 'pending'
+)
+
+puts "Pago creado/actualizado: #{payment.id} with amount #{payment.amount}"

@@ -1,5 +1,3 @@
-# app/models/ability.rb
-
 class Ability
   include CanCan::Ability
 
@@ -9,18 +7,25 @@ class Ability
     if user.admin?
       can :manage, :all  # Los administradores pueden hacer todo
     elsif user.seller?
-      can :read, Project   # Los vendedores pueden ver proyectos
+      # Los vendedores pueden leer, crear y actualizar contratos, pero solo los suyos
+      can :read, Project
       can :read, Lot
-      can :read, contract
-      can :create, contract   # Los vendedores pueden crear solicitudes de reserva
+      can :read, Contract, user_id: user.id  # Solo sus contratos
+      can :update, Contract, user_id: user.id
+      can :create, Contract
+
+      can :update, Lot
+      can :create, Lot
+      can :destroy, Lot
+
+      # Los vendedores pueden gestionar usuarios, pero quizás solo puedan editar algunos usuarios
       can :read, User
       can :create, User
-      can :update, User
+      can :update, User, id: user.id  # Solo pueden actualizar su propia información
     else
-      can :read, Project   # Los usuarios normales solo pueden ver proyectos
-      can :read, Lot
-      can :read, User
-      can :read, contract
+      # Usuarios invitados o clientes
+      can :read, :all
+      can :read, User, id: user.id  # Solo pueden leer su propia información
     end
   end
 end

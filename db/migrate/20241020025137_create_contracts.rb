@@ -7,9 +7,11 @@ class CreateContracts < ActiveRecord::Migration[7.0]
       t.integer :payment_term, null: false  # Plazo de pago en meses
       t.string :financing_type, null: false  # Tipo de financiamiento
       t.string :status, default: "pending"  # Estado de la solicitud
+      t.decimal :amount
       t.decimal :balance
       t.decimal :down_payment
       t.decimal :reserve_amount
+      t.datetime :approved_at
       t.timestamps
     end
   end

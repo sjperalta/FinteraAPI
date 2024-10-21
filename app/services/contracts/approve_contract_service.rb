@@ -14,9 +14,11 @@ module Contracts
         generate_payments
         send_approval_notification
       end
+      { success: true, message: 'Approbado' }
     rescue => e
-      Rails.logger.error("Error aprobando la reserva: #{e.message}")
-      false
+      error_message = "Error aprobando la reserva: #{e.message}"
+      Rails.logger.error(error_message)
+      { success: true, errors: [error_message] }
     end
 
     private
@@ -31,7 +33,8 @@ module Contracts
     end
 
     def send_approval_notification
-      SendContractApprovalNotificationJob.perform_later(@contract.id)  # Ejecutar el Job en segundo plano
+      # Ejecutar el Job en segundo plano
+      SendContractApprovalNotificationJob.perform_later(@contract)
     end
   end
 end

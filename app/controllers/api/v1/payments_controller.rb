@@ -3,6 +3,7 @@
 class Api::V1::PaymentsController < ApplicationController
   before_action :set_contract
   before_action :set_payment, only: [:show, :approve, :reject, :upload_receipt]
+  load_and_authorize_resource
 
   # GET /projects/:project_id/lots/:lot_id/contracts/:contract_id/payments
   def index

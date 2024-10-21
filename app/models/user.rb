@@ -16,4 +16,9 @@ class User < ApplicationRecord
   def seller?
     role == 'seller'
   end
+
+  def generate_jwt
+    payload = { user_id: self.id, exp: 24.hours.from_now.to_i }  # Expira en 24 horas
+    JWT.encode(payload, Rails.application.secrets.secret_key_base)
+  end
 end

@@ -3,7 +3,6 @@
 class Api::V1::LotsController < ApplicationController
   before_action :set_project
   before_action :set_lot, only: [:show, :update, :destroy]
-  before_action :authenticate_user!
   #load_and_authorize_resource :lot, through: :project
   load_and_authorize_resource
 

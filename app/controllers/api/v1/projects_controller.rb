@@ -14,6 +14,11 @@ class Api::V1::ProjectsController < ApplicationController
     render json: @projects
   end
 
+  # GET /api/v1/projects/:id
+  def show
+    render json: @project
+  end
+
   # POST /api/v1/projects
   def create
     service = Projects::CreateProjectService.new(project_params)

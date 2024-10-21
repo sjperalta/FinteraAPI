@@ -1,20 +1,29 @@
 class UserMailer < ApplicationMailer
-  default from: 'no-reply@yourapp.com'
+  default from: ENV['DEFAULT_EMAIL']
 
   # Método compartido para establecer el usuario
   before_action :set_user
 
-  # Enviar correo con el contrato de reserva aprobado
-  def contract_email(contract)
-    @contract = contract
-    mail(to: @user.email, subject: 'Contrato de Reserva Aprobado')
+   # Método para enviar el correo de aprobación de pago
+  def contract_approved
+    @contract = params[:contract]
+
+    mail(to: @user.email, subject: 'Contracto Aprobado')
   end
 
-  # Enviar correo cuando el pago es aprobado
-  def payment_approved(payment)
-    @payment = payment
+  # Método para enviar el correo de aprobación de pago
+  def payment_approved
+    @payment = params[:payment]
     @contract = @payment.contract
-    mail(to: @user.email, subject: 'Pago aprobado')
+
+    mail(to: @user.email, subject: 'Pago Aprobado - Detalles de tu transacción')
+  end
+
+  # Método para enviar el correo de pagos vencidos
+  def overdue_payment_email
+    @payments = params[:payments]
+
+    mail(to: @user.email, subject: 'Pagos Vencidos')
   end
 
   private
