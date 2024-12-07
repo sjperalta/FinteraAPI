@@ -1,29 +1,22 @@
-# app/services/users/create_user_service.rb
-
 module Users
   class CreateUserService
-    def initialize(name:, email:, password:, password_confirmation:, role:)
-      @name = name
-      @role = role
-      @user_params = {
-        name: name,
-        email: email,
-        password: password,
-        password_confirmation: password_confirmation
-      }
+    def initialize(user_params:)
+      @user_params = user_params
     end
 
     def call
       user = User.new(@user_params)
-      user.role = @role
 
       if user.save
-        # Enviar el correo de confirmación si Devise está configurado con confirmable
-        user.send_confirmation_instructions
-        return { success: true, user: user }
+        # Si estás utilizando confirmable en Devise, se envía el email de confirmación
+        user.send_confirmation_instructions if user.respond_to?(:send_confirmation_instructions)
+        { success: true, user: user }
       else
-        return { success: false, errors: user.errors.full_messages }
+        { success: false, errors: user.errors.full_messages }
       end
+    rescue => e
+      Rails.logger.error("Error creating user: #{e.message}")
+      { success: false, errors: [e.message] }
     end
   end
 end

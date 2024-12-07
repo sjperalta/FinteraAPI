@@ -3,11 +3,18 @@ Rails.application.routes.draw do
     namespace :v1 do
       post 'auth/login', to: 'auth#login'
 
-      resources :users, only: [:create] do
-        collection do
-          post 'password', to: 'users#recover_password'
+      devise_for :users, controllers: {
+        registrations: 'api/v1/users'
+      }
+      resources :users, only: [:index, :show, :create] do
+        member do
+          put :toggle_status # Route for toggling user status
+          post :resend_confirmation
         end
       end
+      post 'users/password', to: 'users#recover_password', as: 'recover_password'
+
+      get 'search/contracts', to: 'search#contracts'
 
       resources :projects, only: [:index, :show, :create, :approve, :destroy] do
 

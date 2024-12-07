@@ -9,7 +9,21 @@ class Api::V1::LotsController < ApplicationController
   # GET /projects/:project_id/lots
   def index
     @lots = @project.lots
-    render json: @lots
+
+    lots_with_calculated_fields = @lots.map do |lot|
+      {
+        id: lot.id,
+        project_id: lot.project&.id,
+        name: lot.name,
+        price: lot.price,
+        length: lot.length,
+        width: lot.width,
+        area: lot.length * lot.width,  # Campo calculado: área total
+        status: lot.status # Campo calculado: estado formateado
+      }
+    end
+
+    render json: lots_with_calculated_fields
   end
 
   # GET /projects/:project_id/lots/:id

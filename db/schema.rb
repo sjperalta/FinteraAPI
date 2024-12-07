@@ -108,6 +108,9 @@ ActiveRecord::Schema[7.0].define(version: 202410202111149) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "role", default: "user"
+    t.string "full_name"
+    t.string "phone"
+    t.string "status", default: "active"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end

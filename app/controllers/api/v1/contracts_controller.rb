@@ -78,7 +78,8 @@ class Api::V1::ContractsController < ApplicationController
   end
 
   def set_lot
-    @lot = @project.lots.find(params[:lot_id])
+    #@lot = @project.lots.find(params[:lot_id])
+    @lot = Lot.find(params[:lot_id])
   end
 
   def set_contract

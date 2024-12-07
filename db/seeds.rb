@@ -3,6 +3,8 @@ user = User.find_or_create_by!(email: 'admin@example.com') do |user|
   user.password = 'superPassword@123'
   user.password_confirmation = 'superPassword@123'
   user.role = 'admin'
+  user.full_name = 'Administrador'
+  user.phone = '+50431848112'
   user.confirmed_at = Time.now
 end
 

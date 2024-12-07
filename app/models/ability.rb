@@ -6,6 +6,7 @@ class Ability
 
     if user.admin?
       can :manage, :all  # Los administradores pueden hacer todo
+      can :resend_confirmation, User
     elsif user.seller?
       # Los vendedores pueden leer, crear y actualizar contratos, pero solo los suyos
       can :read, Project
@@ -20,8 +21,10 @@ class Ability
 
       # Los vendedores pueden gestionar usuarios, pero quizás solo puedan editar algunos usuarios
       can :read, User
+      can :update, User
       can :create, User
       can :update, User, id: user.id  # Solo pueden actualizar su propia información
+      can :resend_confirmation, User, id: user.id
     else
       # Usuarios invitados o clientes
       can :read, :all
