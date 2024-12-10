@@ -1,4 +1,5 @@
 class User < ApplicationRecord
+  #has_secure_password
   # Devise modules
   devise :database_authenticatable, :registerable, :recoverable, :confirmable, :validatable
 

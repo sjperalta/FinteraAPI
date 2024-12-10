@@ -1,25 +1,31 @@
 # app/controllers/api/v1/users_controller.rb
 
 class Api::V1::UsersController < ApplicationController
-  before_action :authenticate_user!, only: [:create, :recover_password, :resend_confirmation, :toggle_status]
+  before_action :authenticate_user!, only: [:create, :update, :recover_password, :resend_confirmation, :toggle_status]
   load_and_authorize_resource
 
   # GET /api/v1/users (lista todos los usuarios)
   def index
     users = User.all
 
-    # Aplicar filtros si están presentes en los parámetros
-    users = users.where('email LIKE ?', "%#{params[:email]}%") if params[:email].present?
-    users = users.where('full_name LIKE ?', "%#{params[:full_name]}%") if params[:full_name].present?
-    users = users.where(role: params[:role]) if params[:role].present?
+    # Apply role if present
+    if params[:role].present?
+      users = users.where(role: params[:role].downcase)
+    end
 
-    render json: users, status: :ok
+    # Aplicar filtros si están presentes en los parámetros
+    if params[:search_term].present?
+      term = "%#{params[:search_term].downcase}%"
+      users = users.where('email LIKE ? OR full_name LIKE ? OR phone LIKE ?', term, term, term)
+    end
+
+    render json: users.as_json(only: [:id, :full_name, :email, :phone, :role, :status]), status: :ok
   end
 
   # GET /api/v1/users/:id (muestra un usuario en particular)
   def show
     user = User.find(params[:id])
-    render json: user, status: :ok
+    render json: user.as_json(only: [:id, :full_name, :email, :phone, :role, :status]), status: :ok
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'User not found' }, status: :not_found
   end
@@ -33,6 +39,16 @@ class Api::V1::UsersController < ApplicationController
       render json: { message: 'User successfully created. Confirmation email sent.' }, status: :created
     else
       render json: { errors: result[:errors] }, status: :unprocessable_entity
+    end
+  end
+
+  # PUT /api/v1/users/:id
+  # Update an existing user's details
+  def update
+    if @user.update(user_params)
+      render json: { message: 'User updated successfully' }, status: :ok
+    else
+      render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
     end
   end
 

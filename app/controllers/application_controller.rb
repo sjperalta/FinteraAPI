@@ -9,19 +9,24 @@ class ApplicationController < ActionController::API
   private
 
   def authenticate_user!
-    header = request.headers['Authorization']
-    token = header.split(' ').last if header
-    service = Authentication::DecodeTokenService.new(token: token)
-    result = service.call
+    token = request.headers['Authorization']&.split(' ')&.last
+    return render json: { error: 'Unauthorized' }, status: :unauthorized unless token
 
-    if result[:success]
-      @current_user = result[:user]
+    decoded_token = decode_token(token)
+    if decoded_token && decoded_token[:exp] > Time.now.to_i
+      @current_user = User.find(decoded_token[:user_id])
     else
-      render json: { error: 'Unauthorized' }, status: :unauthorized
+      render json: { error: 'Token expired or invalid' }, status: :unauthorized
     end
   end
 
   def current_user
     @current_user
+  end
+
+  def decode_token(token)
+    JWT.decode(token, Rails.application.secrets.secret_key_base)[0].symbolize_keys
+  rescue JWT::DecodeError
+    nil
   end
 end

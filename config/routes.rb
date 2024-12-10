@@ -2,11 +2,13 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       post 'auth/login', to: 'auth#login'
+      post 'auth/refresh', to: 'auth#refresh'
+      post 'auth/logout', to: 'auth#logout'
 
       devise_for :users, controllers: {
         registrations: 'api/v1/users'
       }
-      resources :users, only: [:index, :show, :create] do
+      resources :users, only: [:index, :show, :create, :update] do
         member do
           put :toggle_status # Route for toggling user status
           post :resend_confirmation

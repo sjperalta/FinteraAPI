@@ -111,6 +111,7 @@ ActiveRecord::Schema[7.0].define(version: 202410202111149) do
     t.string "full_name"
     t.string "phone"
     t.string "status", default: "active"
+    t.string "password_digest"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
