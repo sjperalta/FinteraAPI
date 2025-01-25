@@ -10,7 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 202410202111149) do
+ActiveRecord::Schema[8.0].define(version: 2025_01_24_212956) do
+  # These are extensions that must be enabled in order to support this database
+  enable_extension "pg_catalog.plpgsql"
+
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -40,9 +43,9 @@ ActiveRecord::Schema[7.0].define(version: 202410202111149) do
   end
 
   create_table "contracts", force: :cascade do |t|
-    t.integer "lot_id", null: false
-    t.integer "creator_id"
-    t.integer "applicant_user_id", null: false
+    t.bigint "lot_id", null: false
+    t.bigint "creator_id"
+    t.bigint "applicant_user_id", null: false
     t.integer "payment_term", null: false
     t.string "financing_type", null: false
     t.string "status", default: "pending"
@@ -50,16 +53,19 @@ ActiveRecord::Schema[7.0].define(version: 202410202111149) do
     t.decimal "balance"
     t.decimal "down_payment"
     t.decimal "reserve_amount"
+    t.string "currency", default: "HNL", null: false
     t.datetime "approved_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "active", default: false, null: false
+    t.index ["active"], name: "index_contracts_on_active"
     t.index ["applicant_user_id"], name: "index_contracts_on_applicant_user_id"
     t.index ["creator_id"], name: "index_contracts_on_creator_id"
     t.index ["lot_id"], name: "index_contracts_on_lot_id"
   end
 
   create_table "lots", force: :cascade do |t|
-    t.integer "project_id", null: false
+    t.bigint "project_id", null: false
     t.string "name", null: false
     t.string "status", default: "available"
     t.decimal "length", precision: 10, scale: 2, null: false
@@ -67,15 +73,35 @@ ActiveRecord::Schema[7.0].define(version: 202410202111149) do
     t.decimal "price", precision: 15, scale: 2, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_lots_on_name"
     t.index ["project_id"], name: "index_lots_on_project_id"
+    t.index ["status"], name: "index_lots_on_status"
+  end
+
+  create_table "notifications", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "title", null: false
+    t.string "message", null: false
+    t.string "notification_type"
+    t.datetime "read_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_notifications_on_created_at"
+    t.index ["notification_type"], name: "index_notifications_on_notification_type"
+    t.index ["read_at"], name: "index_notifications_on_read_at"
+    t.index ["user_id"], name: "index_notifications_on_user_id"
   end
 
   create_table "payments", force: :cascade do |t|
-    t.integer "contract_id", null: false
+    t.bigint "contract_id", null: false
     t.decimal "amount", precision: 10, scale: 2, null: false
+    t.decimal "paid_amount", precision: 15, scale: 2, default: "0.0"
     t.date "due_date", null: false
     t.date "payment_date"
     t.string "status", default: "pending", null: false
+    t.string "payment_type", default: "installment"
+    t.string "description"
+    t.decimal "interest_amount", precision: 10, scale: 2
     t.datetime "approved_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -93,6 +119,33 @@ ActiveRecord::Schema[7.0].define(version: 202410202111149) do
     t.string "guid", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "commission_rate", precision: 5, scale: 2, default: "0.0", null: false
+    t.index ["name"], name: "index_projects_on_name"
+  end
+
+  create_table "revenues", force: :cascade do |t|
+    t.string "payment_type", null: false
+    t.integer "year", null: false
+    t.integer "month", null: false
+    t.decimal "amount", precision: 15, scale: 2, default: "0.0"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["payment_type", "year", "month"], name: "index_revenues_on_payment_type_and_year_and_month", unique: true
+  end
+
+  create_table "statistics", force: :cascade do |t|
+    t.date "period_date", null: false
+    t.decimal "total_income", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "total_interest", precision: 15, scale: 2, default: "0.0", null: false
+    t.integer "new_customers", default: 0, null: false
+    t.decimal "payment_reserve", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "payment_installments", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "payment_down_payment", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "on_time_payment", precision: 15, scale: 2, default: "0.0", null: false
+    t.decimal "delayed_payment", precision: 15, scale: 2, default: "0.0", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["period_date"], name: "index_statistics_on_period_date", unique: true
   end
 
   create_table "users", force: :cascade do |t|
@@ -112,8 +165,27 @@ ActiveRecord::Schema[7.0].define(version: 202410202111149) do
     t.string "phone"
     t.string "status", default: "active"
     t.string "password_digest"
+    t.string "identity"
+    t.string "rtn"
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["full_name"], name: "index_users_on_full_name"
+    t.index ["identity"], name: "index_users_on_identity", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+    t.index ["rtn"], name: "index_users_on_rtn", unique: true
+  end
+
+  create_table "versions", force: :cascade do |t|
+    t.string "whodunnit"
+    t.datetime "created_at"
+    t.bigint "item_id", null: false
+    t.string "item_type", null: false
+    t.string "event", null: false
+    t.text "object"
+    t.string "ip"
+    t.string "user_agent"
+    t.index ["ip"], name: "index_versions_on_ip"
+    t.index ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id"
+    t.index ["user_agent"], name: "index_versions_on_user_agent"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
@@ -122,5 +194,6 @@ ActiveRecord::Schema[7.0].define(version: 202410202111149) do
   add_foreign_key "contracts", "users", column: "applicant_user_id"
   add_foreign_key "contracts", "users", column: "creator_id"
   add_foreign_key "lots", "projects"
+  add_foreign_key "notifications", "users"
   add_foreign_key "payments", "contracts"
 end

@@ -10,6 +10,9 @@ module FinteraAPI
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 7.0
+    config.autoload_paths << Rails.root.join('lib')
+    config.middleware.use ActionDispatch::Cookies
+    config.middleware.use ActionDispatch::Session::CookieStore, key: '_fintera_session'
 
     # Configuration for the application, engines, and railties goes here.
     #
@@ -23,14 +26,5 @@ module FinteraAPI
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
-
-    config.middleware.insert_before 0, Rack::Cors do
-      allow do
-        origins '*' # TODO: restrict production environtments
-        resource '*',
-          headers: :any,
-          methods: [:get, :post, :put, :patch, :delete, :options, :head]
-      end
-    end
   end
 end

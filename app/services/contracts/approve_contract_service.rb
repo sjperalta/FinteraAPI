@@ -4,7 +4,6 @@ module Contracts
   class ApproveContractService
     def initialize(contract:, current_user:)
       @contract = contract
-      @financing_type = @contract.financing_type
       @current_user = current_user
     end
 
@@ -12,13 +11,16 @@ module Contracts
       ActiveRecord::Base.transaction do
         approve_contract
         generate_payments
-        send_approval_notification
+        save_notification
       end
-      { success: true, message: 'Approbado' }
+
+      send_approval_notification
+
+      { success: true, message: 'Contrato aprobado exitosamente.' }
     rescue => e
       error_message = "Error aprobando la reserva: #{e.message}"
       Rails.logger.error(error_message)
-      { success: true, errors: [error_message] }
+      { success: false, errors: [error_message] }
     end
 
     private
@@ -32,9 +34,18 @@ module Contracts
       @contract.create_payments
     end
 
+    def save_notification
+      Notification.create(
+        user: @contract.applicant_user,
+        title: "Contrato Aprobado",
+        message: "Tu contrato fue aprobado #{@contract.lot.name}",
+        notification_type: "contract_approved"
+      )
+    end
+
     def send_approval_notification
       # Ejecutar el Job en segundo plano
-      SendContractApprovalNotificationJob.perform_later(@contract)
+      SendContractApprovalNotificationJob.perform_now(@contract)
     end
   end
 end

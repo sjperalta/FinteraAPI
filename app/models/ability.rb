@@ -2,33 +2,48 @@ class Ability
   include CanCan::Ability
 
   def initialize(user)
-    user ||= User.new # usuario invitado (sin iniciar sesión)
+    user ||= User.new # guest user (not logged in)
 
     if user.admin?
-      can :manage, :all  # Los administradores pueden hacer todo
+      Rails.logger.debug "User is an admin"
+      can :manage, :all  # Admins can do everything
       can :resend_confirmation, User
+      can :read, PaperTrail::Version
     elsif user.seller?
-      # Los vendedores pueden leer, crear y actualizar contratos, pero solo los suyos
+      Rails.logger.debug "User is a seller"
+      # Sellers can read, create, and update contracts, but only their own
       can :read, Project
-      can :read, Lot
-      can :read, Contract, user_id: user.id  # Solo sus contratos
+      can :read, Contract, user_id: user.id  # Only their contracts
       can :update, Contract, user_id: user.id
       can :create, Contract
 
+      can :read, Lot
       can :update, Lot
       can :create, Lot
-      can :destroy, Lot
 
-      # Los vendedores pueden gestionar usuarios, pero quizás solo puedan editar algunos usuarios
+      # Sellers can manage users, but only edit their own information
+      can :manage, Notification, user_id: user.id
       can :read, User
-      can :update, User
-      can :create, User
-      can :update, User, id: user.id  # Solo pueden actualizar su propia información
+      can :payments, User, id: user.id
+      can :summary, User, id: user.id
+      can :read, User, id: user.id
+      can :update, User, id: user.id  # Only update their own information
       can :resend_confirmation, User, id: user.id
+
     else
-      # Usuarios invitados o clientes
-      can :read, :all
-      can :read, User, id: user.id  # Solo pueden leer su propia información
+      Rails.logger.debug "User is a regular user or guest"
+      # Regular users or guests
+      can [:update, :destroy], User, id: user.id
+      can :create, Contract
+      can :manage, Contract, applicant_user_id: user.id
+      can :read, Payment, contract: { applicant_user_id: user.id }
+      can :manage, Payment, contract: { applicant_user_id: user.id }
+      can :manage, Notification, user_id: user.id
+
+      # Explicitly allow access to the `payments` and `summary` actions
+      can :payments, User, id: user.id
+      can :summary, User, id: user.id
+      can :read, User, id: user.id
     end
   end
 end

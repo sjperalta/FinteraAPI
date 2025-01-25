@@ -1,62 +1,59 @@
 source "https://rubygems.org"
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby "3.3.4"
+ruby "3.3.6"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 7.0.7", ">= 7.0.7.2"
+gem 'rails', '~> 8.0', '>= 8.0.1'
 
-# Use sqlite3 as the database for Active Record
-gem "sqlite3", "~> 1.4"
+# Use PostgreSQL as the database for Active Record
+gem 'pg', '~> 1.5'
 
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", "~> 5.0"
 
-# Build JSON APIs with ease [https://github.com/rails/jbuilder]
-# gem "jbuilder"
-
 # Use Redis adapter to run Action Cable in production
-# gem "redis", "~> 4.0"
-
-# Use Kredis to get higher-level data types in Redis [https://github.com/rails/kredis]
-# gem "kredis"
-
-# Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
-# gem "bcrypt", "~> 3.1.7"
-
-# Windows does not include zoneinfo files, so bundle the tzinfo-data gem
-gem "tzinfo-data", platforms: %i[ mingw mswin x64_mingw jruby ]
-
-# Reduces boot times through caching; required in config/boot.rb
-gem "bootsnap", require: false
-
-# Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-# gem "image_processing", "~> 1.2"
+gem "redis", "~> 4.0"
 
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin AJAX possible
 gem "rack-cors"
+
+# Authentication and Authorization
 gem 'devise'
+gem 'cancancan'
+gem 'paper_trail', '~> 16.0'
+
+# JSON Web Tokens
 gem 'jwt'
+
+# API Documentation
 gem 'rswag'
 gem 'rswag-api'
 gem 'rswag-ui'
-gem 'cancancan'
-gem 'whenever', require: false
+gem 'rswag-specs'
 
-#requeriments for active_storage
-gem 'mutex_m'
-gem 'bigdecimal'
+# Background Job Processing
+gem 'sidekiq', '~> 7.0'
+gem 'sidekiq-cron', '~> 2.1', require: 'sidekiq/cron/job'
+
+# Pagination
+gem 'pagy'
+
+# Environment Variables Management
+gem 'dotenv-rails', groups: [:development, :test]
+
+# Logging and Boot Optimizations
+gem "bootsnap", require: false
 
 group :development, :test do
-  # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
+  # Testing Framework
   gem 'rspec-rails'
+
+  # Debugging Tools
   gem 'pry-rails'
-  gem 'rswag-specs'
-  gem 'dotenv-rails'
+  gem "pry-byebug", "~> 3.10"
   gem "debug", platforms: %i[ mri mingw x64_mingw ]
 end
 
-group :development do
-  # Speed up commands on slow machines / big apps [https://github.com/rails/spring]
-  # gem "spring"
-end
+# Windows does not include zoneinfo files, so bundle the tzinfo-data gem
+gem "tzinfo-data", platforms: %i[ mingw mswin x64_mingw jruby ]

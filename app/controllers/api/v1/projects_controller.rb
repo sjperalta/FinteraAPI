@@ -71,6 +71,6 @@ class Api::V1::ProjectsController < ApplicationController
   end
 
   def project_params
-    params.require(:project).permit(:name, :description, :project_type, :address, :lot_count, :price_per_square_foot, :interest_rate)
+    params.require(:project).permit(:name, :description, :project_type, :address, :lot_count, :price_per_square_foot, :interest_rate, :commission_rate)
   end
 end

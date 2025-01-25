@@ -11,6 +11,7 @@ class CreateContracts < ActiveRecord::Migration[7.0]
       t.decimal :balance
       t.decimal :down_payment
       t.decimal :reserve_amount
+      t.string :currency, null: false, default: 'HNL'
       t.datetime :approved_at
       t.timestamps
     end

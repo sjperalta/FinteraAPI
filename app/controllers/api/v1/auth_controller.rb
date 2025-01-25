@@ -32,7 +32,7 @@ class Api::V1::AuthController < ApplicationController
       user = User.find(decoded_token[:user_id])
       new_access_token = generate_token(exp: 24.hours.from_now.to_i, user_id: user.id)
 
-      render json: { token: new_access_token, user: user }, status: :ok
+      render json: { token: new_access_token, user: user.as_json(only: [:id, :full_name, :identity, :rtn, :email, :phone, :role, :status]) }, status: :ok
     else
       render json: { errors: ['Invalid or expired refresh token'] }, status: 401
     end
@@ -43,13 +43,13 @@ class Api::V1::AuthController < ApplicationController
   private
 
   def decode_token(token)
-    JWT.decode(token, Rails.application.secrets.secret_key_base)[0].symbolize_keys
+    JWT.decode(token, Rails.application.credentials.secret_key_base)[0].symbolize_keys
   rescue JWT::DecodeError
     nil
   end
 
   def generate_token(payload)
     payload[:iat] = Time.now.to_i
-    JWT.encode(payload, Rails.application.secrets.secret_key_base)
+    JWT.encode(payload, Rails.application.credentials.secret_key_base)
   end
 end

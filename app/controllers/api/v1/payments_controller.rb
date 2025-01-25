@@ -1,22 +1,52 @@
 # app/controllers/payments_controller.rb
 
 class Api::V1::PaymentsController < ApplicationController
-  before_action :set_contract
-  before_action :set_payment, only: [:show, :approve, :reject, :upload_receipt]
+  include Filterable, Sortable, Pagy::Backend
   load_and_authorize_resource
+  before_action :set_payment, only: [:show, :approve, :reject, :upload_receipt]
 
-  # GET /projects/:project_id/lots/:lot_id/contracts/:contract_id/payments
+  # Define searchable and sortable fields
+  SEARCHABLE_FIELDS = %w[status due_date amount contract_id].freeze
+  SORTABLE_FIELDS = %w[created_at amount due_date status].freeze
+
+  # GET /payments
   def index
-    @payments = @contract.payments
-    render json: @payments
+    # Initialize the scope with necessary associations and select relevant fields
+    payments = Payment.joins(:contract).includes(:contract).select('payments.*, contracts.balance, contracts.status as contract_status, contracts.created_at as contract_created_at')
+
+    # Apply filtering based on searchable fields
+    payments = apply_filters(payments, params, SEARCHABLE_FIELDS)
+
+    # Apply sorting based on sortable fields
+    payments = apply_sorting(payments, params, SORTABLE_FIELDS)
+
+    # Paginate the results using Pagy
+    pagy, payments = pagy(payments, items: params[:per_page] || Pagy::DEFAULT[:items], page: params[:page])
+
+    # Prepare the JSON response with payments and pagination metadata
+    render json: {
+      payments: payments.as_json(
+        only: [:id, :description, :amount, :interest_amount, :status, :due_date, :contract_id, :created_at, :approved_at, :payment_date],
+        include: {
+          contract: {
+            only: [:id, :balance, :status, :created_at, :currency]
+          }
+        }
+      ),
+      pagination: pagy_metadata(pagy)
+    }, status: :ok
+  rescue ActiveRecord::RecordNotFound => e
+    render json: { error: e.message }, status: :not_found
+  rescue StandardError => e
+    render json: { error: 'An unexpected error occurred.' }, status: :internal_server_error
   end
 
-  # GET /projects/:project_id/lots/:lot_id/contracts/:contract_id/payments/:id
+  # GET /payments/:id
   def show
     render json: @payment
   end
 
-  # POST /projects/:project_id/lots/:lot_id/contracts/:contract_id/payments/:id/approve
+  # POST /payments/:id/approve
   def approve
     service = Payments::ApprovePaymentService.new(payment: @payment)
 
@@ -27,7 +57,7 @@ class Api::V1::PaymentsController < ApplicationController
     end
   end
 
-  # POST /projects/:project_id/lots/:lot_id/contracts/:contract_id/payments/:id/reject
+  # POST /payments/:id/reject
   def reject
     service = Payments::RejectPaymentService.new(payment: @payment)
 
@@ -38,10 +68,10 @@ class Api::V1::PaymentsController < ApplicationController
     end
   end
 
-  # POST /projects/:project_id/lots/:lot_id/contracts/:contract_id/payments/:id/upload_receipt
+  # POST /payments/:id/upload_receipt
   def upload_receipt
     if params[:receipt].present?
-      service = Payments::UploadReceiptService.new(payment: @payment, receipt: params[:receipt])
+      service = Payments::UploadReceiptService.new(payment: @payment, receipt: params[:receipt], user: current_user)
 
       if service.call
         render json: { message: 'Comprobante subido exitosamente, esperando aprobación' }, status: :ok
@@ -55,11 +85,9 @@ class Api::V1::PaymentsController < ApplicationController
 
   private
 
-  def set_contract
-    @contract = Contract.find(params[:contract_id])
-  end
-
   def set_payment
-    @payment = @contract.payments.find(params[:id])
+    @payment = Payment.find(params[:id])
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'Pago no encontrado' }, status: :not_found
   end
 end

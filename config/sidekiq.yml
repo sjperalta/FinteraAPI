@@ -1,0 +1,20 @@
+# config/sidekiq.yml
+
+:concurrency: 5
+:queues:
+  - default
+  - mailers
+:redis:
+  :url: redis://localhost:6379/0
+:verbose: false
+:namespace: fintera
+:logfile: ./log/sidekiq.log
+:pidfile: ./tmp/pids/sidekiq.pid
+:daemon: false
+:require: ./config/environment
+
+# Optional: Specify environment
+:environment: development
+
+# Optional: Schedule file for sidekiq-cron
+:schedule_file: config/schedule.yml

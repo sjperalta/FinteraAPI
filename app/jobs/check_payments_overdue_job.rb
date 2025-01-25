@@ -1,15 +1,17 @@
 # app/jobs/check_payments_overdue_job.rb
-
 class CheckPaymentsOverdueJob < ApplicationJob
   queue_as :default
 
   def perform
-    # Buscar todos los pagos pendientes cuya fecha de vencimiento haya pasado
-    overdue_payments = Payment.where("due_date < ? AND status = ?", Date.today, 'pending')
+    # Fetch overdue payments that are still pending
+    overdue_payments = Payment.joins(:contract)
+                              .where("payments.due_date < ? AND payments.status = ?", Date.today, 'pending')
 
-    # Agrupar los pagos por usuario
-    overdue_payments.group_by(&:user).each do |user, payments|
-      # Enviar un email al usuario con los detalles de sus pagos vencidos
+    # Group overdue payments by applicant_user
+    overdue_payments.group_by { |payment| payment.contract.applicant_user }.each do |user, payments|
+      next unless user.present? # Skip if the user doesn't exist (just in case)
+
+      # Send email notification to the user about overdue payments
       Notifications::OverduePaymentEmailService.new(user, payments).call
     end
   end

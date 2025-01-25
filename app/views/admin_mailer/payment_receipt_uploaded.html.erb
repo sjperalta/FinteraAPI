@@ -31,20 +31,20 @@
     <div class="email-container">
       <h1>Nuevo Comprobante de Pago Subido</h1>
 
-      <p>Un usuario ha subido un nuevo comprobante de pago para la siguiente reserva:</p>
+      <p>Un usuario ha subido un nuevo comprobante de pago para la siguiente pago:</p>
 
       <ul>
-        <li><strong>Proyecto:</strong> <%= @contract.lot.project.name %></li>
-        <li><strong>Lote:</strong> <%= @contract.lot.name %></li>
-        <li><strong>Monto del Pago:</strong> $<%= @payment.amount %></li>
+        <li><strong>Proyecto:</strong> <%= @payment.contract.lot.project.name %></li>
+        <li><strong>Lote:</strong> <%= @payment.contract.lot.name %></li>
+        <li><strong>Monto del Pago:</strong> <%= @payment.contract.currency %> | <%= @payment.amount %></li>
         <li><strong>Estado del Pago:</strong> <%= @payment.status %></li>
-        <li><strong>Fecha del Pago:</strong> <%= @payment.payment_date || 'Pendiente' %></li>
+        <li><strong>Fecha del Pago:</strong> <%= @payment.due_date || 'Pendiente' %></li>
       </ul>
 
       <p>Puedes revisar este comprobante en el sistema de administración.</p>
 
       <p>Saludos,</p>
-      <p>El equipo de YourApp</p>
+      <p>El equipo de Fintera</p>
     </div>
   </body>
 </html>
