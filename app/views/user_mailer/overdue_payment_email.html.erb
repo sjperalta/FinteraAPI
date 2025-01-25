@@ -1,0 +1,25 @@
+<!-- app/views/user_mailer/overdue_payment_email.html.erb -->
+
+<!DOCTYPE html>
+<html>
+  <body>
+    <h1>Pagos Vencidos</h1>
+    <p>Hola <%= @user.full_name %>,</p>
+    <p>Tienes los siguientes pagos vencidos:</p>
+
+    <ul>
+      <% @payments.each do |payment| %>
+        <li>
+          <strong>Lote:</strong> <%= payment.contract.lot.name %><br>
+          <strong>Monto:</strong> $<%= payment.amount %><br>
+          <strong>Fecha de vencimiento:</strong> <%= payment.due_date.strftime('%d-%m-%Y') %><br>
+        </li>
+      <% end %>
+    </ul>
+
+    <p>Por favor, ponte al día con tus pagos para evitar cargos adicionales.</p>
+
+    <p>Gracias,</p>
+    <p>El equipo de Fintera</p>
+  </body>
+</html>

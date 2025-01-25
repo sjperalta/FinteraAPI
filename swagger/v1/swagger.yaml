@@ -1,0 +1,1073 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "API V1",
+    "version": "v1"
+  },
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "summary": "Iniciar sesión",
+        "tags": [
+          "Autenticación"
+        ],
+        "parameters": [
+
+        ],
+        "responses": {
+          "200": {
+            "description": "Inicio de sesión exitoso"
+          },
+          "401": {
+            "description": "Credenciales inválidas"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/lots/{lot_id}/contracts": {
+      "post": {
+        "summary": "Crea un contrato",
+        "tags": [
+          "Contracts"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del proyecto",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "lot_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del lote",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Contrato creado"
+          },
+          "422": {
+            "description": "Errores de validación"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "payment_term": {
+                    "type": "integer"
+                  },
+                  "financing_type": {
+                    "type": "string"
+                  },
+                  "applicant_user_id": {
+                    "type": "integer"
+                  },
+                  "reserve_amount": {
+                    "type": "number"
+                  },
+                  "down_payment": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "payment_term",
+                  "financing_type",
+                  "applicant_user_id",
+                  "reserve_amount",
+                  "down_payment"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{id}/approve": {
+      "post": {
+        "summary": "Aprueba un contrato",
+        "tags": [
+          "Contracts"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del proyecto",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "lot_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del lote",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID del contrato",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contrato aprobado"
+          },
+          "422": {
+            "description": "Errores de validación"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{id}/reject": {
+      "post": {
+        "summary": "Rechaza un contrato",
+        "tags": [
+          "Contracts"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del proyecto",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "lot_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del lote",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID del contrato",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contrato rechazado"
+          },
+          "422": {
+            "description": "Errores de validación"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{id}/cancel": {
+      "post": {
+        "summary": "Cancela un contrato",
+        "tags": [
+          "Contracts"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del proyecto",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "lot_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del lote",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID del contrato",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contrato cancelado"
+          },
+          "422": {
+            "description": "Errores de validación"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/lots": {
+      "get": {
+        "summary": "Lista todos los lotes de un proyecto",
+        "tags": [
+          "Lotes"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "description": "ID del proyecto",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lotes listados correctamente"
+          },
+          "401": {
+            "description": "No autorizado"
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear un lote para un proyecto",
+        "tags": [
+          "Lotes"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "description": "ID del proyecto",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Lote creado exitosamente"
+          },
+          "401": {
+            "description": "No autorizado"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "length": {
+                    "type": "integer"
+                  },
+                  "width": {
+                    "type": "integer"
+                  },
+                  "price": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "name",
+                  "length",
+                  "width",
+                  "price"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/lots/{id}": {
+      "get": {
+        "summary": "Mostrar un lote específico",
+        "tags": [
+          "Lotes"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "description": "ID del proyecto",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID del lote",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lote mostrado correctamente"
+          },
+          "404": {
+            "description": "Lote no encontrado"
+          },
+          "401": {
+            "description": "No autorizado"
+          }
+        }
+      },
+      "put": {
+        "summary": "Actualizar un lote",
+        "tags": [
+          "Lotes"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "description": "ID del proyecto",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID del lote",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lote actualizado exitosamente"
+          },
+          "401": {
+            "description": "No autorizado"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "length": {
+                    "type": "integer"
+                  },
+                  "width": {
+                    "type": "integer"
+                  },
+                  "price": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "name",
+                  "length",
+                  "width",
+                  "price"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar un lote",
+        "tags": [
+          "Lotes"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "description": "ID del proyecto",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID del lote",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lote eliminado exitosamente"
+          },
+          "404": {
+            "description": "Lote no encontrado"
+          },
+          "401": {
+            "description": "No autorizado"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{contract_id}/payments": {
+      "get": {
+        "summary": "Lista todos los pagos del contrato",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del proyecto",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "lot_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del lote",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del contrato",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de pagos obtenida exitosamente"
+          },
+          "401": {
+            "description": "No autorizado"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{contract_id}/payments/{id}": {
+      "get": {
+        "summary": "Muestra un pago específico",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del proyecto",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "lot_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del lote",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del contrato",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID del pago",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pago encontrado"
+          },
+          "404": {
+            "description": "Pago no encontrado"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{contract_id}/payments/{id}/approve": {
+      "post": {
+        "summary": "Aprueba un pago",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del proyecto",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "lot_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del lote",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del contrato",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID del pago",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pago aprobado exitosamente"
+          },
+          "422": {
+            "description": "Error al aprobar el pago"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{contract_id}/payments/{id}/reject": {
+      "post": {
+        "summary": "Rechaza un pago",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del proyecto",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "lot_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del lote",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del contrato",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID del pago",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pago rechazado exitosamente"
+          },
+          "422": {
+            "description": "Error al rechazar el pago"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{contract_id}/payments/{id}/upload_receipt": {
+      "post": {
+        "summary": "Sube un comprobante de pago",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del proyecto",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "lot_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del lote",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "description": "ID del contrato",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID del pago",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comprobante subido exitosamente"
+          },
+          "422": {
+            "description": "Error al subir el comprobante"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "file"
+              }
+            }
+          },
+          "required": true,
+          "description": "Archivo del comprobante"
+        }
+      }
+    },
+    "/api/v1/projects": {
+      "get": {
+        "summary": "Lista todos los proyectos",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Proyectos listados exitosamente"
+          },
+          "401": {
+            "description": "No autorizado"
+          }
+        }
+      },
+      "post": {
+        "summary": "Crea un nuevo proyecto",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+
+        ],
+        "responses": {
+          "201": {
+            "description": "Proyecto creado exitosamente"
+          },
+          "422": {
+            "description": "Errores de validación"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "lot_count": {
+                    "type": "integer"
+                  },
+                  "price_per_square_foot": {
+                    "type": "number"
+                  },
+                  "interest_rate": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "name",
+                  "description",
+                  "address",
+                  "lot_count",
+                  "price_per_square_foot",
+                  "interest_rate"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{id}": {
+      "get": {
+        "summary": "Muestra un proyecto específico",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID del proyecto",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Proyecto encontrado"
+          },
+          "404": {
+            "description": "Proyecto no encontrado"
+          }
+        }
+      },
+      "put": {
+        "summary": "Actualiza un proyecto",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID del proyecto",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Proyecto actualizado exitosamente"
+          },
+          "422": {
+            "description": "Errores de validación"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "lot_count": {
+                    "type": "integer"
+                  },
+                  "price_per_square_foot": {
+                    "type": "number"
+                  },
+                  "interest_rate": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Elimina un proyecto",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID del proyecto",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Proyecto eliminado exitosamente"
+          },
+          "404": {
+            "description": "Proyecto no encontrado"
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://{defaultHost}",
+      "variables": {
+        "defaultHost": {
+          "default": "localhost:3000"
+        }
+      }
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
