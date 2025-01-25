@@ -28,7 +28,7 @@ module Authentication
 
     def generate_token(payload)
       payload[:iat] = Time.now.to_i # Issued at
-      JWT.encode(payload, Rails.application.credentials.secret_key_base)
+      JWT.encode(payload, ENV['SECRET_KEY_BASE'])
     end
   end
 end

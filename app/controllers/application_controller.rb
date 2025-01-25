@@ -73,7 +73,7 @@ class ApplicationController < ActionController::API
   end
 
   def decode_token(token)
-    JWT.decode(token, Rails.application.credentials.secret_key_base)[0].symbolize_keys
+    JWT.decode(token, ENV['SECRET_KEY_BASE'])[0].symbolize_keys
   rescue JWT::DecodeError
     nil
   end

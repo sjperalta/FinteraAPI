@@ -1,7 +1,7 @@
 # app/lib/json_web_token.rb
 
 class JsonWebToken
-  SECRET_KEY = Rails.application.credentials.secret_key_base.to_s
+  SECRET_KEY = ENV['SECRET_KEY_BASE'].to_s
 
   def self.encode(payload, exp = 24.hours.from_now)
     payload[:exp] = exp.to_i

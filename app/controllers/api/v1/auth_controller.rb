@@ -43,13 +43,13 @@ class Api::V1::AuthController < ApplicationController
   private
 
   def decode_token(token)
-    JWT.decode(token, Rails.application.credentials.secret_key_base)[0].symbolize_keys
+    JWT.decode(token, ENV['SECRET_KEY_BASE'])[0].symbolize_keys
   rescue JWT::DecodeError
     nil
   end
 
   def generate_token(payload)
     payload[:iat] = Time.now.to_i
-    JWT.encode(payload, Rails.application.credentials.secret_key_base)
+    JWT.encode(payload, ENV['SECRET_KEY_BASE'])
   end
 end
