@@ -21,6 +21,4 @@ test:
 
 production:
   <<: *default
-  database: fintera_production
-  username: <%= ENV['POSTGRES_USER'] %>
-  password: <%= ENV['POSTGRES_PASSWORD'] %>
+  url: <%= ENV['DATABASE_URL'] %>
