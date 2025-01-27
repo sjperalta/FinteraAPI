@@ -1,6 +1,7 @@
 # app/models/contract.rb
 
 class Contract < ApplicationRecord
+  include AASM
   has_paper_trail
 
   belongs_to :lot
@@ -21,6 +22,40 @@ class Contract < ApplicationRecord
   scope :active, -> { where(active: true) }
 
   STATUS_APPROVED = "approved"
+
+  # State Machine Definition
+  aasm column: :status do
+    state :pending, initial: true
+    state :submitted
+    state :approved
+    state :rejected
+    state :cancelled
+
+    # Submit contract
+    event :submit do
+      transitions from: [:pending, :rejected], to: :submitted,
+                guard: :valid_for_submission?
+    end
+
+    # Approve contract
+    event :approve do
+      transitions from: [:pending, :submitted, :rejected], to: :approved,
+                guard: :can_be_approved?,
+                after: [:record_approval, :create_payments, :notify_approval]
+    end
+
+    # Reject contract
+    event :reject do
+      transitions from: [:pending, :submitted], to: :rejected,
+                after: :notify_rejection
+    end
+
+    # Cancel contract
+    event :cancel do
+      transitions from: [:pending, :submitted, :approved], to: :cancelled,
+                after: :after_cancellation
+    end
+  end
 
   def set_amounts
     self.amount = self.lot.price
@@ -94,5 +129,54 @@ class Contract < ApplicationRecord
         errors.add(:documents, "must be a PDF, JPG, or PNG")
       end
     end
+  end
+
+  def valid_for_submission?
+    payment_term.present? &&
+    financing_type.present? &&
+    reserve_amount.present? &&
+    down_payment.present? &&
+    applicant_user.present?
+  end
+
+  def can_be_approved?
+    valid_for_submission? && status == 'pending'
+  end
+
+  def record_approval
+    update!(
+      approved_at: Time.current,
+      active: true
+    )
+  end
+
+  def notify_approval
+    Notification.create!(
+      user: applicant_user,
+      title: "Contrato Aprobado",
+      message: "Tu contrato para #{lot.name} ha sido aprobado",
+      notification_type: "contract_approved"
+    )
+  end
+
+  def notify_rejection
+    Notification.create!(
+      user: applicant_user,
+      title: "Contrato Rechazado",
+      message: "Tu contrato para #{lot.name} ha sido rechazado",
+      notification_type: "contract_rejected"
+    )
+  end
+
+  def after_cancellation
+    update!(active: false)
+    lot.update!(status: 'available')
+
+    Notification.create!(
+      user: applicant_user,
+      title: "Contrato Cancelado",
+      message: "Tu contrato para #{lot.name} ha sido cancelado",
+      notification_type: "contract_cancelled"
+    )
   end
 end
