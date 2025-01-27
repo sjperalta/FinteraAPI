@@ -86,6 +86,17 @@ module Api
         end
       end
 
+      # POST /api/v1/user/:id/resend_confirmation
+      def resend_confirmation
+        service = Users::ResendConfirmationService.new(user_id: params[:id])
+        result = service.call
+        if result[:success]
+          render json: { message: result[:message] }, status: :ok
+        else
+          render json: { message: result[:message] }, status: :unprocessable_entity
+        end
+      end
+
       # POST /api/v1/users/password
       def recover_password
         user = User.find_by(email: params[:email])

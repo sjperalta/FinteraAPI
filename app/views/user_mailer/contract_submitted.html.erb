@@ -1,19 +1,19 @@
-<!-- app/views/user_mailer/contract_approved.html.erb -->
+<!-- app/views/user_mailer/contract_submitted.html.erb -->
 
 <!DOCTYPE html>
 <html>
   <head>
     <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
-    <title>Contrato Aprobado</title>
+    <title>Contrato Creado</title>
   </head>
 
   <body>
     <h1>¡Felicidades, <%= @contract.applicant_user.email %>!</h1>
 
-    <p>Nos complace informarte que tu solicitud de contrato para el proyecto <strong><%= @contract.lot.project.name %></strong> ha sido <strong>aprobada</strong>.</p>
+    <p>Nos complace informarte que tu solicitud de contrato ha sido creada para el proyecto <strong><%= @contract.lot.project.name %></strong>.</p>
 
     <p>
-      Aquí están los detalles del contrato aprobado:
+      Aquí están los detalles del contrato:
     </p>
 
     <ul>
@@ -23,7 +23,7 @@
       <li><strong>Plazo de pago:</strong> <%= @contract.payment_term %> meses</li>
       <li><strong>Monto de la reserva:</strong> $<%= number_to_currency(@contract.reserve_amount) %></li>
       <li><strong>Monto de la prima:</strong> $<%= number_to_currency(@contract.down_payment) %></li>
-      <li><strong>Fecha de aprobación:</strong> <%= @contract.approved_at.strftime("%d/%m/%Y %H:%M") %></li>
+      <li><strong>Fecha de creación:</strong> <%= @contract.created_at.strftime("%d/%m/%Y %H:%M") %></li>
     </ul>
 
     <p>
@@ -38,7 +38,7 @@
     <footer>
       <hr />
       <p style="font-size: 0.8em; color: #888;">
-        Este correo es una confirmación de la aprobación del contrato para el lote <%= @contract.lot.name %>. Si no solicitaste este contrato, por favor contáctanos de inmediato.
+        Este correo es una confirmación de la creación de contrato para el lote <%= @contract.lot.name %>. Si no solicitaste este contrato, por favor contáctanos de inmediato.
       </p>
     </footer>
   </body>

@@ -49,37 +49,42 @@ class Api::V1::PaymentsController < ApplicationController
   # POST /payments/:id/approve
   def approve
     service = Payments::ApprovePaymentService.new(payment: @payment)
+    result = service.call
 
-    if service.call
-      render json: { message: 'Pago aprobado exitosamente' }, status: :ok
+    if result[:success]
+      render json: {
+        message: result[:message],
+        payment: result[:payment]
+      }, status: :ok
     else
-      render json: { error: 'No se pudo aprobar el pago' }, status: :unprocessable_entity
+      render json: {
+        error: result[:message],
+        errors: result[:errors]
+      }, status: :unprocessable_entity
     end
   end
 
   # POST /payments/:id/reject
   def reject
-    service = Payments::RejectPaymentService.new(payment: @payment)
-
-    if service.call
-      render json: { message: 'Pago rechazado' }, status: :ok
+    if @payment.may_reject? && @payment.reject!
+      render json: { message: 'Payment rejected successfully' }, status: :ok
     else
-      render json: { error: 'No se pudo rechazar el pago' }, status: :unprocessable_entity
+      render json: { error: 'Failed to reject payment' }, status: :unprocessable_entity
     end
   end
 
   # POST /payments/:id/upload_receipt
   def upload_receipt
-    if params[:receipt].present?
-      service = Payments::UploadReceiptService.new(payment: @payment, receipt: params[:receipt], user: current_user)
+    unless params[:receipt]
+      return render json: { error: 'Receipt file is required' }, status: :bad_request
+    end
 
-      if service.call
-        render json: { message: 'Comprobante subido exitosamente, esperando aprobación' }, status: :ok
-      else
-        render json: { error: 'No se pudo subir el comprobante' }, status: :unprocessable_entity
-      end
+    @payment.document.attach(params[:receipt])
+
+    if @payment.may_submit? && @payment.submit!
+      render json: { message: 'Receipt uploaded and payment submitted successfully' }, status: :ok
     else
-      render json: { error: 'No se proporcionó un archivo para el comprobante' }, status: :unprocessable_entity
+      render json: { error: 'Failed to process payment submission' }, status: :unprocessable_entity
     end
   end
 

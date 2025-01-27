@@ -4,7 +4,14 @@ class UserMailer < ApplicationMailer
   # Método compartido para establecer el usuario
   before_action :set_user
 
-   # Método para enviar el correo de aprobación de pago
+  # Método para enviar el correo de aprobación de pago
+  def contract_submitted
+    @contract = params[:contract]
+
+    mail(to: @user.email, subject: 'Contracto Creado')
+  end
+
+  # Método para enviar el correo de aprobación de pago
   def contract_approved
     @contract = params[:contract]
 

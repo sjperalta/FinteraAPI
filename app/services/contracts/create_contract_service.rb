@@ -1,76 +1,170 @@
+# app/services/contracts/create_contract_service.rb
 module Contracts
   class CreateContractService
+    attr_reader :lot, :contract_params, :user_params, :documents, :current_user, :errors
+
     def initialize(lot:, contract_params:, user_params:, documents:, current_user:)
       @lot = lot
       @contract_params = contract_params
       @user_params = user_params
       @documents = documents
       @current_user = current_user
+      @errors = []
     end
 
     def call
       ActiveRecord::Base.transaction do
-        user = find_or_create_or_update_user
-        contract = create_contract(user)
-        attach_documents(contract) if @documents.present?
-        update_lot_status
+        begin
+          user = process_user
+          contract = create_contract(user)
+          process_documents(contract)
+          update_lot_status
+          submit_contract(contract)
+          after_submission(contract)
 
-        { success: true, contract: contract }
-      rescue ActiveRecord::RecordInvalid => e
-        { success: false, errors: e.record.errors.full_messages }
-      rescue ActiveRecord::RecordNotFound => e
-        { success: false, errors: [e.message] }
+          { success: true, contract: contract }
+        rescue ActiveRecord::RecordInvalid => e
+          handle_error("Validation error: #{e.message}")
+          { success: false, errors: errors }
+        rescue AASM::InvalidTransition => e
+          handle_error("State transition error: #{e.message}")
+          { success: false, errors: errors }
+        rescue StandardError => e
+          handle_error("Unexpected error: #{e.message}")
+          { success: false, errors: errors }
+        end
       end
     end
 
     private
 
-    def find_or_create_or_update_user
-      applicant_user_id = @contract_params[:applicant_user_id]
+    def process_user
+      if new_user?
+        create_new_user
+      else
+        update_existing_user
+      end
+    end
 
-      if applicant_user_id.to_i == 0
-        # Create a new user
-        user = User.new(
-          full_name: @user_params[:full_name],
-          phone: @user_params[:phone],
-          identity: @user_params[:identity],
-          rtn: @user_params[:rtn],
-          email: @user_params[:email],
-          role: 'user' # Assuming 'user' is the default role for applicants
-        )
-        user.creator = @current_user # Assuming there's a `creator` association
-        user.save! # Raises an exception if validation fails
-        #user.send_confirmation_instructions if user.respond_to?(:send_confirmation_instructions)
+    def new_user?
+      contract_params[:applicant_user_id].to_i.zero?
+    end
+
+    def create_new_user
+      user = User.new(user_params.merge(role: 'user'))
+      user.creator = current_user
+
+      if user.save
+        notify_new_user_creation(user)
         user
       else
-        # Update existing user
-        user = User.find(applicant_user_id)
-        user.update!(
-          full_name: @user_params[:full_name],
-          phone: @user_params[:phone],
-          identity: @user_params[:identity],
-          rtn: @user_params[:rtn],
-          email: @user_params[:email]
-        )
+        raise ActiveRecord::RecordInvalid.new(user)
+      end
+    end
+
+    def update_existing_user
+      user = User.find(contract_params[:applicant_user_id])
+
+      if user.update(user_params)
         user
+      else
+        raise ActiveRecord::RecordInvalid.new(user)
       end
     end
 
     def create_contract(user)
-      contract = @lot.contracts.build(@contract_params)
-      contract.active = true
-      contract.applicant_user = user
-      contract.creator = @current_user
-      contract.save! # Raises an exception if validation fails
-      contract
+      contract = lot.contracts.build(contract_attributes(user))
+
+      if contract.save
+        contract
+      else
+        raise ActiveRecord::RecordInvalid.new(contract)
+      end
     end
 
-    def attach_documents(contract)
-      contract.documents.attach(@documents)
+    def contract_attributes(user)
+      contract_params.merge(
+        active: true,
+        applicant_user: user,
+        creator: current_user
+      )
+    end
+
+    def process_documents(contract)
+      return unless documents.present?
+
+      documents.each do |document|
+        validate_document(document)
+        contract.documents.attach(document)
+      end
+    end
+
+    def validate_document(document)
+      unless valid_document?(document)
+        raise ActiveRecord::RecordInvalid.new(
+          "Invalid document format or size: #{document.original_filename}"
+        )
+      end
+    end
+
+    def valid_document?(document)
+      valid_content_type?(document) && valid_size?(document)
+    end
+
+    def valid_content_type?(document)
+      %w[application/pdf image/jpeg image/png].include?(document.content_type)
+    end
+
+    def valid_size?(document)
+      document.size <= 10.megabytes
     end
 
     def update_lot_status
-      @lot.update!(status: 'reserved')
+      lot.update!(status: 'reserved')
+    end
+
+    def submit_contract(contract)
+      return unless contract.may_submit?
+
+      contract.submit!
+    end
+
+    def notify_new_user_creation(user)
+      Notification.create!(
+        user: user,
+        title: "Bienvenido a Fintera",
+        message: "Se ha creado tu cuenta exitosamente",
+        notification_type: "create_new_user"
+      )
+
+      # Notify admins
+      User.where(role: 'admin').each do |admin|
+        Notification.create!(
+          user: admin,
+          title: "Nuevo Usuario",
+          message: "Se ha creado un nuevo usuario: #{user.full_name}",
+          notification_type: "create_new_user"
+        )
+      end
+    end
+
+    def handle_error(message)
+      Rails.logger.error(message)
+      errors << message
+    end
+
+    def after_submission(contract)
+      NotifyContractSubmissionJob.perform_later(contract)
+    end
+
+    def user_params
+      @user_params.slice(
+        :full_name,
+        :phone,
+        :identity,
+        :rtn,
+        :email
+      )
     end
   end
 end

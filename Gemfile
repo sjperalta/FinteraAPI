@@ -45,6 +45,12 @@ gem 'dotenv-rails', groups: [:development, :test]
 # Logging and Boot Optimizations
 gem "bootsnap", require: false
 
+# Onesignal Email
+gem 'onesignal-rails-plugin', '~> 1.0.0'
+
+# Status Transition
+gem 'aasm'
+
 group :development, :test do
   # Testing Framework
   gem 'rspec-rails'

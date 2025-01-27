@@ -1,55 +1,50 @@
+# app/services/payments/approve_payment_service.rb
 module Payments
   class ApprovePaymentService
+    attr_reader :payment, :errors
+
     def initialize(payment:)
       @payment = payment
+      @errors = []
     end
 
-    #TODO: deberia de retornar un {success: true, message: 'sdsd'}
     def call
-      return false unless can_approve_payment?
+      ActiveRecord::Base.transaction do
+        begin
+          if payment.may_approve?
+            payment.approve!
+            send_approval_notification
 
-      @payment.transaction do
-        @payment.approve!  # Cambia el estado del pago a 'approved'
-        update_balance  # Actualiza el saldo del contrato asociado
-        send_notification # Crea la notificacion en el UI
+            { success: true, message: 'Payment approved successfully', payment: payment }
+          else
+            add_error("Cannot approve payment in current state: #{payment.status}")
+            { success: false, message: 'Failed to approve payment', errors: errors }
+          end
+        rescue AASM::InvalidTransition => e
+          handle_error(e)
+          { success: false, message: 'Invalid state transition', errors: errors }
+        rescue StandardError => e
+          handle_error(e)
+          { success: false, message: 'Failed to approve payment', errors: errors }
+        end
       end
-      send_approval_notification  # Enviar notificación
-
-      true
-    rescue => e
-      error_message = "Error aprobando el pago: #{e.message}"
-      Rails.logger.error(error_message)
-      false
     end
 
     private
 
-    # Verificar si el pago puede ser aprobado (por ejemplo, si ya está aprobado o rechazado)
-    def can_approve_payment?
-      unless @payment.submitted?
-        Rails.logger.error("Pago con ID #{@payment.id} no puede ser aprobado, ya tiene el estado #{@payment.status}")
-        return false
-      end
-      true
-    end
-
-    # Actualiza el saldo pendiente del contrato asociado
-    def update_balance
-      @payment.contract.update_balance(@payment.paid_amount)
-    end
-
-    # Enviar notificación al usuario de que el pago fue aprobado
     def send_approval_notification
-      SendPaymentApprovalNotificationJob.perform_now(@payment.id)  # Coloca el trabajo en la cola de jobs
+      SendPaymentApprovalNotificationJob.perform_now(payment.id)
     end
 
-    def send_notification
-      Notification.create(
-        user: @payment.contract.applicant_user,
-        title: "Actualización de pago",
-        message: "Su recibo de pago ##{@payment.id} ha sido aprobado.",
-        notification_type: "payment_approval"
-      )
+    def handle_error(error)
+      error_message = "Error approving payment: #{error.message}"
+      Rails.logger.error(error_message)
+      Rails.logger.error(error.backtrace.join("\n"))
+      add_error(error_message)
+    end
+
+    def add_error(message)
+      @errors << message
     end
   end
 end

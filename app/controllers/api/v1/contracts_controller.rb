@@ -76,41 +76,71 @@ module Api
           documents: contract_documents,
           current_user: current_user
         )
+
         result = service.call
 
         if result[:success]
-          render json: contract_details(result[:contract]), status: :created
+          render json: {
+            message: 'Contract created successfully',
+            contract: contract_details(result[:contract])
+          }, status: :created
         else
-          render json: { errors: result[:errors] }, status: :unprocessable_entity
+          render json: {
+            errors: result[:errors]
+          }, status: :unprocessable_entity
         end
       end
 
       # POST /api/v1/projects/:project_id/lots/:lot_id/contracts/:id/approve
       def approve
         authorize! :approve, @contract
-        service = Contracts::ApproveContractService.new(
-          contract: @contract,
-          current_user: current_user
-        )
-        result = service.call
 
-        if result[:success]
-          render json: { message: result[:message], contract: contract_details(@contract) }, status: :ok
+        if @contract.may_approve?
+          @contract.approve!
+          render json: {
+            message: 'Contrato aprobado exitosamente',
+            contract: contract_details(@contract)
+          }, status: :ok
         else
-          render json: { errors: result[:errors] }, status: :unprocessable_entity
+          render json: {
+            error: 'No se puede aprobar el contrato en su estado actual',
+            status: @contract.status
+          }, status: :unprocessable_entity
         end
       end
 
       # POST /api/v1/projects/:project_id/lots/:lot_id/contracts/:id/reject
       def reject
         authorize! :reject, @contract
-        service = Contracts::RejectContractService.new(contract: @contract)
-        result = service.call
 
-        if result[:success]
-          render json: { message: result[:message], contract: contract_details(@contract) }, status: :ok
+        if @contract.may_reject?
+          @contract.reject!
+          render json: {
+            message: 'Contrato rechazado exitosamente',
+            contract: contract_details(@contract)
+          }, status: :ok
         else
-          render json: { errors: result[:errors] }, status: :unprocessable_entity
+          render json: {
+            error: 'No se puede rechazar el contrato en su estado actual',
+            status: @contract.status
+          }, status: :unprocessable_entity
+        end
+      end
+
+      def cancel
+        authorize! :cancel, @contract
+
+        if @contract.may_cancel?
+          @contract.cancel!
+          render json: {
+            message: 'Contrato cancelado exitosamente',
+            contract: contract_details(@contract)
+          }, status: :ok
+        else
+          render json: {
+            error: 'No se puede cancelar el contrato en su estado actual',
+            status: @contract.status
+          }, status: :unprocessable_entity
         end
       end
 
@@ -179,9 +209,10 @@ module Api
           down_payment: contract.down_payment,
           status: contract.status.titleize,
           balance: contract.balance,
-          documents: contract.documents, # Assuming there's a documents association or attribute
+          documents: contract.documents,
           created_at: contract.created_at,
-          updated_at: contract.updated_at
+          updated_at: contract.updated_at,
+          approved_at: contract.approved_at
           # Add more fields or associations as needed
         }
       end
