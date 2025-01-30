@@ -27,8 +27,6 @@ module Api
         # Apply your standard filtering approach
         users = apply_filters(users, params, SEARCHABLE_FIELDS)
 
-        print("params ?", params);
-
         # Pagy integration
         @pagy, @users = pagy(
           users,
@@ -118,10 +116,10 @@ module Api
     # PATCH /api/v1/user/change_password
     def change_password
       if @user.id == password_change_params[:userId]
-        loged_user_change_password(@user)
+        user_for_password_change
       elsif @user.admin?
         user = User.find(password_change_params[:userId])
-        admin_user_change_password(user) # admin can override password
+        handle_admin_password_change(user) # admin can override password
       else
         render json: { errors: ["Change user password is not allowed"] }, status: :unauthorized
       end
