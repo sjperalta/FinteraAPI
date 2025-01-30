@@ -3,12 +3,20 @@
 module Api
   module V1
     class UsersController < ApplicationController
-      before_action :authenticate_user!, except: [:recover_password]
+      include Filterable
+      include Sortable
+      include Pagy::Backend
+      #before_action :authenticate_user!, except: [:recover_password]
+      before_action :authenticate_user!, only: [:index, :show, :update, :toggle_status, :change_password, :resend_confirmation, :contracts, :payments, :summary]
       load_and_authorize_resource
+      before_action :set_user, only: [:show, :update, :contracts, :payments, :summary, :upload_receipt]
+      before_action :set_payment, only: [:upload_receipt]
+
+      SEARCHABLE_FIELDS = %w[email full_name phone identity rtn role].freeze
 
       # GET /api/v1/users
       def index
-        # Example: only admin or seller can list users
+        # Authorization checks (admin or seller only)
         unless current_user&.admin? || current_user&.seller?
           return render json: { error: 'Not authorized' }, status: :forbidden
         end
@@ -16,37 +24,34 @@ module Api
         # Base scope
         users = User.all
 
-        # Filter by role if provided
-        if params[:role].present?
-          users = users.where(role: params[:role].downcase)
-        end
-
-        # Apply search term if provided
-        if params[:search_term].present?
-          term = "%#{params[:search_term].downcase}%"
-          users = users.where(
-            "LOWER(email) LIKE ? OR LOWER(full_name) LIKE ? OR phone LIKE ? OR identity LIKE ? OR rtn LIKE ?",
-            term, term, term, term, term
-          )
-        end
+        # Apply your standard filtering approach
+        users = apply_filters(users, params, SEARCHABLE_FIELDS)
 
         # Pagy integration
-        # items: how many per page, defaults to 20 if not specified
-        # page: which page number to fetch
         @pagy, @users = pagy(
           users,
-          items: (params[:per_page] || 20),
+          items: (params[:per_page] || 20).to_i,
           page: params[:page]
         )
 
-        # Include pagination metadata in the JSON
-        pagination_metadata = pagy_metadata(@pagy)
-
         render json: {
           users: @users.as_json(only: fields_for_render),
-          pagination: pagination_metadata
+          pagination: pagy_metadata(@pagy)
         }, status: :ok
+
+      rescue ActiveRecord::RecordNotFound => e
+        render json: { error: e.message }, status: :not_found
+      rescue StandardError => e
+        render json: { error: 'An unexpected error occurred.' }, status: :internal_server_error
       end
+
+      # GET /api/v1/user/:id (muestra un usuario en particular)
+      def show
+        render json: @user.as_json(only: [:id, :full_name, :identity, :rtn, :email, :phone, :role, :status]), status: :ok
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: 'User not found' }, status: :not_found
+      end
+
 
       # POST /api/v1/users
       # Example for creating users (admin or seller?).
@@ -86,7 +91,7 @@ module Api
         end
       end
 
-      # POST /api/v1/user/:id/resend_confirmation
+      # POST /api/v1/users/:id/resend_confirmation
       def resend_confirmation
         service = Users::ResendConfirmationService.new(user_id: params[:id])
         result = service.call
@@ -97,33 +102,89 @@ module Api
         end
       end
 
-      # POST /api/v1/users/password
-      def recover_password
-        user = User.find_by(email: params[:email])
-        if user
-          user.send_reset_password_instructions
-          render json: { success: true, message: 'Password recovery instructions sent' }, status: :ok
-        else
-          render json: { success: false, error: 'Email not found' }, status: :not_found
-        end
+    # POST /api/v1/user/password (recuperar contraseña)
+    def recover_password
+      @user = User.find_by(email: params[:email])
+      if @user.present?
+        @user.send_reset_password_instructions
+        render json: { message: 'Password recovery instructions sent.' }, status: :ok
+      else
+        render json: { error: 'Email not found' }, status: :not_found
       end
+    end
 
-      # PATCH /api/v1/users/change_password
-      def change_password
-        # Combine logic into one function or keep separate if you prefer
-        user_to_change = user_for_password_change
-        return unless user_to_change
-
-        if user_can_change_own_password?(user_to_change)
-          handle_own_password_change(user_to_change)
-        elsif current_user.admin?
-          handle_admin_password_change(user_to_change)
-        else
-          render json: { success: false, errors: ['Not authorized'] }, status: :unauthorized
-        end
+    # PATCH /api/v1/user/change_password
+    def change_password
+      if @user.id == password_change_params[:userId]
+        user_for_password_change
+      elsif @user.admin?
+        user = User.find(password_change_params[:userId])
+        handle_admin_password_change(user) # admin can override password
+      else
+        render json: { errors: ["Change user password is not allowed"] }, status: :unauthorized
       end
+    end
+
+    # GET /api/v1/user/:id/contracts
+    def contracts
+      contracts = @user.contracts
+      render json: contracts.as_json(only: [:id, :name, :status, :financing_type, :created_at]), status: :ok
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: 'User not found' }, status: :not_found
+    end
+
+    # GET /api/v1/user/:id/payments
+    def payments
+      payments = Payment.joins(:contract).where(contracts: { applicant_user_id: @user.id, status: Contract::STATUS_APPROVED }, status: ['pending', 'submitted'])
+
+      # Include contract details in the JSON response.
+      # Adjust the :only fields for contract according to the attributes you want to return.
+      render json: payments.as_json(
+        only: [:id, :description, :amount, :status, :due_date, :contract_id, :created_at, :approved_at, :payment_date, :interest_amount],
+        include: {
+          contract: {
+            only: [:id, :name, :status, :currency, :created_at]
+          }
+        }
+      ), status: :ok
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: 'User not found' }, status: :not_found
+    end
+
+    # POST /api/v1/user/:id/upload_receipt
+    def upload_receipt
+      if params[:receipt].present?
+        service = Payments::UploadReceiptService.new(payment: @payment, receipt: params[:receipt], user: @user)
+
+        if service.call
+          render json: { message: 'Comprobante subido exitosamente, esperando aprobación' }, status: :ok
+        else
+          render json: { error: 'No se pudo subir el comprobante' }, status: :unprocessable_entity
+        end
+      else
+        render json: { error: 'No se proporcionó un archivo para el comprobante' }, status: :unprocessable_entity
+      end
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: 'Payment not found' }, status: :not_found
+    end
+
+    # GET /api/v1/user/:id/summary
+    def summary
+      result = Users::UserSummaryService.new(@user).call
+      render json: result, status: :ok
+    rescue StandardError => e
+      render json: { error: e.message }, status: :internal_server_error
+    end
 
       private
+
+      def set_user
+        @user = User.find(params[:id])
+      end
+
+      def set_payment
+        @payment = Payment.find(params[:paymentId])
+      end
 
       def user_for_password_change
         if params[:password_change].blank?
@@ -135,22 +196,6 @@ module Api
       rescue ActiveRecord::RecordNotFound
         render json: { success: false, errors: ['User not found'] }, status: :not_found
         nil
-      end
-
-      def user_can_change_own_password?(user)
-        user.id == current_user.id
-      end
-
-      def handle_own_password_change(user)
-        if user.valid_password?(params[:password_change][:old_password])
-          if user.update(password: new_pass, password_confirmation: new_pass)
-            render json: { success: true, message: 'Password updated successfully' }, status: :ok
-          else
-            render json: { success: false, errors: user.errors.full_messages }, status: :unprocessable_entity
-          end
-        else
-          render json: { success: false, errors: ['Incorrect old password'] }, status: :unauthorized
-        end
       end
 
       def handle_admin_password_change(user)

@@ -14,13 +14,12 @@ Rails.application.routes.draw do
       resources :users, only: [:index, :show, :create, :update] do
         member do
           put   :toggle_status     # Route for toggling user status
-          post  :resend_confirmation
-          get   :contracts         # GET /api/v1/users/:id/contracts
-          get   :payments          # GET /api/v1/users/:id/payments
-        end
-        collection do
-          post :recover_password
+          post  :recover_password
           patch :change_password
+          post  :resend_confirmation
+          get   :contracts         # GET /api/v1/user/:id/contracts
+          get   :payments          # GET /api/v1/user/:id/payments
+          get   :summary
         end
       end
 
@@ -76,17 +75,6 @@ Rails.application.routes.draw do
           end
         end
       end
-
-      resources :user, only: [:show, :update] do
-        member do
-          post  :resend_confirmation
-          get   :contracts         # GET /api/v1/user/:id/contracts
-          get   :payments          # GET /api/v1/user/:id/payments
-          patch :change_password
-          get   :summary
-        end
-      end
-
     end
   end
 
