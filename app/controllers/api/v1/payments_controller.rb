@@ -2,6 +2,7 @@
 
 class Api::V1::PaymentsController < ApplicationController
   include Filterable, Sortable, Pagy::Backend
+  before_action :authenticate_user!
   load_and_authorize_resource
   before_action :set_payment, only: [:show, :approve, :reject, :upload_receipt]
 
