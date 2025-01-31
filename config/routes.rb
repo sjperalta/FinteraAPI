@@ -6,6 +6,7 @@ Rails.application.routes.draw do
       post 'auth/login', to: 'auth#login'
       post 'auth/refresh', to: 'auth#refresh'
       post 'auth/logout', to: 'auth#logout'
+      post 'users/password', to: 'users#recover_password', as: 'recover_password'
 
       devise_for :users, controllers: {
         registrations: 'api/v1/users'
@@ -17,8 +18,8 @@ Rails.application.routes.draw do
           post  :recover_password
           patch :change_password
           post  :resend_confirmation
-          get   :contracts         # GET /api/v1/user/:id/contracts
-          get   :payments          # GET /api/v1/user/:id/payments
+          get   :contracts         # GET /api/v1/users/:id/contracts
+          get   :payments          # GET /api/v1/users/:id/payments
           get   :summary
         end
       end
@@ -41,9 +42,7 @@ Rails.application.routes.draw do
         get :overdue_payments_csv
       end
 
-      post 'users/password', to: 'users#recover_password', as: 'recover_password'
-
-      get 'contracts', to: 'contracts#index'
+      resources :contracts, only: [:index]
       resources :audits, only: [:index]
       resources :payments, only: [:index, :show] do
         member do

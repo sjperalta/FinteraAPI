@@ -1,16 +1,34 @@
 # app/controllers/api/v1/projects_controller.rb
 
 class Api::V1::ProjectsController < ApplicationController
-  before_action :set_project, only: [:show, :update, :destroy]
+  include Filterable
+  include Sortable
+  include Pagy::Backend
+  before_action :authenticate_user!
   load_and_authorize_resource
+  before_action :set_project, only: [:show, :update, :destroy]
+
+  # Define fields allowed for search & sort
+  SEARCHABLE_FIELDS = %w[name description address].freeze
+  SORTABLE_FIELDS   = %w[name created_at project_type price_per_square_foot].freeze
 
   # GET /api/v1/projects
   def index
-    if params[:query].present?
-      @projects = Project.where('name LIKE ? OR description LIKE ? OR address LIKE ?', "%#{params[:query]}%", "%#{params[:query]}%", "%#{params[:query]}%")
-    else
-      @projects = Project.all
-    end
+    # Base scope
+    projects = Project.all
+
+    # Apply filtering based on query parameters & searchable fields
+    projects = apply_filters(projects, params, SEARCHABLE_FIELDS)
+
+    # Apply sorting based on sortable fields
+    projects = apply_sorting(projects, params, SORTABLE_FIELDS)
+
+    # Paginate results using Pagy
+    @pagy, @projects = pagy(
+      projects,
+      items: (params[:per_page] || 20).to_i,
+      page: params[:page]
+    )
 
     # Modificar la respuesta para incluir campos calculados
     projects_with_calculated_fields = @projects.map do |project|
@@ -29,7 +47,14 @@ class Api::V1::ProjectsController < ApplicationController
       }
     end
 
-    render json: projects_with_calculated_fields
+    render json: {
+      projects: projects_with_calculated_fields,
+      pagination: pagy_metadata(@pagy)
+    }, status: :ok
+  rescue ActiveRecord::RecordNotFound => e
+    render json: { error: e.message }, status: :not_found
+  rescue StandardError => e
+    render json: { error: 'An unexpected error occurred.' }, status: :internal_server_error
   end
 
   # GET /api/v1/projects/:id
