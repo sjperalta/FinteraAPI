@@ -7,19 +7,19 @@
   "paths": {
     "/api/v1/auth/login": {
       "post": {
-        "summary": "Iniciar sesión",
+        "summary": "User login",
         "tags": [
-          "Autenticación"
+          "Authentication"
         ],
         "parameters": [
 
         ],
         "responses": {
           "200": {
-            "description": "Inicio de sesión exitoso"
+            "description": "Successful login"
           },
           "401": {
-            "description": "Credenciales inválidas"
+            "description": "Unauthorized"
           }
         },
         "requestBody": {
@@ -45,11 +45,11 @@
         }
       }
     },
-    "/api/v1/projects/{project_id}/lots/{lot_id}/contracts": {
+    "/api/v1/auth/logout": {
       "post": {
-        "summary": "Crea un contrato",
+        "summary": "Logs out a user",
         "tags": [
-          "Contracts"
+          "Authentication"
         ],
         "security": [
           {
@@ -59,31 +59,14 @@
           }
         ],
         "parameters": [
-          {
-            "name": "project_id",
-            "in": "path",
-            "required": true,
-            "description": "ID del proyecto",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "lot_id",
-            "in": "path",
-            "required": true,
-            "description": "ID del lote",
-            "schema": {
-              "type": "integer"
-            }
-          }
+
         ],
         "responses": {
-          "201": {
-            "description": "Contrato creado"
+          "200": {
+            "description": "Logged out successfully"
           },
-          "422": {
-            "description": "Errores de validación"
+          "401": {
+            "description": "Invalid or missing token"
           }
         },
         "requestBody": {
@@ -92,28 +75,49 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "payment_term": {
-                    "type": "integer"
-                  },
-                  "financing_type": {
+                  "refresh_token": {
                     "type": "string"
-                  },
-                  "applicant_user_id": {
-                    "type": "integer"
-                  },
-                  "reserve_amount": {
-                    "type": "number"
-                  },
-                  "down_payment": {
-                    "type": "number"
                   }
                 },
                 "required": [
-                  "payment_term",
-                  "financing_type",
-                  "applicant_user_id",
-                  "reserve_amount",
-                  "down_payment"
+                  "refresh_token"
+                ]
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "summary": "Refresh token",
+        "tags": [
+          "Authentication"
+        ],
+        "parameters": [
+
+        ],
+        "responses": {
+          "200": {
+            "description": "Token refreshed successfully"
+          },
+          "401": {
+            "description": "Invalid or expired refresh token"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "refresh_token": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "refresh_token"
                 ]
               }
             }
@@ -121,9 +125,29 @@
         }
       }
     },
-    "/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{id}/approve": {
+    "/api/v1/contracts": {
+      "get": {
+        "summary": "List contracts",
+        "tags": [
+          "Contracts"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List contracts successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/lots/{lot_id}/contracts": {
       "post": {
-        "summary": "Aprueba un contrato",
+        "summary": "Create a contract",
         "tags": [
           "Contracts"
         ],
@@ -139,7 +163,6 @@
             "name": "project_id",
             "in": "path",
             "required": true,
-            "description": "ID del proyecto",
             "schema": {
               "type": "integer"
             }
@@ -148,7 +171,97 @@
             "name": "lot_id",
             "in": "path",
             "required": true,
-            "description": "ID del lote",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Contract created"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contract": {
+                    "payment_term": {
+                      "type": "integer"
+                    },
+                    "financing_type": {
+                      "type": "string"
+                    },
+                    "applicant_user_id": {
+                      "type": "integer"
+                    },
+                    "reserve_amount": {
+                      "type": "number"
+                    },
+                    "down_payment": {
+                      "type": "number"
+                    }
+                  },
+                  "user": {
+                    "phone": {
+                      "type": "string"
+                    },
+                    "full_name": {
+                      "type": "string"
+                    },
+                    "identity": {
+                      "type": "string"
+                    },
+                    "rtn": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "contract",
+                  "user"
+                ]
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{id}/approve": {
+      "post": {
+        "summary": "Approve a contract",
+        "tags": [
+          "Contracts"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "lot_id",
+            "in": "path",
+            "required": true,
             "schema": {
               "type": "integer"
             }
@@ -157,7 +270,6 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "ID del contrato",
             "schema": {
               "type": "integer"
             }
@@ -165,17 +277,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Contrato aprobado"
-          },
-          "422": {
-            "description": "Errores de validación"
+            "description": "Contract approved"
           }
         }
       }
     },
     "/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{id}/reject": {
       "post": {
-        "summary": "Rechaza un contrato",
+        "summary": "Reject a contract",
         "tags": [
           "Contracts"
         ],
@@ -191,7 +300,6 @@
             "name": "project_id",
             "in": "path",
             "required": true,
-            "description": "ID del proyecto",
             "schema": {
               "type": "integer"
             }
@@ -200,7 +308,6 @@
             "name": "lot_id",
             "in": "path",
             "required": true,
-            "description": "ID del lote",
             "schema": {
               "type": "integer"
             }
@@ -209,7 +316,6 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "ID del contrato",
             "schema": {
               "type": "integer"
             }
@@ -217,17 +323,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Contrato rechazado"
-          },
-          "422": {
-            "description": "Errores de validación"
+            "description": "Contract rejected"
           }
         }
       }
     },
     "/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{id}/cancel": {
       "post": {
-        "summary": "Cancela un contrato",
+        "summary": "Cancel a contract",
         "tags": [
           "Contracts"
         ],
@@ -243,7 +346,6 @@
             "name": "project_id",
             "in": "path",
             "required": true,
-            "description": "ID del proyecto",
             "schema": {
               "type": "integer"
             }
@@ -252,7 +354,6 @@
             "name": "lot_id",
             "in": "path",
             "required": true,
-            "description": "ID del lote",
             "schema": {
               "type": "integer"
             }
@@ -261,7 +362,6 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "ID del contrato",
             "schema": {
               "type": "integer"
             }
@@ -269,19 +369,16 @@
         ],
         "responses": {
           "200": {
-            "description": "Contrato cancelado"
-          },
-          "422": {
-            "description": "Errores de validación"
+            "description": "Contract canceled"
           }
         }
       }
     },
     "/api/v1/projects/{project_id}/lots": {
       "get": {
-        "summary": "Lista todos los lotes de un proyecto",
+        "summary": "List lots",
         "tags": [
-          "Lotes"
+          "Lots"
         ],
         "security": [
           {
@@ -294,26 +391,23 @@
           {
             "name": "project_id",
             "in": "path",
-            "description": "ID del proyecto",
             "required": true,
+            "description": "Project ID",
             "schema": {
-              "type": "string"
+              "type": "integer"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Lotes listados correctamente"
-          },
-          "401": {
-            "description": "No autorizado"
+            "description": "List lots successfully"
           }
         }
       },
       "post": {
-        "summary": "Crear un lote para un proyecto",
+        "summary": "Create a lot",
         "tags": [
-          "Lotes"
+          "Lots"
         ],
         "security": [
           {
@@ -326,19 +420,15 @@
           {
             "name": "project_id",
             "in": "path",
-            "description": "ID del proyecto",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer"
             }
           }
         ],
         "responses": {
           "201": {
-            "description": "Lote creado exitosamente"
-          },
-          "401": {
-            "description": "No autorizado"
+            "description": "Lot created"
           }
         },
         "requestBody": {
@@ -368,15 +458,16 @@
                 ]
               }
             }
-          }
+          },
+          "required": true
         }
       }
     },
     "/api/v1/projects/{project_id}/lots/{id}": {
       "get": {
-        "summary": "Mostrar un lote específico",
+        "summary": "Retrieve lot details",
         "tags": [
-          "Lotes"
+          "Lots"
         ],
         "security": [
           {
@@ -389,38 +480,35 @@
           {
             "name": "project_id",
             "in": "path",
-            "description": "ID del proyecto",
             "required": true,
+            "description": "Project ID",
             "schema": {
-              "type": "string"
+              "type": "integer"
             }
           },
           {
             "name": "id",
             "in": "path",
-            "description": "ID del lote",
             "required": true,
+            "description": "Lot ID",
             "schema": {
-              "type": "string"
+              "type": "integer"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Lote mostrado correctamente"
+            "description": "Lot retrieved successfully"
           },
           "404": {
-            "description": "Lote no encontrado"
-          },
-          "401": {
-            "description": "No autorizado"
+            "description": "Lot not found"
           }
         }
       },
       "put": {
-        "summary": "Actualizar un lote",
+        "summary": "Update a lot",
         "tags": [
-          "Lotes"
+          "Lots"
         ],
         "security": [
           {
@@ -433,28 +521,24 @@
           {
             "name": "project_id",
             "in": "path",
-            "description": "ID del proyecto",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer"
             }
           },
           {
             "name": "id",
             "in": "path",
-            "description": "ID del lote",
             "required": true,
+            "description": "Lot ID",
             "schema": {
-              "type": "string"
+              "type": "integer"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Lote actualizado exitosamente"
-          },
-          "401": {
-            "description": "No autorizado"
+            "description": "Lot updated"
           }
         },
         "requestBody": {
@@ -475,22 +559,139 @@
                   "price": {
                     "type": "number"
                   }
-                },
-                "required": [
-                  "name",
-                  "length",
-                  "width",
-                  "price"
-                ]
+                }
               }
             }
+          },
+          "required": true
+        }
+      },
+      "delete": {
+        "summary": "Delete a lot",
+        "tags": [
+          "Lots"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lot deleted"
+          },
+          "404": {
+            "description": "Lot not found"
+          }
+        }
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "summary": "List all unread notifications",
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notifications retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/{id}": {
+      "get": {
+        "summary": "Retrieve a notification",
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Notification ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification retrieved successfully"
+          },
+          "404": {
+            "description": "Notification not found"
+          }
+        }
+      },
+      "put": {
+        "summary": "Mark notification as read",
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Notification ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification marked as read"
           }
         }
       },
       "delete": {
-        "summary": "Eliminar un lote",
+        "summary": "Delete a notification",
         "tags": [
-          "Lotes"
+          "Notifications"
         ],
         "security": [
           {
@@ -501,42 +702,29 @@
         ],
         "parameters": [
           {
-            "name": "project_id",
-            "in": "path",
-            "description": "ID del proyecto",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "id",
             "in": "path",
-            "description": "ID del lote",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer"
             }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Lote eliminado exitosamente"
+          "204": {
+            "description": "Notification deleted successfully"
           },
           "404": {
-            "description": "Lote no encontrado"
-          },
-          "401": {
-            "description": "No autorizado"
+            "description": "Notification not found"
           }
         }
       }
     },
-    "/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{contract_id}/payments": {
-      "get": {
-        "summary": "Lista todos los pagos del contrato",
+    "/api/v1/notifications/mark_all_as_read": {
+      "post": {
+        "summary": "Mark all notifications as read",
         "tags": [
-          "Payments"
+          "Notifications"
         ],
         "security": [
           {
@@ -545,48 +733,36 @@
             ]
           }
         ],
-        "parameters": [
+        "responses": {
+          "204": {
+            "description": "All notifications marked as read"
+          }
+        }
+      }
+    },
+    "/api/v1/payments": {
+      "get": {
+        "summary": "List payments",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
           {
-            "name": "project_id",
-            "in": "path",
-            "required": true,
-            "description": "ID del proyecto",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "lot_id",
-            "in": "path",
-            "required": true,
-            "description": "ID del lote",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "contract_id",
-            "in": "path",
-            "required": true,
-            "description": "ID del contrato",
-            "schema": {
-              "type": "integer"
-            }
+            "bearerAuth": [
+
+            ]
           }
         ],
         "responses": {
           "200": {
-            "description": "Lista de pagos obtenida exitosamente"
-          },
-          "401": {
-            "description": "No autorizado"
+            "description": "List payments successfully"
           }
         }
       }
     },
-    "/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{contract_id}/payments/{id}": {
+    "/api/v1/payments/{id}": {
       "get": {
-        "summary": "Muestra un pago específico",
+        "summary": "Retrieve payment details",
         "tags": [
           "Payments"
         ],
@@ -598,38 +774,11 @@
           }
         ],
         "parameters": [
-          {
-            "name": "project_id",
-            "in": "path",
-            "required": true,
-            "description": "ID del proyecto",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "lot_id",
-            "in": "path",
-            "required": true,
-            "description": "ID del lote",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "contract_id",
-            "in": "path",
-            "required": true,
-            "description": "ID del contrato",
-            "schema": {
-              "type": "integer"
-            }
-          },
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "ID del pago",
+            "description": "Payment ID",
             "schema": {
               "type": "integer"
             }
@@ -637,17 +786,17 @@
         ],
         "responses": {
           "200": {
-            "description": "Pago encontrado"
+            "description": "Payment retrieved successfully"
           },
           "404": {
-            "description": "Pago no encontrado"
+            "description": "Payment not found"
           }
         }
       }
     },
-    "/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{contract_id}/payments/{id}/approve": {
+    "/api/v1/payments/{id}/approve": {
       "post": {
-        "summary": "Aprueba un pago",
+        "summary": "Approve a payment",
         "tags": [
           "Payments"
         ],
@@ -660,37 +809,9 @@
         ],
         "parameters": [
           {
-            "name": "project_id",
-            "in": "path",
-            "required": true,
-            "description": "ID del proyecto",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "lot_id",
-            "in": "path",
-            "required": true,
-            "description": "ID del lote",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "contract_id",
-            "in": "path",
-            "required": true,
-            "description": "ID del contrato",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "ID del pago",
             "schema": {
               "type": "integer"
             }
@@ -698,17 +819,17 @@
         ],
         "responses": {
           "200": {
-            "description": "Pago aprobado exitosamente"
+            "description": "Payment approved"
           },
           "422": {
-            "description": "Error al aprobar el pago"
+            "description": "Payment cannot be approved"
           }
         }
       }
     },
-    "/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{contract_id}/payments/{id}/reject": {
+    "/api/v1/payments/{id}/reject": {
       "post": {
-        "summary": "Rechaza un pago",
+        "summary": "Reject a payment",
         "tags": [
           "Payments"
         ],
@@ -721,37 +842,9 @@
         ],
         "parameters": [
           {
-            "name": "project_id",
-            "in": "path",
-            "required": true,
-            "description": "ID del proyecto",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "lot_id",
-            "in": "path",
-            "required": true,
-            "description": "ID del lote",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "contract_id",
-            "in": "path",
-            "required": true,
-            "description": "ID del contrato",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "ID del pago",
             "schema": {
               "type": "integer"
             }
@@ -759,17 +852,17 @@
         ],
         "responses": {
           "200": {
-            "description": "Pago rechazado exitosamente"
+            "description": "Payment rejected"
           },
           "422": {
-            "description": "Error al rechazar el pago"
+            "description": "Payment cannot be rejected"
           }
         }
       }
     },
-    "/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{contract_id}/payments/{id}/upload_receipt": {
+    "/api/v1/payments/{id}/upload_receipt": {
       "post": {
-        "summary": "Sube un comprobante de pago",
+        "summary": "Upload payment receipt",
         "tags": [
           "Payments"
         ],
@@ -782,37 +875,9 @@
         ],
         "parameters": [
           {
-            "name": "project_id",
-            "in": "path",
-            "required": true,
-            "description": "ID del proyecto",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "lot_id",
-            "in": "path",
-            "required": true,
-            "description": "ID del lote",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "contract_id",
-            "in": "path",
-            "required": true,
-            "description": "ID del contrato",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "ID del pago",
             "schema": {
               "type": "integer"
             }
@@ -820,10 +885,10 @@
         ],
         "responses": {
           "200": {
-            "description": "Comprobante subido exitosamente"
+            "description": "Receipt uploaded successfully"
           },
           "422": {
-            "description": "Error al subir el comprobante"
+            "description": "Failed to process payment submission"
           }
         },
         "requestBody": {
@@ -835,13 +900,13 @@
             }
           },
           "required": true,
-          "description": "Archivo del comprobante"
+          "description": "Receipt file to upload"
         }
       }
     },
     "/api/v1/projects": {
       "get": {
-        "summary": "Lista todos los proyectos",
+        "summary": "List all projects",
         "tags": [
           "Projects"
         ],
@@ -854,15 +919,12 @@
         ],
         "responses": {
           "200": {
-            "description": "Proyectos listados exitosamente"
-          },
-          "401": {
-            "description": "No autorizado"
+            "description": "Projects retrieved successfully"
           }
         }
       },
       "post": {
-        "summary": "Crea un nuevo proyecto",
+        "summary": "Create a new project",
         "tags": [
           "Projects"
         ],
@@ -878,10 +940,10 @@
         ],
         "responses": {
           "201": {
-            "description": "Proyecto creado exitosamente"
+            "description": "Project created successfully"
           },
           "422": {
-            "description": "Errores de validación"
+            "description": "Validation error"
           }
         },
         "requestBody": {
@@ -896,6 +958,9 @@
                   "description": {
                     "type": "string"
                   },
+                  "project_type": {
+                    "type": "string"
+                  },
                   "address": {
                     "type": "string"
                   },
@@ -906,26 +971,30 @@
                     "type": "number"
                   },
                   "interest_rate": {
+                    "type": "number"
+                  },
+                  "commission_rate": {
                     "type": "number"
                   }
                 },
                 "required": [
                   "name",
                   "description",
+                  "project_type",
                   "address",
                   "lot_count",
-                  "price_per_square_foot",
-                  "interest_rate"
+                  "price_per_square_foot"
                 ]
               }
             }
-          }
+          },
+          "required": true
         }
       }
     },
     "/api/v1/projects/{id}": {
       "get": {
-        "summary": "Muestra un proyecto específico",
+        "summary": "Retrieve a project",
         "tags": [
           "Projects"
         ],
@@ -941,7 +1010,7 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "ID del proyecto",
+            "description": "Project ID",
             "schema": {
               "type": "integer"
             }
@@ -949,15 +1018,15 @@
         ],
         "responses": {
           "200": {
-            "description": "Proyecto encontrado"
+            "description": "Project retrieved successfully"
           },
           "404": {
-            "description": "Proyecto no encontrado"
+            "description": "Project not found"
           }
         }
       },
       "put": {
-        "summary": "Actualiza un proyecto",
+        "summary": "Update a project",
         "tags": [
           "Projects"
         ],
@@ -973,7 +1042,7 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "ID del proyecto",
+            "description": "Project ID",
             "schema": {
               "type": "integer"
             }
@@ -981,10 +1050,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Proyecto actualizado exitosamente"
-          },
-          "422": {
-            "description": "Errores de validación"
+            "description": "Project updated successfully"
           }
         },
         "requestBody": {
@@ -999,6 +1065,9 @@
                   "description": {
                     "type": "string"
                   },
+                  "project_type": {
+                    "type": "string"
+                  },
                   "address": {
                     "type": "string"
                   },
@@ -1010,15 +1079,19 @@
                   },
                   "interest_rate": {
                     "type": "number"
+                  },
+                  "commission_rate": {
+                    "type": "number"
                   }
                 }
               }
             }
-          }
+          },
+          "required": true
         }
       },
       "delete": {
-        "summary": "Elimina un proyecto",
+        "summary": "Delete a project",
         "tags": [
           "Projects"
         ],
@@ -1034,7 +1107,6 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "ID del proyecto",
             "schema": {
               "type": "integer"
             }
@@ -1042,10 +1114,343 @@
         ],
         "responses": {
           "200": {
-            "description": "Proyecto eliminado exitosamente"
+            "description": "Project deleted successfully"
           },
           "404": {
-            "description": "Proyecto no encontrado"
+            "description": "Project not found"
+          }
+        }
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "summary": "List all users",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Users retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new user",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+
+        ],
+        "responses": {
+          "422": {
+            "description": "Validation error"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "full_name": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "identity": {
+                    "type": "string"
+                  },
+                  "rtn": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "password_confirmation": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "full_name",
+                  "email",
+                  "phone",
+                  "identity",
+                  "rtn",
+                  "role",
+                  "password",
+                  "password_confirmation"
+                ]
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/v1/users/{id}": {
+      "get": {
+        "summary": "Retrieve a user",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "User ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User retrieved successfully"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update a user",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "User ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User updated successfully"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "full_name": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "identity": {
+                    "type": "string"
+                  },
+                  "rtn": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        }
+      },
+      "delete": {
+        "summary": "Soft delete a user",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "User ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User soft deleted successfully"
+          },
+          "403": {
+            "description": "Not authorized"
+          }
+        }
+      }
+    },
+    "/api/v1/users/{id}/restore": {
+      "post": {
+        "summary": "Restore a soft deleted user",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "User ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Not authorized"
+          }
+        }
+      }
+    },
+    "/api/v1/users/{id}/contracts": {
+      "get": {
+        "summary": "Retrieve user contracts",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contracts retrieved"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/api/v1/users/{id}/payments": {
+      "get": {
+        "summary": "Retrieve user payments",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payments retrieved"
+          }
+        }
+      }
+    },
+    "/api/v1/users/{id}/summary": {
+      "get": {
+        "summary": "Retrieve user summary",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User summary retrieved"
           }
         }
       }

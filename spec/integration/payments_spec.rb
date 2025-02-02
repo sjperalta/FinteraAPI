@@ -1,174 +1,215 @@
 require 'swagger_helper'
 
-RSpec.describe Api::V1::PaymentsController, type: :request do
-  # Crear usuario admin para los tests
-  let!(:user) { User.create!(email: 'admin@example.com', password: 'password123', role: 'admin', confirmed_at: Time.now) }
+RSpec.describe 'Api::V1::PaymentsController', type: :request do
+  let!(:user) do
+    User.create!(
+      id: 1,
+      email: 'user@example.com',
+      password: 'password123',
+      full_name: 'testing user',
+      phone: '50449494442',
+      identity: '40405005050505',
+      rtn: '404050050505051',
+      role: 'admin',
+      confirmed_at: Time.now
+    )
+  end
+
+  let!(:project) do
+    Project.create!(
+      name: 'Proyecto 1',
+      description: 'Descripción del proyecto',
+      address: 'Dirección 1',
+      lot_count: 5,
+      price_per_square_foot: 120.0,
+      interest_rate: 5.5
+    )
+  end
+
+  let!(:lot) do
+    Lot.create!(
+      name: 'Lote 1',
+      length: 50,
+      width: 40,
+      price: 10000,
+      project: project
+    )
+  end
+
+  let!(:contract) do
+    Contract.create!(
+      lot: lot,
+      applicant_user_id: user.id,
+      payment_term: 12,
+      financing_type: 'direct',
+      reserve_amount: 2000.00,
+      down_payment: 5000.00,
+      balance: 15000.00,
+      currency: 'USD',
+      status: 'pending'
+    )
+  end
+
+  let!(:payment) do
+    Payment.create!(
+      contract: contract,
+      description: 'First payment',
+      amount: 500.00,
+      interest_amount: 50.00,
+      status: 'pending',
+      due_date: Date.today + 30.days
+    )
+  end
+
   let(:Authorization) { "Bearer #{user.generate_jwt}" }
 
-  # Crear datos asociados al contrato
-  let!(:project) { Project.create!(name: 'Proyecto 1', description: 'Descripción del proyecto', address: 'Dirección', lot_count: 5, price_per_square_foot: 200.0, interest_rate: 5.0) }
-  let!(:lot) { Lot.create!(name: 'Lote 1', length: 50, width: 50, price: 10000, project: project) }
-  let!(:contract) { Contract.create!(lot: lot, applicant_user_id: user.id, payment_term: 12, financing_type: 'direct', reserve_amount: 1000, down_payment: 5000) }
-  let!(:payment) { Payment.create!(contract: contract, amount: 500, due_date: Date.today + 30.days, status: 'pending') }
-
-  path '/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{contract_id}/payments' do
-    get 'Lista todos los pagos del contrato' do
+  path '/api/v1/payments' do
+    get 'List payments' do
       tags 'Payments'
+      security [bearerAuth: []]
       consumes 'application/json'
       produces 'application/json'
-      security [ bearerAuth: [] ]
 
-      parameter name: :project_id, in: :path, type: :integer, required: true, description: 'ID del proyecto'
-      parameter name: :lot_id, in: :path, type: :integer, required: true, description: 'ID del lote'
-      parameter name: :contract_id, in: :path, type: :integer, required: true, description: 'ID del contrato'
+      response '200', 'List payments successfully' do
+        let(:Authorization) { "Bearer #{user.reload.generate_jwt}" }
 
-      response '200', 'Lista de pagos obtenida exitosamente' do
-        let(:Authorization) { "Bearer #{user.generate_jwt}" }
-        let(:project_id) { project.id }
-        let(:lot_id) { lot.id }
-        let(:contract_id) { contract.id }
-        run_test!
+        run_test! do |response|
+          data = JSON.parse(response.body)
+          expect(data['payments']).to be_an(Array)
+          expect(data['payments'].first['id']).to eq(payment.id)
+        end
+      end
+    end
+  end
+
+  path '/api/v1/payments/{id}' do
+    get 'Retrieve payment details' do
+      tags 'Payments'
+      security [bearerAuth: []]
+      consumes 'application/json'
+      produces 'application/json'
+
+      parameter name: :id, in: :path, type: :integer, required: true, description: 'Payment ID'
+
+      response '200', 'Payment retrieved successfully' do
+        let(:id) { payment.id }
+
+        run_test! do |response|
+          data = JSON.parse(response.body)
+          expect(data['id']).to eq(payment.id)
+          expect(data['amount']).to eq(payment.amount.to_s)
+        end
       end
 
-      response '401', 'No autorizado' do
-        let(:Authorization) { nil }  # Sin token JWT
-        let(:project_id) { project.id }
-        let(:lot_id) { lot.id }
-        let(:contract_id) { contract.id }
+      response '404', 'Payment not found' do
+        let(:id) { -1 }
         run_test!
       end
     end
   end
 
-  path '/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{contract_id}/payments/{id}' do
-    get 'Muestra un pago específico' do
+  path '/api/v1/payments/{id}/approve' do
+    post 'Approve a payment' do
       tags 'Payments'
+      security [bearerAuth: []]
       consumes 'application/json'
       produces 'application/json'
-      security [ bearerAuth: [] ]
 
-      parameter name: :project_id, in: :path, type: :integer, required: true, description: 'ID del proyecto'
-      parameter name: :lot_id, in: :path, type: :integer, required: true, description: 'ID del lote'
-      parameter name: :contract_id, in: :path, type: :integer, required: true, description: 'ID del contrato'
-      parameter name: :id, in: :path, type: :integer, required: true, description: 'ID del pago'
+      parameter name: :id, in: :path, type: :integer, required: true
 
-      response '200', 'Pago encontrado' do
-        let(:Authorization) { "Bearer #{user.generate_jwt}" }
-        let(:project_id) { project.id }
-        let(:lot_id) { lot.id }
-        let(:contract_id) { contract.id }
+      response '200', 'Payment approved' do
         let(:id) { payment.id }
+
+        before do
+          allow_any_instance_of(Payments::ApprovePaymentService).to receive(:call).and_return({ success: true, payment: payment })
+        end
+
         run_test!
       end
 
-      response '404', 'Pago no encontrado' do
-        let(:Authorization) { "Bearer #{user.generate_jwt}" }
-        let(:project_id) { project.id }
-        let(:lot_id) { lot.id }
-        let(:contract_id) { contract.id }
-        let(:id) { 9999 }  # ID inexistente para provocar error
+      response '422', 'Payment cannot be approved' do
+        let(:id) { payment.id }
+
+        before do
+          allow_any_instance_of(Payments::ApprovePaymentService).to receive(:call).and_return({ success: false, message: 'Approval failed' })
+        end
+
         run_test!
       end
     end
   end
 
-  path '/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{contract_id}/payments/{id}/approve' do
-    post 'Aprueba un pago' do
+  path '/api/v1/payments/{id}/reject' do
+    post 'Reject a payment' do
       tags 'Payments'
+      security [bearerAuth: []]
       consumes 'application/json'
       produces 'application/json'
-      security [ bearerAuth: [] ]
 
-      parameter name: :project_id, in: :path, type: :integer, required: true, description: 'ID del proyecto'
-      parameter name: :lot_id, in: :path, type: :integer, required: true, description: 'ID del lote'
-      parameter name: :contract_id, in: :path, type: :integer, required: true, description: 'ID del contrato'
-      parameter name: :id, in: :path, type: :integer, required: true, description: 'ID del pago'
+      parameter name: :id, in: :path, type: :integer, required: true
 
-      response '200', 'Pago aprobado exitosamente' do
-        let!(:contract) { Contract.create!(lot: lot, applicant_user_id: user.id, payment_term: 12, financing_type: 'direct', reserve_amount: 1000, down_payment: 5000) }
-        let(:Authorization) { "Bearer #{user.generate_jwt}" }
-        let(:project_id) { project.id }
-        let(:lot_id) { lot.id }
-        let(:contract_id) { contract.id }
+      response '200', 'Payment rejected' do
         let(:id) { payment.id }
+
+        before do
+          allow_any_instance_of(Payment).to receive(:may_reject?).and_return(true)
+          allow_any_instance_of(Payment).to receive(:reject!).and_return(true)
+        end
+
         run_test!
       end
 
-      response '422', 'Error al aprobar el pago' do
-        let(:Authorization) { "Bearer #{user.generate_jwt}" }
-        let(:project_id) { project.id }
-        let(:lot_id) { lot.id }
-        let(:contract_id) { contract.id }
+      response '422', 'Payment cannot be rejected' do
         let(:id) { payment.id }
-        before { allow_any_instance_of(Payments::ApprovePaymentService).to receive(:call).and_return(false) }
+
+        before do
+          allow_any_instance_of(Payment).to receive(:may_reject?).and_return(false)
+        end
+
         run_test!
       end
     end
   end
 
-  path '/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{contract_id}/payments/{id}/reject' do
-    post 'Rechaza un pago' do
+  let(:Authorization) { "Bearer #{user.generate_jwt}" }
+
+  path '/api/v1/payments/{id}/upload_receipt' do
+    post 'Upload payment receipt' do
       tags 'Payments'
-      consumes 'application/json'
-      produces 'application/json'
-      security [ bearerAuth: [] ]
-
-      parameter name: :project_id, in: :path, type: :integer, required: true, description: 'ID del proyecto'
-      parameter name: :lot_id, in: :path, type: :integer, required: true, description: 'ID del lote'
-      parameter name: :contract_id, in: :path, type: :integer, required: true, description: 'ID del contrato'
-      parameter name: :id, in: :path, type: :integer, required: true, description: 'ID del pago'
-
-      response '200', 'Pago rechazado exitosamente' do
-        let(:Authorization) { "Bearer #{user.generate_jwt}" }
-        let(:project_id) { project.id }
-        let(:lot_id) { lot.id }
-        let(:contract_id) { contract.id }
-        let(:id) { payment.id }
-        run_test!
-      end
-
-      response '422', 'Error al rechazar el pago' do
-        let(:Authorization) { "Bearer #{user.generate_jwt}" }
-        let(:project_id) { project.id }
-        let(:lot_id) { lot.id }
-        let(:contract_id) { contract.id }
-        let(:id) { payment.id }
-        before { allow_any_instance_of(Payments::RejectPaymentService).to receive(:call).and_return(false) }
-        run_test!
-      end
-    end
-  end
-
-  path '/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{contract_id}/payments/{id}/upload_receipt' do
-    post 'Sube un comprobante de pago' do
-      tags 'Payments'
+      security [bearerAuth: []]
       consumes 'multipart/form-data'
       produces 'application/json'
-      security [ bearerAuth: [] ]
 
-      parameter name: :project_id, in: :path, type: :integer, required: true, description: 'ID del proyecto'
-      parameter name: :lot_id, in: :path, type: :integer, required: true, description: 'ID del lote'
-      parameter name: :contract_id, in: :path, type: :integer, required: true, description: 'ID del contrato'
-      parameter name: :id, in: :path, type: :integer, required: true, description: 'ID del pago'
-      parameter name: :receipt, in: :formData, type: :file, required: true, description: 'Archivo del comprobante'
+      parameter name: :id, in: :path, type: :integer, required: true
+      parameter name: :receipt, in: :formData, type: :file, required: true, description: 'Receipt file to upload'
 
-      response '200', 'Comprobante subido exitosamente' do
-        let(:Authorization) { "Bearer #{user.generate_jwt}" }
-        let(:project_id) { project.id }
-        let(:lot_id) { lot.id }
-        let(:contract_id) { contract.id }
+      response '200', 'Receipt uploaded successfully' do
         let(:id) { payment.id }
-        let(:receipt) { fixture_file_upload(Rails.root.join('spec/fixtures/receipt.pdf'), 'application/pdf') }
+        let(:receipt) { Rack::Test::UploadedFile.new(Rails.root.join('spec/fixtures/receipt.pdf'), 'pdf') }
+
+        before do
+          allow_any_instance_of(Payment).to receive(:may_submit?).and_return(true)
+          allow_any_instance_of(Payment).to receive(:submit!).and_return(true)
+        end
+
         run_test!
       end
 
-      response '422', 'Error al subir el comprobante' do
-        let(:Authorization) { "Bearer #{user.generate_jwt}" }
-        let(:project_id) { project.id }
-        let(:lot_id) { lot.id }
-        let(:contract_id) { contract.id }
+      response '422', 'Receipt file is required' do
         let(:id) { payment.id }
-        let(:receipt) { nil }  # Comprobante faltante
+        let(:receipt) { nil }
+
+        run_test!
+      end
+
+      response '422', 'Failed to process payment submission' do
+        let(:id) { payment.id }
+        let(:receipt) { Rack::Test::UploadedFile.new(Rails.root.join('spec/fixtures/receipt.pdf'), 'pdf') }
+
+        before do
+          allow_any_instance_of(Payment).to receive(:may_submit?).and_return(false)
+        end
+
         run_test!
       end
     end

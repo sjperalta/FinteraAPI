@@ -10,7 +10,7 @@ gem 'rails', '~> 8.0', '>= 8.0.1'
 gem 'pg', '~> 1.5'
 
 # Use the Puma web server [https://github.com/puma/puma]
-gem "puma", "~> 5.0"
+gem 'puma', '>= 6.0'
 
 # Use Redis adapter to run Action Cable in production
 gem "redis", "~> 4.0"
@@ -63,3 +63,5 @@ end
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ mingw mswin x64_mingw jruby ]
+
+gem "discard", "~> 1.4"

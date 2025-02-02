@@ -12,7 +12,7 @@ Rails.application.routes.draw do
         registrations: 'api/v1/users'
       }
 
-      resources :users, only: [:index, :show, :create, :update] do
+      resources :users, only: [:index, :show, :create, :update, :destroy] do
         member do
           put   :toggle_status     # Route for toggling user status
           post  :recover_password
@@ -21,6 +21,7 @@ Rails.application.routes.draw do
           get   :contracts         # GET /api/v1/users/:id/contracts
           get   :payments          # GET /api/v1/users/:id/payments
           get   :summary
+          post  :restore
         end
       end
 
@@ -48,9 +49,10 @@ Rails.application.routes.draw do
         member do
           post :approve
           post :upload_receipt
+          post :reject
         end
       end
-      resources :projects, only: [:index, :show, :create, :destroy] do
+      resources :projects, only: [:index, :show, :create, :update, :destroy] do
 
         member do
           post :approve      # Aprobar un proyecto
@@ -80,4 +82,10 @@ Rails.application.routes.draw do
   mount Rswag::Ui::Engine => '/api-docs'
   mount Rswag::Api::Engine => '/api-docs'
   mount Sidekiq::Web => '/sidekiq'
+
+  get '/service-worker.js', to: proc { |env|
+    [200, { 'Content-Type' => 'application/javascript' }, ['']]
+  }
+
+  root to: redirect('/api-docs')
 end
