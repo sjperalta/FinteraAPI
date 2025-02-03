@@ -1,6 +1,7 @@
 class User < ApplicationRecord
   #has_secure_password
   # Devise modules
+  include Discard::Model
   devise :database_authenticatable, :registerable, :recoverable, :confirmable, :validatable
 
   # PaperTrail for versioning
@@ -10,6 +11,7 @@ class User < ApplicationRecord
   has_many :payments, through: :contracts
   has_many :audits, dependent: :destroy
   has_many :notifications, foreign_key: :user_id, dependent: :destroy
+  has_many :refresh_tokens, dependent: :destroy
 
   validates :full_name, presence: true
   validates :phone, presence: true
@@ -26,6 +28,10 @@ class User < ApplicationRecord
 
   # Callbacks for Normalization (Optional)
   before_validation :normalize_identity_and_rtn
+
+  # Ensure soft-deleted records are excluded by default
+  #default_scope { where(discarded_at: nil) }
+  default_scope -> { kept }
 
   # Verificar si el usuario es administrador
   def admin?
@@ -44,7 +50,7 @@ class User < ApplicationRecord
 
    # Método para verificar si el usuario está activo
   def active_for_authentication?
-    super && active?
+    super && active? && !discarded?
   end
 
   # Mensaje de error cuando el usuario está inactivo
@@ -54,6 +60,14 @@ class User < ApplicationRecord
 
   def can_resend_confirmation_email?
     !confirmed? && confirmation_token.present?
+  end
+
+  def soft_delete
+    discard! # Marks user as discarded (soft delete)
+  end
+
+  def restore
+    undiscard! # Restores soft-deleted user
   end
 
   private

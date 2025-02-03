@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_01_24_212956) do
+ActiveRecord::Schema[8.0].define(version: 2025_02_02_185441) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -123,6 +123,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_24_212956) do
     t.index ["name"], name: "index_projects_on_name"
   end
 
+  create_table "refresh_tokens", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "token"
+    t.datetime "expires_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_refresh_tokens_on_user_id"
+  end
+
   create_table "revenues", force: :cascade do |t|
     t.string "payment_type", null: false
     t.integer "year", null: false
@@ -167,6 +176,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_24_212956) do
     t.string "password_digest"
     t.string "identity"
     t.string "rtn"
+    t.datetime "discarded_at"
+    t.index ["discarded_at"], name: "index_users_on_discarded_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["full_name"], name: "index_users_on_full_name"
     t.index ["identity"], name: "index_users_on_identity", unique: true
@@ -196,4 +207,5 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_24_212956) do
   add_foreign_key "lots", "projects"
   add_foreign_key "notifications", "users"
   add_foreign_key "payments", "contracts"
+  add_foreign_key "refresh_tokens", "users"
 end

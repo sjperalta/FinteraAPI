@@ -2,10 +2,8 @@
 
 
 class Api::V1::UsersController < ApplicationController
-  include Filterable
-  include Sortable
-  include Pagy::Backend
-  before_action :authenticate_user!, only: [:index, :show, :update, :toggle_status, :change_password, :resend_confirmation, :contracts, :payments, :summary]
+  include Filterable, Sortable, Pagy::Backend
+  before_action :authenticate_user!, except: [:recover_password]
   load_and_authorize_resource
   before_action :set_user, only: [:show, :update, :contracts, :payments, :summary, :upload_receipt]
   before_action :set_payment, only: [:upload_receipt]
@@ -70,6 +68,32 @@ class Api::V1::UsersController < ApplicationController
       render json: { success: true, message: 'User updated successfully' }, status: :ok
     else
       render json: { success: false, errors: @user.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
+# DELETE /api/v1/users/:id
+  def destroy
+    if current_user.admin? # Ensure only admin can delete users
+      if @user.soft_delete
+        render json: { message: 'User soft deleted successfully' }, status: :ok
+      else
+        render json: { error: 'Failed to soft delete user' }, status: :unprocessable_entity
+      end
+    else
+      render json: { error: 'Not authorized' }, status: :forbidden
+    end
+  end
+
+  # POST /api/v1/users/:id/restore
+  def restore
+    if current_user.admin? # Ensure only admin can restore users
+      if @user.restore
+        render json: { message: 'User restored successfully' }, status: :ok
+      else
+        render json: { error: 'Failed to restore user' }, status: :unprocessable_entity
+      end
+    else
+      render json: { error: 'Not authorized' }, status: :forbidden
     end
   end
 
@@ -149,23 +173,6 @@ rescue ActiveRecord::RecordNotFound
   render json: { error: 'User not found' }, status: :not_found
 end
 
-# POST /api/v1/user/:id/upload_receipt
-def upload_receipt
-  if params[:receipt].present?
-    service = Payments::UploadReceiptService.new(payment: @payment, receipt: params[:receipt], user: @user)
-
-    if service.call
-      render json: { message: 'Comprobante subido exitosamente, esperando aprobación' }, status: :ok
-    else
-      render json: { error: 'No se pudo subir el comprobante' }, status: :unprocessable_entity
-    end
-  else
-    render json: { error: 'No se proporcionó un archivo para el comprobante' }, status: :unprocessable_entity
-  end
-rescue ActiveRecord::RecordNotFound
-  render json: { error: 'Payment not found' }, status: :not_found
-end
-
 # GET /api/v1/user/:id/summary
 def summary
   result = Users::UserSummaryService.new(@user).call
@@ -177,7 +184,9 @@ end
   private
 
   def set_user
-    @user = User.find(params[:id])
+    @user = User.with_discarded.find(params[:id])
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'User not found' }, status: :not_found
   end
 
   def set_payment

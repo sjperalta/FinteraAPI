@@ -1,9 +1,7 @@
 # app/controllers/api/v1/projects_controller.rb
 
 class Api::V1::ProjectsController < ApplicationController
-  include Filterable
-  include Sortable
-  include Pagy::Backend
+  include Filterable, Sortable, Pagy::Backend
   before_action :authenticate_user!
   load_and_authorize_resource
   before_action :set_project, only: [:show, :update, :destroy]

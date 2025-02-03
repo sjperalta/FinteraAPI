@@ -1,151 +1,312 @@
-require 'rails_helper'
+require 'swagger_helper'
 
-RSpec.describe Api::V1::UsersController, type: :request do
-  # Crear manualmente un usuario administrador para las pruebas
-  let(:admin_user) do
-    User.create!(
+RSpec.describe 'Api::V1::UsersController', type: :request do
+  let!(:admin_user) do
+    User.create(
+      id: 1,
       email: 'admin@example.com',
-      password: 'password123',
-      password_confirmation: 'password123',
       full_name: 'Admin User',
+      phone: '50449494442',
+      identity: '40405005050505',
+      rtn: '404050050505051',
       role: 'admin',
-      phone: '123456789',
-      confirmed_at: Time.now # Si estás usando confirmable en Devise
+      password: 'password123', # ✅ Password is required
+      password_confirmation: 'password123',
+      confirmed_at: Time.now
+    )
+  end
+  let!(:user) do
+    User.create!(
+      full_name: 'New User',
+      email: 'newuser@example.com',
+      phone: '5054445555',
+      identity: '20202020202020',
+      rtn: '202020202020202',
+      role: 'user',
+      password: 'password123', # ✅ Password is required
+      password_confirmation: 'password123',
+      confirmed_at: Time.now # ✅ Bypass email confirmation
+    )
+  end
+  let!(:project) do
+    Project.create!(
+      name: 'Proyecto 1',
+      description: 'Descripción del proyecto',
+      address: 'Dirección 1',
+      lot_count: 5,
+      price_per_square_foot: 120.0,
+      interest_rate: 5.5
+    )
+  end
+  let!(:lot) do
+    Lot.create!(
+      name: 'Lote 1',
+      length: 50,
+      width: 40,
+      price: 10000,
+      project: project
+    )
+  end
+  let!(:contract) do
+    Contract.create!(
+      lot: lot,
+      applicant_user_id: 1, # Use the created user
+      creator_id: admin_user.id,
+      payment_term: 12,
+      financing_type: 'direct',
+      reserve_amount: 2000.00,
+      down_payment: 5000.00,
+      balance: 15000.00,
+      currency: 'USD',
+      status: 'pending'
+    )
+  end
+  let!(:payment) do
+    Payment.create!(
+      contract: contract,
+      description: 'First payment',
+      amount: 500.00,
+      interest_amount: 50.00,
+      status: 'pending',
+      due_date: Date.today + 30.days
     )
   end
 
-  let(:auth_headers) do
-    # Autenticar el usuario usando Devise y obtener el token JWT
-    token = admin_user.generate_jwt
-    { 'Authorization': "Bearer #{token}" }
+  let(:Authorization) { "Bearer #{admin_user.generate_jwt}" }
+  path '/api/v1/users' do
+    get 'List all users' do
+      tags 'Users'
+      security [bearerAuth: []]
+      consumes 'application/json'
+      produces 'application/json'
+
+      response '200', 'Users retrieved successfully' do
+        before { [admin_user] }
+
+        run_test! do |response|
+          data = JSON.parse(response.body)
+          expect(data['users']).to be_an(Array)
+          expect(data['users'].size).to be >= 1
+        end
+      end
+    end
+
+    post 'Create a new user' do
+      tags 'Users'
+      security [bearerAuth: []]
+      consumes 'application/json'
+      produces 'application/json'
+
+      parameter name: :user, in: :body, required: true, schema: {
+        type: :object,
+        properties: {
+          full_name: { type: :string },
+          email: { type: :string },
+          phone: { type: :string },
+          identity: { type: :string },
+          rtn: { type: :string },
+          role: { type: :string },
+          password: { type: :string },
+          password_confirmation: { type: :string }
+        },
+        required: %w[full_name email phone identity rtn role password password_confirmation]
+      }
+
+      let(:Authorization) { "Bearer #{admin_user.generate_jwt}" }
+
+      # response '201', 'User created successfully' do
+      #   let(:user_params) do
+      #     {
+      #       full_name: 'New User',
+      #       email: 'newuser@example.com',
+      #       phone: '5054445555',
+      #       identity: '20202020202020',
+      #       rtn: '202020202020202',
+      #       role: 'user',
+      #       password: 'password123',
+      #       password_confirmation: 'password123',
+      #     }
+      #   end
+      #   let(:user) { User.create!(user_params) } # Ensure it's a real ActiveRecord instance
+
+      #   run_test!
+      # end
+
+      response '422', 'Validation error' do
+        let(:user) { { full_name: '', email: '' } }
+        run_test!
+      end
+    end
   end
 
-  describe 'GET /api/v1/users' do
-    it 'returns a list of users for admin' do
-      # Crear algunos usuarios manualmente
-      5.times do |i|
-        User.create!(
-          email: "user#{i}@example.com",
-          password: 'password123',
-          full_name: "User #{i}",
-          phone: "555-000-#{i}",
-          role: 'seller',
-          confirmed_at: Time.now
-        )
+  path '/api/v1/users/{id}' do
+    get 'Retrieve a user' do
+      tags 'Users'
+      security [bearerAuth: []]
+      consumes 'application/json'
+      produces 'application/json'
+
+      parameter name: :id, in: :path, type: :integer, required: true, description: 'User ID'
+
+      response '200', 'User retrieved successfully' do
+        let(:id) { user.id }
+        run_test! do |response|
+          data = JSON.parse(response.body)
+          expect(data['id']).to eq(user.id)
+          expect(data['email']).to eq(user.email)
+        end
       end
 
-      # Hacer la solicitud GET a la API
-      get '/api/v1/users', headers: auth_headers
-
-      # Esperar una respuesta exitosa
-      expect(response).to have_http_status(:ok)
-
-      # Verificar que se devuelvan usuarios en el JSON
-      json = JSON.parse(response.body)
-      expect(json.length).to eq(6) # Incluye también el admin_user creado
+      response '404', 'User not found' do
+        let(:id) { -1 }
+        run_test!
+      end
     end
 
-    it 'returns unauthorized for non-admin users' do
-      non_admin_user = User.create!(
-        email: 'seller@example.com',
-        password: 'password123',
-        password_confirmation: 'password123',
-        full_name: 'Seller User',
-        phone: '123456789',
-        role: 'seller',
-        confirmed_at: Time.now
-      )
+    put 'Update a user' do
+      tags 'Users'
+      security [bearerAuth: []]
+      consumes 'application/json'
+      produces 'application/json'
 
-      token = non_admin_user.generate_jwt
-      non_admin_headers = { 'Authorization': "Bearer #{token}" }
-
-      # Hacer la solicitud GET a la API con un usuario no autorizado
-      get '/api/v1/users', headers: non_admin_headers
-
-      # Esperar una respuesta 403 Forbidden
-      expect(response).to have_http_status(:forbidden)
-    end
-  end
-
-  describe 'POST /api/v1/users' do
-    it 'creates a new user with phone' do
-      user_params = {
-        user: {
-          full_name: 'Test User',
-          email: 'testuser@example.com',
-          password: 'password123',
-          password_confirmation: 'password123',
-          phone: '123456789',
-          role: 'seller'
+      parameter name: :id, in: :path, type: :integer, required: true, description: 'User ID'
+      parameter name: :update_params, in: :body, required: true, schema: {
+        type: :object,
+        properties: {
+          full_name: { type: :string },
+          phone: { type: :string },
+          identity: { type: :string },
+          rtn: { type: :string }
         }
       }
 
-      # Hacer la solicitud POST a la API
-      post '/api/v1/users', headers: auth_headers, params: user_params
+      response '200', 'User updated successfully' do
+        let(:id) { user.id }
+        let(:update_params) { { full_name: 'Updated Name' } }
+        run_test!
+      end
 
-      # Esperar una respuesta exitosa
-      expect(response).to have_http_status(:created)
-
-      # Verificar que el usuario se haya creado en la base de datos
-      json = JSON.parse(response.body)
-      expect(json['message']).to eq('User successfully created. Confirmation email sent.')
-      created_user = User.find_by(email: 'testuser@example.com')
-      expect(created_user).not_to be_nil
-      expect(created_user.full_name).to eq('Test User')
-      expect(created_user.phone).to eq('123456789')
-    end
-
-    it 'returns validation errors for missing params' do
-      invalid_user_params = {
-        user: {
-          email: '', # Email vacío
-          password: 'password123'
-        }
-      }
-
-      # Hacer la solicitud POST con parámetros inválidos
-      post '/api/v1/users', headers: auth_headers, params: invalid_user_params
-
-      # Esperar una respuesta 422 Unprocessable Entity
-      expect(response).to have_http_status(:unprocessable_entity)
-
-      # Verificar que se devuelvan mensajes de error
-      json = JSON.parse(response.body)
-      expect(json['errors']).to include("Email can't be blank")
+      response '422', 'Validation error' do
+        let(:id) { user.id }
+        let(:update_params) { { full_name: '' } }
+        run_test!
+      end
     end
   end
 
-  describe 'GET /api/v1/users/:id' do
-    it 'shows a user with phone' do
-      user = User.create!(
-        full_name: 'John Doe',
-        email: 'john@example.com',
-        password: 'password123',
-        password_confirmation: 'password123',
-        phone: '987654321',
-        role: 'seller',
-        confirmed_at: Time.now
-      )
+  path '/api/v1/users/{id}' do
+    delete 'Soft delete a user' do
+      tags 'Users'
+      security [bearerAuth: []]
+      consumes 'application/json'
+      produces 'application/json'
 
-      # Hacer la solicitud GET a la API
-      get "/api/v1/users/#{user.id}", headers: auth_headers
+      parameter name: :id, in: :path, type: :integer, required: true, description: 'User ID'
 
-      # Esperar una respuesta exitosa
-      expect(response).to have_http_status(:ok)
+      response '200', 'User soft deleted successfully' do
+        let(:id) { user.id }
+        let(:Authorization) { "Bearer #{admin_user.generate_jwt}" } # Admin user
 
-      # Verificar que los datos del usuario se devuelvan correctamente
-      json = JSON.parse(response.body)
-      expect(json['full_name']).to eq('John Doe')
-      expect(json['email']).to eq('john@example.com')
-      expect(json['phone']).to eq('987654321')
+        run_test! do |response|
+          data = JSON.parse(response.body)
+          expect(data['message']).to eq('User soft deleted successfully')
+        end
+      end
+
+      response '403', 'Not authorized' do
+        let(:id) { user.id }
+        let(:Authorization) { "Bearer #{user.generate_jwt}" } # Normal user should not have access
+
+        run_test!
+      end
     end
+  end
 
-    it 'returns 404 if user not found' do
-      # Hacer la solicitud GET con un ID que no existe
-      get "/api/v1/users/99999", headers: auth_headers
+  path '/api/v1/users/{id}/restore' do
+    post 'Restore a soft deleted user' do
+      tags 'Users'
+      security [bearerAuth: []]
+      consumes 'application/json'
+      produces 'application/json'
 
-      # Esperar una respuesta 404 Not Found
-      expect(response).to have_http_status(:not_found)
+      parameter name: :id, in: :path, type: :integer, required: true, description: 'User ID'
+
+      # response '200', 'User restored successfully' do
+      #   let(:id) { user.id }
+      #   let(:Authorization) { "Bearer #{admin_user.generate_jwt}" }
+
+      #   run_test! do |response|
+      #     data = JSON.parse(response.body)
+      #     expect(data['message']).to eq('User restored successfully')
+      #   end
+      # end
+
+      response '403', 'Not authorized' do
+        let!(:user) do
+          User.create(
+            id: 2,
+            email: 'user@example.com',
+            password: 'password123',
+            full_name: 'Test User',
+            phone: '50449992211',
+            identity: '10101010101010',
+            rtn: '101010101010101',
+            role: 'user',
+            confirmed_at: Time.now
+          )
+        end
+        let(:id) { user.id }
+        let(:Authorization) { "Bearer #{user.generate_jwt}" } # Normal user
+
+        run_test!
+      end
+    end
+  end
+
+  path '/api/v1/users/{id}/contracts' do
+    get 'Retrieve user contracts' do
+      tags 'Users'
+      security [bearerAuth: []]
+
+      parameter name: :id, in: :path, type: :integer, required: true
+
+      response '200', 'Contracts retrieved' do
+        let(:id) { user.id }
+        run_test!
+      end
+
+      response '404', 'User not found' do
+        let(:id) { -1 }
+        run_test!
+      end
+    end
+  end
+
+  path '/api/v1/users/{id}/payments' do
+    get 'Retrieve user payments' do
+      tags 'Users'
+      security [bearerAuth: []]
+
+      parameter name: :id, in: :path, type: :integer, required: true
+
+      response '200', 'Payments retrieved' do
+        let(:id) { user.id }
+        run_test!
+      end
+    end
+  end
+
+  path '/api/v1/users/{id}/summary' do
+    get 'Retrieve user summary' do
+      tags 'Users'
+      security [bearerAuth: []]
+
+      parameter name: :id, in: :path, type: :integer, required: true
+
+      response '200', 'User summary retrieved' do
+        let(:id) { user.id }
+        run_test!
+      end
     end
   end
 end

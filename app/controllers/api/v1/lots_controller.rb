@@ -3,7 +3,7 @@
 class Api::V1::LotsController < ApplicationController
   include Filterable, Sortable, Pagy::Backend
   load_and_authorize_resource
-  before_action :set_project
+  before_action :set_project, only: [:index, :show, :create, :update, :destroy]
   before_action :set_lot, only: [:show, :update, :destroy]
 
   # Define allowed sort fields
@@ -78,12 +78,17 @@ class Api::V1::LotsController < ApplicationController
   end
 
   # PUT /projects/:project_id/lots/:id
+  # PUT /projects/:project_id/lots/:id
   def update
+    if lot_params.blank?
+      return render json: { errors: ['Invalid or missing parameters'] }, status: :bad_request
+    end
+
     service = Lots::UpdateLotService.new(lot: @lot, lot_params: lot_params)
     result = service.call
 
     if result[:success]
-      render json: result[:lot], status: :ok
+      render json: { message: 'Lot updated successfully', lot: result[:lot] }, status: :ok
     else
       render json: { errors: result[:errors] }, status: :unprocessable_entity
     end

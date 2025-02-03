@@ -1,7 +1,7 @@
 # app/controllers/api/v1/authentication_controller.rb
 
 class Api::V1::AuthController < ApplicationController
-  skip_before_action :authenticate_user!, only: [:login, :refresh, :logout]
+  skip_before_action :authenticate_user!, only: [:login, :refresh]
 
   # POST /api/v1/auth/login
   def login
@@ -17,10 +17,21 @@ class Api::V1::AuthController < ApplicationController
 
   # POST /api/v1/auth/logout
   def logout
-    # Example if using a database to store refresh tokens
     refresh_token = params[:refresh_token]
-    current_user.refresh_tokens.find_by(token: refresh_token)&.destroy
-    render json: { message: 'Logged out successfully' }, status: :ok
+
+    if refresh_token.blank?
+      return render json: { error: 'Invalid or missing token' }, status: 401
+    end
+
+    # Find refresh token
+    token = RefreshToken.find_by(token: refresh_token)
+
+    if token
+      token.destroy
+      render json: { message: 'Logged out successfully' }, status: :ok
+    else
+      render json: { error: 'Invalid or missing token' }, status: 401
+    end
   end
 
   # POST /api/v1/auth/refresh
