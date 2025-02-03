@@ -1,21 +1,29 @@
-workers Integer(ENV['WEB_CONCURRENCY'] || 2)
-threads_count = Integer(ENV['RAILS_MAX_THREADS'] || 5)
+# Set the number of workers (processes) based on ENV variable, defaults to 2
+workers Integer(ENV.fetch('WEB_CONCURRENCY', 2))
+
+# Configure threads per worker (min, max) based on ENV variable, defaults to 5
+threads_count = Integer(ENV.fetch('RAILS_MAX_THREADS', 5))
 threads threads_count, threads_count
 
 preload_app!
 
-# Support IPv6 by binding to host `::` instead of `0.0.0.0`
-port(ENV['PORT'] || 3000, "::")
+# Bind to IPv6 (::) or IPv4 (0.0.0.0) based on ENV variable
+bind "tcp://#{ENV.fetch('BIND_ADDRESS', '0.0.0.0')}:#{ENV.fetch('PORT', 3000)}"
 
-# Turn off keepalive support for better long tails response time with Router 2.0
-# Remove this line when https://github.com/puma/puma/issues/3487 is closed, and the fix is released
+# Turn off keepalive support (temporary fix for Router 2.0 issue)
 enable_keep_alives(false) if respond_to?(:enable_keep_alives)
 
-rackup      DefaultRackup if defined?(DefaultRackup)
-environment ENV['RACK_ENV'] || 'development'
+# Use rackup for starting the app
+rackup DefaultRackup if defined?(DefaultRackup)
 
+# Set the environment (defaults to development)
+environment ENV.fetch('RAILS_ENV', 'development')
+
+# Worker-specific setup
 on_worker_boot do
-  # Worker-specific setup for Rails 4.1 to 5.2, after 5.2 it's not needed
-  # See: https://devcenter.heroku.com/articles/deploying-rails-applications-with-the-puma-web-server#on-worker-boot
+  # Establish database connection for each worker
   ActiveRecord::Base.establish_connection
 end
+
+# Allow for phased restarts (zero-downtime deploys)
+plugin :tmp_restart

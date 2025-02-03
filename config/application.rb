@@ -13,6 +13,7 @@ module FinteraAPI
     config.autoload_paths << Rails.root.join('lib')
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use ActionDispatch::Session::CookieStore, key: '_fintera_session'
+    config.active_job.queue_adapter = :sidekiq
 
     # Configuration for the application, engines, and railties goes here.
     #

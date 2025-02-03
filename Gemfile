@@ -34,7 +34,7 @@ gem 'rswag-specs'
 
 # Background Job Processing
 gem 'sidekiq', '~> 7.0'
-gem 'sidekiq-cron', '~> 2.1', require: 'sidekiq/cron/job'
+gem 'sidekiq-scheduler'
 
 # Pagination
 gem 'pagy'

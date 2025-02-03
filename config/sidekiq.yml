@@ -1,12 +1,10 @@
-# config/sidekiq.yml
-
 :concurrency: 5
 :queues:
+  - high
   - default
   - mailers
 :redis:
-  :url: redis://localhost:6379/0
-:verbose: false
+  :url: <%= ENV['REDIS_URL'] || 'redis://localhost:6379/0' %>
 :namespace: fintera
 :logfile: ./log/sidekiq.log
 :pidfile: ./tmp/pids/sidekiq.pid
@@ -14,7 +12,7 @@
 :require: ./config/environment
 
 # Optional: Specify environment
-:environment: development
+:environment: <%= ENV['RAILS_ENV'] || 'development' %>
 
 # Optional: Schedule file for sidekiq-cron
 :schedule_file: config/schedule.yml
