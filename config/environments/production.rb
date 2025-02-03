@@ -58,7 +58,11 @@ Rails.application.configure do
 
   config.action_mailer.default_url_options = { host: 'securexapp.com', protocol: 'https' }
 
-  config.hosts += ["web-production-6cf6.up.railway.app","web-production-6cf6.up.railway.app","securexapp.com", "api.securexapp.com"]
+  config.hosts << "web-production-6cf6.up.railway.app"
+  config.hosts << "web-production-6cf6.up.railway.app"
+  config.hosts << "fintera-api.securexapp.com"
+
+  #config.hosts += ["web-production-6cf6.up.railway.app","web-production-6cf6.up.railway.app","securexapp.com", "api.securexapp.com"]
 
   config.action_mailer.perform_caching = false
 

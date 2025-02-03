@@ -5,6 +5,7 @@
   - mailers
 :redis:
   :url: <%= ENV['REDIS_URL'] || 'redis://localhost:6379/0' %>
+  :password: <%= ENV['REDIS_PASSWORD'] if ENV['REDIS_PASSWORD'] %>
 :namespace: fintera
 :logfile: ./log/sidekiq.log
 :pidfile: ./tmp/pids/sidekiq.pid

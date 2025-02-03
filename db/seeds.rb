@@ -1,3 +1,5 @@
+puts "Iniciando seeds ambiente: #{RAILS_ENV}"
+
 # Verifica si el usuario ya existe antes de crearlo para evitar duplicados
 user = User.find_or_create_by!(email: 'admin@example.com') do |user|
   user.password = 'superPassword@123'
