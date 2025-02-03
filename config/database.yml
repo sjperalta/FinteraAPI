@@ -17,3 +17,7 @@ test:
   password: <%= ENV['POSTGRES_PASSWORD'] %>
   host: <%= ENV.fetch("POSTGRES_HOST") { "localhost" } %>
 
+production:
+  <<: *default
+  url: <%= ENV['DATABASE_URL'] %>
+  
