@@ -23,6 +23,12 @@ Rails.application.routes.draw do
           get   :summary
           post  :restore
         end
+
+        collection do
+          post :send_recovery_code       # /api/v1/users/send_recovery_code
+          post :verify_recovery_code     # /api/v1/users/verify_recovery_code
+          post :update_password_with_code  # /api/v1/users/update_password_with_code
+        end
       end
 
       resources :statistics, only: [:index] do
@@ -50,6 +56,7 @@ Rails.application.routes.draw do
           post :approve
           post :upload_receipt
           post :reject
+          get  :download_receipt
         end
       end
       resources :projects, only: [:index, :show, :create, :update, :destroy] do

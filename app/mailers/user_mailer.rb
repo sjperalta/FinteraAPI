@@ -33,6 +33,13 @@ class UserMailer < ApplicationMailer
     mail(to: @user.email, subject: 'Pagos Vencidos')
   end
 
+  def reset_code_email
+    @user = params[:user]
+    @code = params[:code]
+
+    mail(to: @user.email, subject: "Codigo de reseteo")
+  end
+
   private
 
   # Método para establecer el usuario de los parámetros

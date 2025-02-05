@@ -33,7 +33,7 @@ class Ability
     else
       Rails.logger.debug "User is a regular user or guest"
       # Regular users or guests
-      can [:update, :destroy], User, id: user.id
+      can [:update], User, id: user.id
       can :create, Contract
       can :manage, Contract, applicant_user_id: user.id
       can :read, Payment, contract: { applicant_user_id: user.id }
@@ -44,6 +44,10 @@ class Ability
       can :payments, User, id: user.id
       can :summary, User, id: user.id
       can :read, User, id: user.id
+
+      can :send_recovery_code, User
+      can :verify_recovery_code, User
+      can :update_password_with_code, User
     end
   end
 end

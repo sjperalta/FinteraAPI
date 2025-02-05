@@ -4,14 +4,18 @@
 # Handle Cross-Origin Resource Sharing (CORS) in order to accept cross-origin AJAX requests.
 
 # Read more: https://github.com/cyu/rack-cors
-
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins '*' # TODO: restrict production environtments
+    origins '*'  # For development only; restrict this in production
+
+    # Allow API endpoints
     resource '/api/*',
+      headers: :any,
+      methods: [:get, :post, :put, :patch, :delete, :options, :head]
+
+    # Also allow Active Storage endpoints
+    resource '/rails/active_storage/*',
       headers: :any,
       methods: [:get, :post, :put, :patch, :delete, :options, :head]
   end
 end
-
-#Rails.application.config.autoload_paths += %W(#{Rails.application.config.root}/lib/constraints)
