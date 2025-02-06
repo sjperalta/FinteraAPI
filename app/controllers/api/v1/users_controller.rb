@@ -76,7 +76,7 @@ class Api::V1::UsersController < ApplicationController
     end
   end
 
-# DELETE /api/v1/users/:id
+  # DELETE /api/v1/users/:id
   def destroy
     if current_user.admin? # Ensure only admin can delete users
       if @user.soft_delete
@@ -190,72 +190,68 @@ def verify_recovery_code
   end
 end
 
-# POST /api/v1/users/update_password_with_code
-def update_password_with_code
+  # POST /api/v1/users/update_password_with_code
+  def update_password_with_code
+    return render json: { error: 'Contraseña muy debil, deberia estar compuesta de una minuscula, una Mayuscula, y numeros' }, status: :unprocessable_entity unless valid_password?(params[:new_password])
 
-
-  binding.pry
-
-  return render json: { error: 'Contraseña muy debil, deberia estar compuesta de una minuscula, una Mayuscula, y numeros' }, status: :unprocessable_entity unless valid_password?(params[:new_password])
-
-  user = User.find_by(email: params[:email]&.downcase)
-  if user.blank?
-    return render json: { success: false, error: 'Email not found' }, status: :not_found
-  end
-
-  # Check the code
-  if user.recovery_code == params[:code] && user.recovery_code_sent_at >= 15.minutes.ago
-    # Password
-    if params[:new_password] == params[:new_password_confirmation]
-      user.update!(
-        password: params[:new_password],
-        password_confirmation: params[:new_password_confirmation],
-        # Clear the code so it can’t be reused
-        recovery_code: nil,
-        recovery_code_sent_at: nil
-      )
-      render json: { success: true, message: 'Password updated successfully.' }, status: :ok
-    else
-      render json: { success: false, error: 'Password confirmation mismatch.' }, status: :unprocessable_entity
+    user = User.find_by(email: params[:email]&.downcase)
+    if user.blank?
+      return render json: { success: false, error: 'Email not found' }, status: :not_found
     end
-  else
-    render json: { success: false, error: 'Invalid or expired code.' }, status: :unprocessable_entity
+
+    # Check the code
+    if user.recovery_code == params[:code] && user.recovery_code_sent_at >= 15.minutes.ago
+      # Password
+      if params[:new_password] == params[:new_password_confirmation]
+        user.update!(
+          password: params[:new_password],
+          password_confirmation: params[:new_password_confirmation],
+          # Clear the code so it can’t be reused
+          recovery_code: nil,
+          recovery_code_sent_at: nil
+        )
+        render json: { success: true, message: 'Password updated successfully.' }, status: :ok
+      else
+        render json: { success: false, error: 'Password confirmation mismatch.' }, status: :unprocessable_entity
+      end
+    else
+      render json: { success: false, error: 'Invalid or expired code.' }, status: :unprocessable_entity
+    end
   end
-end
 
-# GET /api/v1/user/:id/contracts
-def contracts
-  contracts = @user.contracts
-  render json: contracts.as_json(only: [:id, :name, :status, :financing_type, :created_at]), status: :ok
-rescue ActiveRecord::RecordNotFound
-  render json: { error: 'User not found' }, status: :not_found
-end
+  # GET /api/v1/user/:id/contracts
+  def contracts
+    contracts = @user.contracts
+    render json: contracts.as_json(only: [:id, :name, :status, :financing_type, :created_at]), status: :ok
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'User not found' }, status: :not_found
+  end
 
-# GET /api/v1/user/:id/payments
-def payments
-  payments = Payment.joins(:contract).where(contracts: { applicant_user_id: @user.id, status: Contract::STATUS_APPROVED }, status: ['pending', 'submitted'])
+  # GET /api/v1/user/:id/payments
+  def payments
+    payments = Payment.joins(:contract).where(contracts: { applicant_user_id: @user.id, status: Contract::STATUS_APPROVED }, status: ['pending', 'submitted'])
 
-  # Include contract details in the JSON response.
-  # Adjust the :only fields for contract according to the attributes you want to return.
-  render json: payments.as_json(
-    only: [:id, :description, :amount, :status, :due_date, :contract_id, :created_at, :approved_at, :payment_date, :interest_amount],
-    include: {
-      contract: {
-        only: [:id, :name, :status, :currency, :created_at]
+    # Include contract details in the JSON response.
+    # Adjust the :only fields for contract according to the attributes you want to return.
+    render json: payments.as_json(
+      only: [:id, :description, :amount, :status, :due_date, :contract_id, :created_at, :approved_at, :payment_date, :interest_amount],
+      include: {
+        contract: {
+          only: [:id, :name, :status, :currency, :created_at]
+        }
       }
-    }
-  ), status: :ok
-rescue ActiveRecord::RecordNotFound
-  render json: { error: 'User not found' }, status: :not_found
-end
+    ), status: :ok
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'User not found' }, status: :not_found
+  end
 
-# GET /api/v1/user/:id/summary
-def summary
-  result = Users::UserSummaryService.new(@user).call
-  render json: result, status: :ok
-rescue StandardError => e
-  render json: { error: e.message }, status: :internal_server_error
-end
+  # GET /api/v1/user/:id/summary
+  def summary
+    result = Users::UserSummaryService.new(@user).call
+    render json: result, status: :ok
+  rescue StandardError => e
+    render json: { error: e.message }, status: :internal_server_error
+  end
 
   private
 
@@ -297,7 +293,7 @@ end
     return false if password.nil?
     password.length >= 8 &&
       password.match?(/[A-Z]/) &&
-      password.match(/[a-z]/) &&
+      password.match?(/[a-z]/) &&
       password.match?(/\d/)
   end
 
