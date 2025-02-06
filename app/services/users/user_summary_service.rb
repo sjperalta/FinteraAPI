@@ -11,7 +11,8 @@ module Users
         balance: balance.to_f,
         totalDue: total_due.to_f,
         totalFees: total_fees.to_f,
-        overdueCount: overdue_count
+        overdueCount: overdue_count,
+        contractList: contract_list
       }
     end
 
@@ -43,6 +44,10 @@ module Users
 
     def overdue_count
       overdue_payments.count
+    end
+
+    def contract_list
+      @user.contracts.map { |contract| contract.lot.project.name }.uniq
     end
   end
 end

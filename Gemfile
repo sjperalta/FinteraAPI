@@ -51,6 +51,13 @@ gem 'onesignal-rails-plugin', '~> 1.0.0'
 # Status Transition
 gem 'aasm'
 
+# CSV reporting
+gem 'csv'
+
+# PDF reporting
+gem 'wicked_pdf'
+gem 'wkhtmltopdf-binary'
+
 group :development, :test do
   # Testing Framework
   gem 'rspec-rails'

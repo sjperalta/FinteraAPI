@@ -1,7 +1,7 @@
 puts "Iniciando seeds ambiente: #{ENV['RAILS_ENV']}"
 
 # Verifica si el usuario ya existe antes de crearlo para evitar duplicados
-user = User.find_or_create_by!(email: 'admin@example.com') do |user|
+admin_user = User.find_or_create_by!(email: 'admin@example.com') do |user|
   user.password = 'superPassword@123'
   user.password_confirmation = 'superPassword@123'
   user.role = 'admin'
@@ -12,7 +12,20 @@ user = User.find_or_create_by!(email: 'admin@example.com') do |user|
   user.confirmed_at = Time.now
 end
 
-puts "Usuario creado/actualizado: #{user.email}"
+puts "Usuario admin creado/actualizado: #{admin_user.email}"
+
+user = User.find_or_create_by!(email: 'vendedor@example.com') do |user|
+  user.password = 'Prueba123'
+  user.password_confirmation = 'Prueba123'
+  user.role = 'seller'
+  user.full_name = 'Juan Perez'
+  user.phone = '+50498586221'
+  user.identity = '0506199100444'
+  user.rtn = '05061991004441'
+  user.confirmed_at = Time.now
+end
+
+puts "Usuario seller creado/actualizado: #{user.email}"
 
 project = Project.find_or_create_by!(name: 'Proyecto Wameru') do |project|
   project.description = 'Proyecto Residencial En Sector Cieneguita'

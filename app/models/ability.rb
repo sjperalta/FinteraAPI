@@ -45,9 +45,9 @@ class Ability
       can :summary, User, id: user.id
       can :read, User, id: user.id
 
-      can :send_recovery_code, User
-      can :verify_recovery_code, User
-      can :update_password_with_code, User
+      can :send_recovery_code, User, id: user.id
+      can :verify_recovery_code, User, id: user.id
+      can :update_password_with_code, User, id: user.id
     end
   end
 end

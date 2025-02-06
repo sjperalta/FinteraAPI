@@ -35,10 +35,8 @@ class Payment < ApplicationRecord
     end
   end
 
-  def document_url
-    return unless document.attached?
-    Rails.application.routes.url_helpers.url_for(document)
-  end
+  scope :pending, -> { where(status: 'pending') }
+  scope :overdue, -> { pending.where("due_date < ?", Date.current).order(:due_date) }
 
   private
 

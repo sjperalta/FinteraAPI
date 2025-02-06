@@ -1,7 +1,6 @@
 require 'csv'
 
-class Api::V1::ReportsController < ApplicationController
-
+class Api::V1::ReportsController < ActionController::Base
   # GET /api/v1/reports/commissions_csv?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
   def commissions_csv
     start_date, end_date = parse_date_range
@@ -142,6 +141,33 @@ class Api::V1::ReportsController < ApplicationController
               filename: "overdue_payments_report.csv",
               type: "text/csv; charset=UTF-8; header=present",
               disposition: "attachment"
+  end
+
+  def user_balance_pdf
+    service = Users::UserBalanceService.new(params[:user_id])
+    result = service.call
+
+    unless result[:success]
+      return render json: { error: result[:error] }, status: :not_found
+    end
+
+    @user = result[:user]
+    @balance = result[:balance]
+    @pending_payments = result[:pending_payments]
+
+    respond_to do |format|
+      format.pdf do
+        render pdf: "user_balance_#{params[:user_id]}",
+              template: "reports/user_balance",
+              formats: [:html],
+              layout: "pdf",
+              disposition: "attachment"
+      end
+    end
+
+  rescue => e
+    Rails.logger.error "Error generating User Balance PDF: #{e.message}"
+    render json: { error: "Failed to generate PDF: #{e.message}" }, status: :internal_server_error
   end
 
   private

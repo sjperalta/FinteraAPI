@@ -47,6 +47,7 @@ Rails.application.routes.draw do
         get :commissions_csv
         get :total_revenue_csv
         get :overdue_payments_csv
+        get :user_balance_pdf
       end
 
       resources :contracts, only: [:index]

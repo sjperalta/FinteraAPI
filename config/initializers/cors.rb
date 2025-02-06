@@ -6,9 +6,7 @@
 # Read more: https://github.com/cyu/rack-cors
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins '*'  # For development only; restrict this in production
-
-    # Allow API endpoints
+    origins ENV['CORS_ORIGINS']&.split(',') || '*'
     resource '/api/*',
       headers: :any,
       methods: [:get, :post, :put, :patch, :delete, :options, :head]

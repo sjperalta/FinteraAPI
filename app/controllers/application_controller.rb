@@ -12,44 +12,6 @@ class ApplicationController < ActionController::API
     render json: { error: 'No tienes acceso a esta sección' }, status: :forbidden
   end
 
-  protected
-
-  # def parse_sort_param(sort_param)
-  #   field, direction = sort_param.split('-')
-  #   direction = direction.downcase == 'desc' ? 'desc' : 'asc'
-  #   [field, direction]
-  # end
-
-  # def apply_filters(scope, params, searchable_fields)
-  #   model = scope.model.table_name
-
-  #   # Apply status filter
-  #   scope = scope.where(status: params[:status].downcase) if params[:status].present?
-
-  #   # Apply search filter
-  #   if params[:search_term].present?
-  #     search_term = "%#{params[:search_term].strip.downcase}%"
-  #     searchable_conditions = searchable_fields.map { |field| "LOWER(#{model}.#{field}) LIKE :search" }.join(' OR ')
-  #     scope = scope.where(searchable_conditions, search: search_term)
-  #   end
-
-  #   scope
-  # end
-
-  # def apply_sorting(scope, params, sortable_fields)
-  #   if params[:sort].present?
-  #     sort_field, sort_direction = parse_sort_param(params[:sort])
-  #     if sortable_fields.include?(sort_field)
-  #       scope = scope.order(sort_field => sort_direction)
-  #     else
-  #       render json: { error: "Invalid sort parameter" }, status: :bad_request and return
-  #     end
-  #   else
-  #     # Default sorting
-  #     scope = scope.order(created_at: :asc)
-  #   end
-  # end
-
   private
 
   def authenticate_user!
