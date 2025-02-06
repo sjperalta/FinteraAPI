@@ -4,6 +4,11 @@
 class Api::V1::UsersController < ApplicationController
   include Filterable, Sortable, Pagy::Backend
   before_action :authenticate_user!, except: [:recover_password]
+  skip_before_action :authenticate_user!, only: [
+    :send_recovery_code,
+    :verify_recovery_code,
+    :update_password_with_code
+  ]
   load_and_authorize_resource
   before_action :set_user, only: [:show, :update, :contracts, :payments, :summary, :upload_receipt]
   before_action :set_payment, only: [:upload_receipt]
@@ -135,7 +140,7 @@ def recover_password
   end
 end
 
-# PATCH /api/v1/user/change_password
+# PATCH /api/v1/users/change_password
 def change_password
   if @user.id == password_change_params[:userId]
     user_for_password_change
@@ -144,6 +149,77 @@ def change_password
     handle_admin_password_change(user) # admin can override password
   else
     render json: { errors: ["Change user password is not allowed"] }, status: :unauthorized
+  end
+end
+
+# POST /api/v1/users/send_recovery_code
+def send_recovery_code
+  user = User.find_by(email: params[:email]&.downcase)
+  unless user
+    return render json: { success: false, error: 'No se encontro Email' }, status: :not_found
+  end
+
+  # remember this recovery code is 5 digits
+  code = ENV['RAILS_ENV'] == 'development' ?
+    99999 : rand(10000..99999).to_s # 5-digit code
+  user.update!(
+    recovery_code: code,
+    recovery_code_sent_at: Time.current
+  )
+
+  # Enqueue job to send the code
+  SendResetCodeJob.perform_later(user.id, code)
+
+  render json: { success: true, message: 'Verification code sent to your email.' }, status: :ok
+end
+
+# POST /api/v1/users/verify_recovery_code
+def verify_recovery_code
+  return render json: { error: 'Code is required' }, status: :bad_request if params[:code].blank?
+
+  user = User.find_by(email: params[:email]&.downcase)
+  if user.blank?
+    return render json: { success: false, error: 'Email not found' }, status: :not_found
+  end
+
+  # e.g., code is valid for 15 minutes
+  if user.recovery_code == params[:code] && user.recovery_code_sent_at >= 15.minutes.ago
+    render json: { success: true, message: 'Code verified successfully.' }, status: :ok
+  else
+    render json: { success: false, error: 'Invalid or expired code.' }, status: :unprocessable_entity
+  end
+end
+
+# POST /api/v1/users/update_password_with_code
+def update_password_with_code
+
+
+  binding.pry
+
+  return render json: { error: 'Contraseña muy debil, deberia estar compuesta de una minuscula, una Mayuscula, y numeros' }, status: :unprocessable_entity unless valid_password?(params[:new_password])
+
+  user = User.find_by(email: params[:email]&.downcase)
+  if user.blank?
+    return render json: { success: false, error: 'Email not found' }, status: :not_found
+  end
+
+  # Check the code
+  if user.recovery_code == params[:code] && user.recovery_code_sent_at >= 15.minutes.ago
+    # Password
+    if params[:new_password] == params[:new_password_confirmation]
+      user.update!(
+        password: params[:new_password],
+        password_confirmation: params[:new_password_confirmation],
+        # Clear the code so it can’t be reused
+        recovery_code: nil,
+        recovery_code_sent_at: nil
+      )
+      render json: { success: true, message: 'Password updated successfully.' }, status: :ok
+    else
+      render json: { success: false, error: 'Password confirmation mismatch.' }, status: :unprocessable_entity
+    end
+  else
+    render json: { success: false, error: 'Invalid or expired code.' }, status: :unprocessable_entity
   end
 end
 
@@ -215,6 +291,14 @@ end
 
   def new_pass
     params[:password_change][:new_password]
+  end
+
+  def valid_password?(password)
+    return false if password.nil?
+    password.length >= 8 &&
+      password.match?(/[A-Z]/) &&
+      password.match(/[a-z]/) &&
+      password.match?(/\d/)
   end
 
   def fields_for_render

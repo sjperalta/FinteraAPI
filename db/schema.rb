@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_02_02_185441) do
+ActiveRecord::Schema[8.0].define(version: 2025_02_04_190051) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -177,6 +177,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_02_185441) do
     t.string "identity"
     t.string "rtn"
     t.datetime "discarded_at"
+    t.string "recovery_code"
+    t.datetime "recovery_code_sent_at"
     t.index ["discarded_at"], name: "index_users_on_discarded_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["full_name"], name: "index_users_on_full_name"

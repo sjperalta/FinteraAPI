@@ -35,6 +35,11 @@ class Payment < ApplicationRecord
     end
   end
 
+  def document_url
+    return unless document.attached?
+    Rails.application.routes.url_helpers.url_for(document)
+  end
+
   private
 
   def document_attached?

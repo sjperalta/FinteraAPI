@@ -32,7 +32,7 @@ class Api::V1::PaymentsController < ApplicationController
           contract: {
             only: [:id, :balance, :status, :created_at, :currency]
           }
-        }
+        },
       ),
       pagination: pagy_metadata(pagy)
     }, status: :ok
@@ -89,10 +89,21 @@ class Api::V1::PaymentsController < ApplicationController
     end
   end
 
+  # Add this new action
+  def download_receipt
+    authorize! :read, @payment
+
+    if @payment.document.attached?
+      redirect_to url_for(@payment.document)
+    else
+      render json: { error: 'No document attached' }, status: :not_found
+    end
+  end
+
   private
 
   def set_payment
-    @payment = Payment.find(params[:id])
+    @payment = Payment.with_attached_document.find(params[:id])
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Pago no encontrado' }, status: :not_found
   end
