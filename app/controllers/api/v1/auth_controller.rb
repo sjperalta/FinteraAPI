@@ -50,17 +50,4 @@ class Api::V1::AuthController < ApplicationController
   rescue JWT::DecodeError
     render json: { errors: ['Invalid token'] }, status: 401
   end
-
-  private
-
-  def decode_token(token)
-    JWT.decode(token, ENV['SECRET_KEY_BASE'])[0].symbolize_keys
-  rescue JWT::DecodeError
-    nil
-  end
-
-  def generate_token(payload)
-    payload[:iat] = Time.now.to_i
-    JWT.encode(payload, ENV['SECRET_KEY_BASE'])
-  end
 end
