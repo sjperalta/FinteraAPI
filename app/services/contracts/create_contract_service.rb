@@ -154,7 +154,7 @@ module Contracts
     end
 
     def after_submission(contract)
-      NotifyContractSubmissionJob.perform_later(contract)
+      NotifyContractSubmissionJob.perform_now(contract)
     end
 
     def user_params

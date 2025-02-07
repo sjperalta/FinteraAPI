@@ -164,7 +164,7 @@ def send_recovery_code
     99999 : rand(10000..99999).to_s # 5-digit code
   user.update!(
     recovery_code: code,
-    recovery_code_sent_at: Time.current
+    recovery_code_sent_at: Time.now
   )
 
   # Enqueue job to send the code

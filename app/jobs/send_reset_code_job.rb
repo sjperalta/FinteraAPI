@@ -4,6 +4,6 @@ class SendResetCodeJob < ApplicationJob
 
   def perform(user_id, code)
     user = User.find(user_id)
-    Users::Notifications::SendResetCodeService.new(user, code).call
+    Users::SendResetCodeService.new(user, code).call
   end
 end
