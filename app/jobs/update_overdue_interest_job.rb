@@ -23,6 +23,15 @@ class UpdateOverdueInterestJob < ApplicationJob
     )
   end
 
+  def notify_admin(admin, count)
+    Notification.create(
+      user: admin,
+      title: "Se Ejecuto Servicio de Actualización Saldos en Mora.",
+      message: "Se ha generado un cargo por mora a #{count} usuarios.",
+      notification_type: "payment_overdue_admin"
+    )
+  end
+
   def perform
     overdue_payments = Payment.joins(contract: { lot: :project })
                               .where("payments.due_date < ? AND payments.status = ?", Date.current, 'pending')
@@ -41,5 +50,8 @@ class UpdateOverdueInterestJob < ApplicationJob
 
       Rails.logger.info "[UpdateOverdueInterestJob] Payment ID #{payment.id} updated with overdue interest: #{overdue_interest}"
     end
+
+    user_admin = User.find_by(role: 'admin')
+    notify_admin(user_admin, overdue_payments.count)
   end
 end

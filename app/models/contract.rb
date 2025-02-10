@@ -19,7 +19,12 @@ class Contract < ApplicationRecord
 
   validate :acceptable_documents
 
-  scope :active, -> { where(active: true) }
+  scope :active_contracts, -> { where(active: true) }
+  scope :approved_between, ->(start_date, end_date) { where(status: 'approved', approved_at: start_date..end_date) }
+  scope :with_creator_and_lot, -> { includes(:creator, :lot) }
+  scope :pending_approval, -> { where(status: %w[pending submitted]) }
+  scope :by_financing_type, ->(type) { where(financing_type: type) }
+  scope :by_applicant_user, ->(user_id) { where(applicant_user_id: user_id) }
 
   STATUS_APPROVED = "approved"
 

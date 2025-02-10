@@ -10,13 +10,13 @@ update_overdue_interest_job:
   queue: default
   description: "Update interest for overdue payments"
 
-generate_statistics_daily:
-  cron: "0 0 * * *" # Runs every day at midnight
+generate_statistics_hourly:
+  cron: "0 * * * *"  # Runs every hour on the hour
   class: GenerateStatisticsJob
   args:
-    - "yesterday"
+    - "last_hour"  # Adjust argument as necessary; for example, "last_hour" or another relevant value
   queue: default
-  description: "Generate daily statistics"
+  description: "Generate hourly statistics"
 
 generate_revenue_daily:
   cron: "0 1 * * *" # Runs every day at 1:00 AM
