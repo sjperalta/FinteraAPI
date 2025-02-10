@@ -3,14 +3,14 @@ class Api::V1::StatisticsController < ApplicationController
   load_and_authorize_resource
 
   def index
-    # Fetch the latest statistics (current month)
-    current_month_stats = Statistic.find_by(period_date: Date.today.beginning_of_month)
+    # Extract month and year from query parameters; they will be nil if not provided.
+    month = params[:month]
+    year  = params[:year]
 
-    render json: {
-      total_income: current_month_stats&.total_income || 0,
-      total_interest: current_month_stats&.total_interest || 0,
-      new_customers: current_month_stats&.new_customers || 0
-    }
+    # Call the service with the provided parameters (or default values)
+    statistics = Statistics::FetchMonthStatisticsService.call(month: month, year: year)
+
+    render json: statistics
   end
 
   def monthly_revenue
