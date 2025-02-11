@@ -1,3 +1,4 @@
-WickedPdf.config = {
-  exe_path: `which wkhtmltopdf`.strip # Automatically detects path on Mac/Linux
-}
+WickedPdf.configure do |config|
+  config.exe_path = `which wkhtmltopdf`.strip
+  #config.layout = 'pdf.html'
+end
