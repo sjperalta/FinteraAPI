@@ -45,12 +45,13 @@ module Statistics
     end
 
     def notify_admin_async
-      User.where(role: 'admin').find_each do |admin|
-        NotificationJob.perform_later(
-          admin.id,
-          "Actualización de estadísticas",
-          "Se ha ejecutado el servicio de actualización de estadísticas.",
-          "generate_statistics"
+      users = User.where(role: 'admin')
+      users.each do |user|
+        Notification.create(
+          user: user,
+          title: "Actualizacion de estadisticas",
+          message: "Se ha ejecutado el servicio de actualizacion de estadisticas.",
+          notification_type: "generate_statistics"
         )
       end
     end
