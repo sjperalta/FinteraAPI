@@ -57,9 +57,13 @@ class Contract < ApplicationRecord
 
     # Cancel contract
     event :cancel do
-      transitions from: [:pending, :submitted, :approved], to: :cancelled,
-                after: :after_cancellation
+      transitions from: [:rejected], to: :cancelled,
+                after: [:release_lot, :delete_payments, :notify_cancellation]
     end
+  end
+
+  def calculate_financing_amount
+    self.amount - (self.reserve_amount + self.down_payment)
   end
 
   def set_amounts
@@ -145,7 +149,11 @@ class Contract < ApplicationRecord
   end
 
   def can_be_approved?
-    valid_for_submission? && status == 'pending'
+    valid_for_submission? && (status == 'pending' || status == "submitted" )
+  end
+
+  def can_be_rejected?
+    status == 'approved'
   end
 
   def record_approval
@@ -168,20 +176,35 @@ class Contract < ApplicationRecord
     Notification.create!(
       user: applicant_user,
       title: "Contrato Rechazado",
-      message: "Tu contrato para #{lot.name} ha sido rechazado",
+      message: "Tu contrato para #{lot.name} ha sido rechazado, detalle: #{rejection_reason}",
       notification_type: "contract_rejected"
     )
   end
 
-  def after_cancellation
+  def release_lot
     update!(active: false)
     lot.update!(status: 'available')
+  end
 
-    Notification.create!(
-      user: applicant_user,
-      title: "Contrato Cancelado",
-      message: "Tu contrato para #{lot.name} ha sido cancelado",
-      notification_type: "contract_cancelled"
-    )
+  def delete_payments
+    payments.destroy_all
+  end
+
+  def notify_cancellation
+    recipients = [
+      { user: applicant_user, message: "Tu contrato para #{lot.name} ha sido cancelado, lote se liberado." },
+      { user: User.find_by(role: 'admin'), message: "El contrato #{lot.name} ha sido cancelado, lote se liberado." }
+    ]
+
+    recipients.each do |recipient|
+      next unless recipient[:user]  # Skip if the user is nil
+
+      Notification.create!(
+        user: recipient[:user],
+        title: "Contrato Cancelado",
+        message: recipient[:message],
+        notification_type: "contract_cancelled"
+      )
+    end
   end
 end

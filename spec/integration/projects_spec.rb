@@ -20,7 +20,7 @@ RSpec.describe 'Api::V1::ProjectsController', type: :request do
       description: 'Descripción del proyecto',
       address: 'Dirección 1',
       lot_count: 5,
-      price_per_square_foot: 120.0,
+      price_per_square_vara: 120.0,
       interest_rate: 5.5
     )
   end
@@ -57,11 +57,11 @@ RSpec.describe 'Api::V1::ProjectsController', type: :request do
           project_type: { type: :string },
           address: { type: :string },
           lot_count: { type: :integer },
-          price_per_square_foot: { type: :number },
+          price_per_square_vara: { type: :number },
           interest_rate: { type: :number },
           commission_rate: { type: :number }
         },
-        required: ['name', 'description', 'project_type', 'address', 'lot_count', 'price_per_square_foot']
+        required: ['name', 'description', 'project_type', 'address', 'lot_count', 'price_per_square_vara']
       }
 
       response '201', 'Project created successfully' do
@@ -72,7 +72,7 @@ RSpec.describe 'Api::V1::ProjectsController', type: :request do
             project_type: 'Residential',
             address: '123 Main St',
             lot_count: 10,
-            price_per_square_foot: 150.0,
+            price_per_square_vara: 150.0,
             interest_rate: 5.5,
             commission_rate: 2.0
           }
@@ -126,7 +126,7 @@ RSpec.describe 'Api::V1::ProjectsController', type: :request do
           project_type: { type: :string },
           address: { type: :string },
           lot_count: { type: :integer },
-          price_per_square_foot: { type: :number },
+          price_per_square_vara: { type: :number },
           interest_rate: { type: :number },
           commission_rate: { type: :number }
         }

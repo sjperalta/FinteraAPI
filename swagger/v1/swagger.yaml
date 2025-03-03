@@ -967,7 +967,7 @@
                   "lot_count": {
                     "type": "integer"
                   },
-                  "price_per_square_foot": {
+                  "price_per_square_vara": {
                     "type": "number"
                   },
                   "interest_rate": {
@@ -983,7 +983,7 @@
                   "project_type",
                   "address",
                   "lot_count",
-                  "price_per_square_foot"
+                  "price_per_square_vara"
                 ]
               }
             }
@@ -1074,7 +1074,7 @@
                   "lot_count": {
                     "type": "integer"
                   },
-                  "price_per_square_foot": {
+                  "price_per_square_vara": {
                     "type": "number"
                   },
                   "interest_rate": {

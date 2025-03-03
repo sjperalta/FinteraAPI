@@ -32,7 +32,7 @@ project = Project.find_or_create_by!(name: 'Proyecto Wameru') do |project|
   project.project_type = 'Residencial'
   project.address = 'Cieneguita, Wameru'
   project.lot_count = 100
-  project.price_per_square_foot = 2500
+  project.price_per_square_vara = 2500
   project.interest_rate = 5
 end
 
