@@ -231,6 +231,18 @@ RSpec.describe 'Api::V1::ContractsController', type: :request do
   end
 
   path '/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{id}/cancel' do
+    let!(:contract) do
+      Contract.create!(
+        lot: lot,
+        status: 'rejected',
+        applicant_user_id: 1,
+        payment_term: 12,
+        financing_type: 'direct',
+        reserve_amount: 2000.0,
+        down_payment: 5000.0
+      )
+    end
+
     post 'Cancel a contract' do
       tags 'Contracts'
       consumes 'application/json'
