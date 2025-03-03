@@ -6,7 +6,7 @@ class Project < ApplicationRecord
 
   # Validaciones
   validates :name, :description, :address, presence: true
-  validates :price_per_square_foot, :interest_rate, numericality: { greater_than: 0 }
+  validates :price_per_square_vara, :interest_rate, numericality: { greater_than: 0 }
   validates :commission_rate, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }, presence: true
   validates :interest_rate, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }, presence: true
 

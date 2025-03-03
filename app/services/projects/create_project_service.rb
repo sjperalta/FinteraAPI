@@ -24,6 +24,7 @@ module Projects
       (1..@lot_count).each do |i|
         project.lots.create(
           name: "Lote #{i}",
+          address: "Etapa 1",
           length: rand(10..30),
           width: rand(10..30)
         )

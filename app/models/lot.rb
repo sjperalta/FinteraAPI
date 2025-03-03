@@ -16,14 +16,22 @@ class Lot < ApplicationRecord
   has_one :current_contract, -> { where(active: true) }, class_name: 'Contract'
   #delegate :applicant_user, to: :current_contract, allow_nil: true
 
-  private
-
   # Método para calcular el área del lote
-  def area
+  def area_m2
     length * width
   end
 
+  def area_square_feet
+    area_m2 * 10.7639  # 1 m² = 10.7639 ft²
+  end
+
+  def area_square_vara
+    area_m2 * 1.431  # 1 metro cuadrado = 1.431 varas cuadradas
+  end
+
+  private
+
   def calculate_price
-    self.price = area * project.price_per_square_foot
+    self.price = area_square_vara * project.price_per_square_vara
   end
 end

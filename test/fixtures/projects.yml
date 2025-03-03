@@ -5,7 +5,7 @@ one:
   description: MyText
   address: MyString
   lot_count: 1
-  price_per_square_foot: 9.99
+  price_per_square_vara: 9.99
   interest_rate: 9.99
   guid: MyString
 
@@ -14,6 +14,6 @@ two:
   description: MyText
   address: MyString
   lot_count: 1
-  price_per_square_foot: 9.99
+  price_per_square_vara: 9.99
   interest_rate: 9.99
   guid: MyString

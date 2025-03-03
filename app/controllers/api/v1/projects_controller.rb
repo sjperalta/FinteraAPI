@@ -8,7 +8,7 @@ class Api::V1::ProjectsController < ApplicationController
 
   # Define fields allowed for search & sort
   SEARCHABLE_FIELDS = %w[name description address].freeze
-  SORTABLE_FIELDS   = %w[name created_at project_type price_per_square_foot].freeze
+  SORTABLE_FIELDS   = %w[name created_at project_type price_per_square_vara].freeze
 
   # GET /api/v1/projects
   def index
@@ -30,13 +30,13 @@ class Api::V1::ProjectsController < ApplicationController
 
     # Modificar la respuesta para incluir campos calculados
     projects_with_calculated_fields = @projects.map do |project|
-      total_area = project.lots.sum { |lot| lot.length * lot.width }
+      total_area = project.lots.sum { |lot| lot.area_m2 }
       {
         id: project.id,
         name: project.name,
         description: project.description,
         project_type: project.project_type,
-        price_per_square_foot: project.price_per_square_foot,
+        price_per_square_vara: project.price_per_square_vara,
         address: project.address,
         total_lots: project.lot_count,
         available: project.lots.where(status: 'available').count,
@@ -94,6 +94,6 @@ class Api::V1::ProjectsController < ApplicationController
   end
 
   def project_params
-    params.require(:project).permit(:name, :description, :project_type, :address, :lot_count, :price_per_square_foot, :interest_rate, :commission_rate)
+    params.require(:project).permit(:name, :description, :project_type, :address, :lot_count, :price_per_square_vara, :interest_rate, :commission_rate)
   end
 end

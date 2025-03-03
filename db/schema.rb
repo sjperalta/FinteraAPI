@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_02_04_190051) do
+ActiveRecord::Schema[8.0].define(version: 2025_02_19_064114) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -58,6 +58,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_04_190051) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "active", default: false, null: false
+    t.text "note"
+    t.text "rejection_reason"
     t.index ["active"], name: "index_contracts_on_active"
     t.index ["applicant_user_id"], name: "index_contracts_on_applicant_user_id"
     t.index ["creator_id"], name: "index_contracts_on_creator_id"
@@ -73,6 +75,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_04_190051) do
     t.decimal "price", precision: 15, scale: 2, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "address"
     t.index ["name"], name: "index_lots_on_name"
     t.index ["project_id"], name: "index_lots_on_project_id"
     t.index ["status"], name: "index_lots_on_status"
@@ -114,7 +117,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_04_190051) do
     t.string "project_type", default: "residential"
     t.string "address", null: false
     t.integer "lot_count", null: false
-    t.decimal "price_per_square_foot", precision: 10, scale: 2, null: false
+    t.decimal "price_per_square_vara", precision: 10, scale: 2, null: false
     t.decimal "interest_rate", precision: 5, scale: 2, null: false
     t.string "guid", null: false
     t.datetime "created_at", null: false
@@ -179,6 +182,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_04_190051) do
     t.datetime "discarded_at"
     t.string "recovery_code"
     t.datetime "recovery_code_sent_at"
+    t.string "address"
     t.index ["discarded_at"], name: "index_users_on_discarded_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["full_name"], name: "index_users_on_full_name"

@@ -23,3 +23,9 @@ generate_revenue_daily:
   class: GenerateRevenueJob
   queue: default
   description: "Generate daily revenue report"
+
+release_unpaid_reservation:
+  cron: "0 2 * * *"   # Runs every day at 2:00 AM
+  class: ReleaseUnpaidReservationJob
+  queue: default
+  description: "Release unpaid reservation"

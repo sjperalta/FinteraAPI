@@ -6,7 +6,7 @@ class CreateProjects < ActiveRecord::Migration[7.0]
       t.string :project_type, default: "residential"        # Tipo de proyecto
       t.string :address, null: false                # Dirección del proyecto
       t.integer :lot_count, null: false             # Cantidad de lotes en el proyecto
-      t.decimal :price_per_square_foot, null: false, precision: 10, scale: 2  # Precio por vara cuadrada
+      t.decimal :price_per_square_vara, null: false, precision: 10, scale: 2  # Precio por vara cuadrada
       t.decimal :interest_rate, null: false, precision: 5, scale: 2           # Tasa de interés
       t.string :guid, null: false, unique: true
 

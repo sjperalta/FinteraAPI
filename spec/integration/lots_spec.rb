@@ -21,7 +21,7 @@ RSpec.describe 'Api::V1::LotsController', type: :request do
       description: 'Descripción del proyecto',
       address: 'Dirección 1',
       lot_count: 5,
-      price_per_square_foot: 120.0,
+      price_per_square_vara: 120.0,
       interest_rate: 5.5
     )
   end

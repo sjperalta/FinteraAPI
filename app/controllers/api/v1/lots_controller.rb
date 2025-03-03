@@ -45,7 +45,7 @@ class Api::V1::LotsController < ApplicationController
         length: lot.length,
         width: lot.width,
         dimensions: "#{lot.length} x #{lot.width}",
-        area: lot.length * lot.width,
+        area: lot.area_m2,
         status: lot.status.titleize,  # Capitalize for better readability
         balance: contract&.balance || lot.price
       }
