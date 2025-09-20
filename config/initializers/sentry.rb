@@ -1,9 +1,11 @@
 Sentry.init do |config|
   config.dsn = ENV["SENTRY_DSN"]
   config.environment = ENV["SENTRY_ENV"] || Rails.env
-  config.breadcrumbs_logger = [:active_support_logger, :http_logger]
+  config.breadcrumbs_logger = [:active_support_logger, :http_logger, :redis_logger]
   # Adjust traces_sample_rate as needed for performance monitoring
-  config.traces_sample_rate = (ENV["SENTRY_TRACES_SAMPLE_RATE"] || 0.0).to_f
+  config.traces_sample_rate = (ENV["SENTRY_TRACES_SAMPLE_RATE"] || 0.3).to_f
+  config.max_breadcrumbs = 5
+  config.send_default_pii = true
   # Integrations
   config.instrumenter = :active_support
 end
