@@ -6,11 +6,11 @@ class ApplicationController < ActionController::API
 
   before_action :authenticate_user!
   before_action :set_paper_trail_whodunnit
-  # Optionally, set the controller_info for additional metadata
   before_action :set_paper_trail_custom_attributes
+  before_action :set_sentry_user
 
   rescue_from CanCan::AccessDenied do |exception|
-    render json: { error: 'No tienes acceso a esta sección' }, status: :forbidden
+    render json: { error: "No tienes acceso a esta sección" }, status: :forbidden
   end
 
   private
@@ -30,5 +30,21 @@ class ApplicationController < ActionController::API
         user_agent: request.user_agent
       }
     end
+  end
+
+  # Set Sentry user context so errors include the logged in user
+  def set_sentry_user
+    return unless defined?(Sentry) && current_user
+
+    Sentry.set_user(
+      id: current_user.id,
+      email: current_user.email,
+      username: current_user.full_name
+    )
+
+    Sentry.set_extras(
+      ip: request.remote_ip,
+      params: request.filtered_parameters.except("controller", "action")
+    )
   end
 end

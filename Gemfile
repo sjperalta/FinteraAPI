@@ -58,6 +58,11 @@ gem 'csv'
 gem 'wicked_pdf'
 gem 'wkhtmltopdf-binary'
 
+# Sentry for error tracking
+gem "sentry-ruby"
+gem "sentry-rails"
+gem "sentry-sidekiq"
+
 group :development, :test do
   # Testing Framework
   gem 'rspec-rails'
