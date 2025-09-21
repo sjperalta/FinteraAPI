@@ -125,8 +125,10 @@ module Contracts
 
     def submit_contract(contract)
       return unless contract.may_submit?
-
       contract.submit!
+
+      # Notify reservation approval (new or existing user)
+      SendReservationApprovalNotificationJob.perform_later(contract)
     end
 
     def notify_new_user_creation(user)

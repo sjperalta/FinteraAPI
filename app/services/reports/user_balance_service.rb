@@ -3,10 +3,11 @@ module Reports
     def initialize(user_id)
       @user = User.find_by(id: user_id)
       @admin_user = User.find_by(role: "admin")
+      @locale = I18n.default_locale
     end
 
     def call
-      return { success: false, error: "User not found" } unless @user
+      return { success: false, error: I18n.t("reports.user_balance.errors.user_not_found", locale: @locale) } unless @user
       notify_user
 
       {
@@ -16,7 +17,7 @@ module Reports
         pending_payments: fetch_pending_payments
       }
     rescue StandardError => e
-      Rails.logger.error "Error fetching user balance: #{e.message}"
+      Rails.logger.error I18n.t("reports.user_balance.errors.user_not_found", message: e.message, locale: @locale)
       { success: false, error: e.message }
     end
 
@@ -33,11 +34,10 @@ module Reports
 
     def notify_user
       return nil if @admin_user.blank?
-
       Notification.create(
         user: @admin_user,
-        title: "Se ha generado reporte de balance",
-        message: "Se ha generado reporte de balance para #{@user.full_name}",
+        title: I18n.t("reports.user_balance.notifications.title", locale: @locale),
+        message: I18n.t("reports.user_balance.notifications.message", locale: @locale, user: @user.full_name),
         notification_type: "create_user_balance"
       )
     end

@@ -1,3 +1,2 @@
-<p>Hi <%= @user.full_name %>,</p>
-<p>Tu código para reestablecer tu contraseña es: <strong><%= @code %></strong></p>
-<p>Este código expira en 15 minutos.</p>
+<p><%= I18n.t("mailers.user_mailer.reset_code_email.title") %> <%= @user.full_name %>,</p>
+<p><%= I18n.t("mailers.user_mailer.reset_code_email.body", code: @code, minutes: 15) %></p>

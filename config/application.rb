@@ -15,6 +15,9 @@ module FinteraAPI
     config.middleware.use ActionDispatch::Session::CookieStore, key: '_fintera_session'
     config.active_job.queue_adapter = :sidekiq
 
+    # Opt-in to new to_time timezone preservation behavior (Rails 8.1 compatibility)
+    config.active_support.to_time_preserves_timezone = :zone
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files
