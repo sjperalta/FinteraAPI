@@ -4,14 +4,11 @@ class NotifyAdminPaymentReceiptJob < ApplicationJob
   queue_as :default
 
   def perform(payment)
-    @payment = payment
-    # Llamamos al servicio que notifica al administrador
-    send_admin_notification_email
-  end
+    payment = Payment.find_by(id: payment)
+    Rails.logger.info "[NotifyAdminPaymentReceiptJob] Notifying admins for payment_id=#{payment&.id}"
+    return unless payment
 
-  private
-
-  def send_admin_notification_email
-    Notifications::AdminPaymentReceiptNotificationService.new(@payment).call
+    Notifications::AdminPaymentReceiptNotificationService.new(payment).call
+    Rails.logger.info "[NotifyAdminPaymentReceiptJob] Notified admins for payment_id=#{payment.id}"
   end
 end

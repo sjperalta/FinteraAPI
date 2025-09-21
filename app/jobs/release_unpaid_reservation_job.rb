@@ -5,11 +5,8 @@ class ReleaseUnpaidReservationJob < ApplicationJob
   retry_on StandardError, wait: 5.minutes, attempts: 2
 
   def perform
-    Rails.logger.info "Starting ReleaseUnpaidReservationJob"
+    Rails.logger.info "[ReleaseUnpaidReservationJob] Starting"
     Contracts::ReleaseUnpaidReservationService.new.call
-    Rails.logger.info "Completed ReleaseUnpaidReservationJob"
-  rescue StandardError => e
-    Rails.logger.error "ReleaseUnpaidReservationJob failed: #{e.message}"
-    raise e
+    Rails.logger.info "[ReleaseUnpaidReservationJob] Completed"
   end
 end

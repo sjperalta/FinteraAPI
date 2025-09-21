@@ -4,6 +4,11 @@ class NotifyContractSubmissionJob < ApplicationJob
   queue_as :default
 
   def perform(contract)
+    contract = Contract.find_by(id: contract)
+    Rails.logger.info "[NotifyContractSubmissionJob] Notifying contract submission contract_id=#{contract&.id}"
+    return unless contract
+
     Notifications::ContractSubmissionEmailService.new(contract).call
+    Rails.logger.info "[NotifyContractSubmissionJob] Notification sent for contract_id=#{contract.id}"
   end
 end

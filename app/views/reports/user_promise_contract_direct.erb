@@ -112,8 +112,8 @@
           <strong>SUR:</strong> Mide trece metros (<%= @lot.width %>m) – colinda con __________________,
           <strong>ESTE:</strong> Mide veintidós metros (<%= @lot.length %>m) – colinda con __________________,
           <strong>OESTE:</strong> Mide veintidós metros (<%= @lot.length %>m) – colinda con __________________, 
-          con extensión superficial de <%= number_to_words(@lot.area_m2) %> METROS CUADRADOS (<%= @lot.area_m2 %> M2) O  <%= number_to_words(@lot.area_square_vara) %> VARAS CUADRADAS
-          (<%= @lot.area_square_vara %> V2), cuya matrícula es __________________ inscrita debidamente 
+          con extensión superficial de <%= number_to_words(@lot.area_m2) %> METROS CUADRADOS (<%= @lot.area_m2 %> M2) O  <%= number_to_words(@lot.area_in_project_unit) %> <%= (@lot.measurement_unit || @project.measurement_unit).upcase %>
+          (<%= @lot.area_in_project_unit %> <%= (@lot.measurement_unit || @project.measurement_unit).upcase %>), cuya matrícula es __________________ inscrita debidamente 
           en el Instituto de la Propiedad. Dicha promesa de venta está sujeta a las
           cláusulas y condiciones siguientes: <strong>PRIMERA DERECHOS,  PRECIO, RESERVACIÓN Y PAGO DE PRIMA: </strong>
           El señor <strong>RUBEN DE JESUS MENJIVAR AYALA</strong>, manifiesta que su representada es dueña y legitima poseedora del lote de terreno antes descrito el 

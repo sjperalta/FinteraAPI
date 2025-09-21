@@ -3,16 +3,28 @@ class CheckPaymentsOverdueJob < ApplicationJob
   queue_as :default
 
   def perform
-    # Fetch overdue payments that are still pending
+    Rails.logger.info "[CheckPaymentsOverdueJob] Fetching overdue payments"
     overdue_payments = Payment.joins(:contract)
-                              .where("payments.due_date < ? AND payments.status = ?", Date.today, 'pending')
+                              .where("payments.due_date < ? AND payments.status = ?", Date.today, "pending")
 
-    # Group overdue payments by applicant_user
     overdue_payments.group_by { |payment| payment.contract.applicant_user }.each do |user, payments|
-      next unless user.present? # Skip if the user doesn't exist (just in case)
+      next unless valid_user?(user)
 
-      # Send email notification to the user about overdue payments
       Notifications::OverduePaymentEmailService.new(user, payments).call
+      Rails.logger.info "[CheckPaymentsOverdueJob] Notified user_id=#{safe_user_id(user)} for #{payments.size} overdue payments"
     end
+  end
+
+  private
+
+  def valid_user?(user)
+    return false if user.nil?
+    return user.present? if user.respond_to?(:present?)
+
+    true
+  end
+
+  def safe_user_id(user)
+    user.respond_to?(:id) ? user.id : "unknown"
   end
 end
