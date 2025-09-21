@@ -3,23 +3,21 @@
 <!DOCTYPE html>
 <html>
   <body>
-    <h1>Pagos Vencidos</h1>
-    <p>Hola <%= @user.full_name %>,</p>
-    <p>Tienes los siguientes pagos vencidos:</p>
+    <h1><%= I18n.t("mailers.user_mailer.overdue_payment_email.title") %></h1>
+    <p><%= I18n.t("mailers.user_mailer.overdue_payment_email.greeting", name: @user.full_name) %></p>
+    <p><%= I18n.t("mailers.user_mailer.overdue_payment_email.intro") %></p>
 
     <ul>
       <% @payments.each do |payment| %>
         <li>
-          <strong>Lote:</strong> <%= payment.contract.lot.name %><br>
-          <strong>Monto:</strong> $<%= payment.amount %><br>
-          <strong>Fecha de vencimiento:</strong> <%= payment.due_date.strftime('%d-%m-%Y') %><br>
+          <%= I18n.t("mailers.user_mailer.overdue_payment_email.list_item", lot: payment.contract.lot.name, amount: number_to_currency(payment.amount), date: payment.due_date.strftime('%d-%m-%Y')) %>
         </li>
       <% end %>
     </ul>
 
-    <p>Por favor, ponte al día con tus pagos para evitar cargos adicionales.</p>
+    <p><%= I18n.t("mailers.user_mailer.overdue_payment_email.please_pay") %></p>
 
-    <p>Gracias,</p>
-    <p>El equipo de Fintera</p>
+    <p><%= I18n.t("mailers.user_mailer.reservation_approved.thanks") %>,</p>
+    <p><%= I18n.t("mailers.user_mailer.reservation_approved.thanks") %></p>
   </body>
 </html>

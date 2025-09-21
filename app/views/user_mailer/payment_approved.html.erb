@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html>
   <body>
-    <h1>Tu pago ha sido aprobado</h1>
-    <p>Hola <%= @user.full_name %>,</p>
-    <p>Nos complace informarte que tu pago ha sido aprobado. Aquí tienes los detalles de la transacción:</p>
+    <h1><%= I18n.t("mailers.user_mailer.payment_approved.title") %></h1>
+    <p><%= I18n.t("mailers.user_mailer.payment_approved.greeting", name: @user.full_name) %></p>
+    <p><%= I18n.t("mailers.user_mailer.payment_approved.details_intro") %></p>
     
     <ul>
-      <li><strong>Proyecto:</strong> <%= @contract.lot.project.name %></li>
-      <li><strong>Lote:</strong> <%= @contract.lot.name %></li>
-      <li><strong>Monto del pago:</strong> $<%= @payment.amount %></li>
-      <li><strong>Fecha de vencimiento:</strong> <%= @payment.due_date.strftime('%d-%m-%Y') %></li>
-      <li><strong>Fecha de aprobación:</strong> <%= @payment.approved_at.strftime('%d-%m-%Y') %></li>
+      <li><strong><%= I18n.t("mailers.user_mailer.payment_approved.project", project: @contract.lot.project.name) %></strong></li>
+      <li><strong><%= I18n.t("mailers.user_mailer.payment_approved.lot", lot: @contract.lot.name) %></strong></li>
+      <li><strong><%= I18n.t("mailers.user_mailer.payment_approved.payment_amount", amount: number_to_currency(@payment.amount)) %></strong></li>
+      <li><strong><%= I18n.t("mailers.user_mailer.payment_approved.due_date", date: @payment.due_date.strftime('%d-%m-%Y')) %></strong></li>
+      <li><strong><%= I18n.t("mailers.user_mailer.payment_approved.approved_at", date: @payment.approved_at.strftime('%d-%m-%Y')) %></strong></li>
     </ul>
 
-    <p>Gracias por tu pago y por mantenerte al día con tus obligaciones.</p>
+    <p><%= I18n.t("mailers.user_mailer.reservation_approved.thanks") %></p>
 
-    <p>Saludos,</p>
-    <p>El equipo de YourApp</p>
+    <p><%= I18n.t("mailers.user_mailer.reservation_approved.thanks") %>,</p>
+    <p><%= I18n.t("mailers.user_mailer.reservation_approved.thanks") %></p>
   </body>
 </html>

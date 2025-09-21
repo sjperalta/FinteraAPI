@@ -13,7 +13,8 @@ RSpec.describe "Sentry initializer" do
 
   it "configures Sentry with DSN from ENV" do
     expect(defined?(Sentry)).to be_truthy
-    expect(Sentry.configuration.dsn).to eq(dsn)
+    # Sentry.configuration.dsn returns a Sentry::DSN object; compare its string form
+    expect(Sentry.configuration.dsn.to_s).to eq(dsn)
     expect(Sentry.configuration.environment).to eq(Rails.env)
   end
 end
