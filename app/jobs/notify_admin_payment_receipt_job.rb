@@ -18,10 +18,4 @@ class NotifyAdminPaymentReceiptJob < ApplicationJob
       raise e
     end
   end
-
-  private
-
-  def send_admin_notification_email
-    # kept for backward compatibility
-  end
 end

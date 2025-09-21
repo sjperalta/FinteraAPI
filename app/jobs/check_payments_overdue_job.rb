@@ -8,20 +8,31 @@ class CheckPaymentsOverdueJob < ApplicationJob
                               .where("payments.due_date < ? AND payments.status = ?", Date.today, 'pending')
 
     overdue_payments.group_by { |payment| payment.contract.applicant_user }.each do |user, payments|
-      # Skip when there's no user (spec passes nil applicant_user)
-      next unless user && user.respond_to?(:present?) ? user.present? : !!user
+      next unless valid_user?(user)
 
       begin
         service = Notifications::OverduePaymentEmailService.new(user, payments)
         service.call
-        # Avoid calling `user.id` on test doubles that may not implement it; log presence only
-        Rails.logger.info "[CheckPaymentsOverdueJob] Notified user=#{user.inspect} for #{payments.size} overdue payments"
+        Rails.logger.info "[CheckPaymentsOverdueJob] Notified user_id=#{safe_user_id(user)} for #{payments.size} overdue payments"
       rescue StandardError => e
-        Rails.logger.error "[CheckPaymentsOverdueJob] Error notifying user=#{user.inspect}: #{e.message}"
+        Rails.logger.error "[CheckPaymentsOverdueJob] Error notifying user_id=#{safe_user_id(user)}: #{e.message}"
         Rails.logger.error e.backtrace.join("\n") if e.backtrace
         Sentry.capture_exception(e) if defined?(Sentry)
         next
       end
     end
+  end
+
+  private
+
+  def valid_user?(user)
+    return false if user.nil?
+    return user.present? if user.respond_to?(:present?)
+
+    true
+  end
+
+  def safe_user_id(user)
+    user.respond_to?(:id) ? user.id : 'unknown'
   end
 end
