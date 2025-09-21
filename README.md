@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-# FinteraAPI
-FinteraAPI 
-=======
 # FinteraAPI
 
 API backend for Fintera built with Ruby on Rails.
