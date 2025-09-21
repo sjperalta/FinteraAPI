@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_21_000000) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_21_171000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -77,6 +77,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_21_000000) do
     t.datetime "updated_at", null: false
     t.string "address"
     t.string "measurement_unit"
+    t.decimal "override_price", precision: 15, scale: 2
     t.index ["name"], name: "index_lots_on_name"
     t.index ["project_id"], name: "index_lots_on_project_id"
     t.index ["status"], name: "index_lots_on_status"

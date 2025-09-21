@@ -122,6 +122,17 @@ class Api::V1::LotsController < ApplicationController
   end
 
   def lot_params
-    params.require(:lot).permit(:name, :length, :width, :price)
+    return {} unless params[:lot].is_a?(ActionController::Parameters)
+
+    # We now allow partial updates and additional attributes.
+    params.require(:lot).permit(
+      :name,
+      :length,
+      :width,
+      :price,
+      :override_price,
+      :status,
+      :measurement_unit
+    )
   end
 end
