@@ -3,6 +3,9 @@
 # Este archivo es generado automáticamente por el comando `rails generate rspec:install`
 require 'spec_helper'
 ENV['RAILS_ENV'] ||= 'test'
+# Ensure tests don't attempt to send events to Sentry unless explicitly enabled
+ENV['SENTRY_DSN'] ||= ''
+ENV['SENTRY_ENV'] ||= 'test'
 require File.expand_path('../config/environment', __dir__)
 
 # Si la base de datos necesita migrarse, abortar si el entorno de producción está activo
@@ -22,7 +25,8 @@ rescue ActiveRecord::PendingMigrationError => e
 end
 
 RSpec.configure do |config|
-  config.fixture_path = "#{::Rails.root}/spec/fixtures"
+  # Use pluralized fixture_paths to avoid Rails 7.1 deprecation
+  config.fixture_paths = ["#{::Rails.root}/spec/fixtures"]
   config.use_transactional_fixtures = true
   config.infer_spec_type_from_file_location!
   config.filter_rails_from_backtrace!

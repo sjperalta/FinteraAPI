@@ -4,11 +4,12 @@ module Reports
 
     def initialize(contract_id)
       @contract_id = contract_id
+      @locale = I18n.default_locale
     end
 
     def call
       contract = Contract.includes(:lot, lot: :project).find_by(id: @contract_id, status: 'rejected')
-      return { success: false, error: "Contract not found or not rescinded" } unless contract
+      return { success: false, error: I18n.t("reports.user_rescission.errors.not_found", locale: @locale) } unless contract
 
       applicant = contract.applicant_user
       creator = contract.creator
@@ -27,7 +28,7 @@ module Reports
         reservation_amount: contract.reserve_amount
       }
     rescue StandardError => e
-      Rails.logger.error "Error in UserRescissionContractService: #{e.message}"
+      Rails.logger.error I18n.t("reports.user_rescission.errors.not_found", message: e.message, locale: @locale)
       { success: false, error: e.message }
     end
   end

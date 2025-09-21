@@ -1,0 +1,14 @@
+<h1><%= I18n.t('mailers.user_mailer.reservation_approved.title') %></h1>
+
+<p><%= I18n.t('mailers.user_mailer.reservation_approved.greeting', name: @user.full_name) %></p>
+
+<p><%= I18n.t('mailers.user_mailer.reservation_approved.approved_line', id: @contract.id) %></p>
+
+<p><%= I18n.t('mailers.user_mailer.reservation_approved.details') %>:</p>
+<ul>
+  <li><%= I18n.t('mailers.user_mailer.reservation_approved.project', project: @contract.project&.name || 'N/A') %></li>
+  <li><%= I18n.t('mailers.user_mailer.reservation_approved.lot', lot: @contract.lot&.name || 'N/A') %></li>
+  <li><%= I18n.t('mailers.user_mailer.reservation_approved.amount', amount: number_to_currency(@contract.reserve_amount || 0)) %></li>
+</ul>
+
+<p><%= t('mailers.user_mailer.reservation_approved.thanks', default: 'Gracias por confiar en Fintera.') %></p>
