@@ -19,16 +19,7 @@ class Lot < ApplicationRecord
   end
 
   def area_in_project_unit
-    case measurement_unit || project&.measurement_unit
-    when 'm2'
-      area_m2
-    when 'ft2'
-      area_m2 * 10.7639
-    when 'vara2'
-      area_m2 * 1.431
-    else
-      area_m2
-    end
+    MeasurementUnits.convert_area(area_m2, measurement_unit || project&.measurement_unit)
   end
 
   private

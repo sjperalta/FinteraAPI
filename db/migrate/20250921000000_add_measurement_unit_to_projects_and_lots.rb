@@ -1,4 +1,4 @@
-class AddMeasurementUnitToProjectsAndLots < ActiveRecord::Migration[7.0]
+class AddMeasurementUnitToProjectsAndLots < ActiveRecord::Migration[8.0]
   def change
     add_column :projects, :measurement_unit, :string, null: false, default: 'm2'
     add_column :lots, :measurement_unit, :string

@@ -1,6 +1,7 @@
 # app/models/project.rb
 
 class Project < ApplicationRecord
+  include MeasurementUnits
   has_paper_trail
   has_many :lots, dependent: :destroy
 
@@ -16,18 +17,8 @@ class Project < ApplicationRecord
 
   def price_for(area_in_m2)
     # Normalize area to the unit configured
-    case measurement_unit
-    when 'm2'
-      area_in_m2 * price_per_square_unit
-    when 'ft2'
-      # Convert m2 to ft2 then multiply
-      (area_in_m2 * 10.7639) * price_per_square_unit
-    when 'vara2'
-      # Convert m2 to vara2 (1 m2 = 1.431 vara2)
-      (area_in_m2 * 1.431) * price_per_square_unit
-    else
-      area_in_m2 * price_per_square_unit
-    end
+    normalized_area = MeasurementUnits.convert_area(area_in_m2, measurement_unit)
+    normalized_area * price_per_square_unit
   end
 
   private
