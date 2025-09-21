@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_02_19_064114) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_21_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -76,6 +76,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_19_064114) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "address"
+    t.string "measurement_unit"
     t.index ["name"], name: "index_lots_on_name"
     t.index ["project_id"], name: "index_lots_on_project_id"
     t.index ["status"], name: "index_lots_on_status"
@@ -117,12 +118,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_19_064114) do
     t.string "project_type", default: "residential"
     t.string "address", null: false
     t.integer "lot_count", null: false
-    t.decimal "price_per_square_vara", precision: 10, scale: 2, null: false
+    t.decimal "price_per_square_unit", precision: 10, scale: 2, null: false
     t.decimal "interest_rate", precision: 5, scale: 2, null: false
     t.string "guid", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.decimal "commission_rate", precision: 5, scale: 2, default: "0.0", null: false
+    t.string "measurement_unit", default: "m2", null: false
     t.index ["name"], name: "index_projects_on_name"
   end
 
