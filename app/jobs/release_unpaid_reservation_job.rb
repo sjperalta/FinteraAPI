@@ -6,14 +6,7 @@ class ReleaseUnpaidReservationJob < ApplicationJob
 
   def perform
     Rails.logger.info "[ReleaseUnpaidReservationJob] Starting"
-    begin
-      Contracts::ReleaseUnpaidReservationService.new.call
-      Rails.logger.info "[ReleaseUnpaidReservationJob] Completed"
-    rescue StandardError => e
-      Rails.logger.error "[ReleaseUnpaidReservationJob] Failed: #{e.message}"
-      Rails.logger.error e.backtrace.join("\n") if e.backtrace
-      Sentry.capture_exception(e) if defined?(Sentry)
-      raise e
-    end
+    Contracts::ReleaseUnpaidReservationService.new.call
+    Rails.logger.info "[ReleaseUnpaidReservationJob] Completed"
   end
 end

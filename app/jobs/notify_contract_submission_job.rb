@@ -8,14 +8,7 @@ class NotifyContractSubmissionJob < ApplicationJob
     Rails.logger.info "[NotifyContractSubmissionJob] Notifying contract submission contract_id=#{contract&.id}"
     return unless contract
 
-    begin
-      Notifications::ContractSubmissionEmailService.new(contract).call
-      Rails.logger.info "[NotifyContractSubmissionJob] Notification sent for contract_id=#{contract.id}"
-    rescue StandardError => e
-      Rails.logger.error "[NotifyContractSubmissionJob] Error notifying contract submission contract_id=#{contract.id}: #{e.message}"
-      Rails.logger.error e.backtrace.join("\n") if e.backtrace
-      Sentry.capture_exception(e) if defined?(Sentry)
-      raise e
-    end
+    Notifications::ContractSubmissionEmailService.new(contract).call
+    Rails.logger.info "[NotifyContractSubmissionJob] Notification sent for contract_id=#{contract.id}"
   end
 end

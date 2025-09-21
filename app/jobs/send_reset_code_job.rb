@@ -10,14 +10,7 @@ class SendResetCodeJob < ApplicationJob
       return
     end
 
-    begin
-      Users::SendResetCodeService.new(user, code).call
-      Rails.logger.info "[SendResetCodeJob] Reset code sent for user_id=#{user_id}"
-    rescue StandardError => e
-      Rails.logger.error "[SendResetCodeJob] Error sending reset code for user_id=#{user_id}: #{e.message}"
-      Rails.logger.error e.backtrace.join("\n") if e.backtrace
-      Sentry.capture_exception(e) if defined?(Sentry)
-      raise e
-    end
+    Users::SendResetCodeService.new(user, code).call
+    Rails.logger.info "[SendResetCodeJob] Reset code sent for user_id=#{user_id}"
   end
 end

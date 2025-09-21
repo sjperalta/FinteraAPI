@@ -8,14 +8,7 @@ class NotifyAdminPaymentReceiptJob < ApplicationJob
     Rails.logger.info "[NotifyAdminPaymentReceiptJob] Notifying admins for payment_id=#{payment&.id}"
     return unless payment
 
-    begin
-      Notifications::AdminPaymentReceiptNotificationService.new(payment).call
-      Rails.logger.info "[NotifyAdminPaymentReceiptJob] Notified admins for payment_id=#{payment.id}"
-    rescue StandardError => e
-      Rails.logger.error "[NotifyAdminPaymentReceiptJob] Error notifying admins for payment_id=#{payment.id}: #{e.message}"
-      Rails.logger.error e.backtrace.join("\n") if e.backtrace
-      Sentry.capture_exception(e) if defined?(Sentry)
-      raise e
-    end
+    Notifications::AdminPaymentReceiptNotificationService.new(payment).call
+    Rails.logger.info "[NotifyAdminPaymentReceiptJob] Notified admins for payment_id=#{payment.id}"
   end
 end

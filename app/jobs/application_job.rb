@@ -1,4 +1,9 @@
 class ApplicationJob < ActiveJob::Base
+  # New class-level configuration to control whether unhandled exceptions
+  # in a job should be swallowed (useful for fire-and-forget notification jobs).
+  class_attribute :swallow_exceptions
+  self.swallow_exceptions = false
+
   # Automatically retry jobs that encountered a deadlock
   # retry_on ActiveRecord::Deadlocked
 
@@ -10,8 +15,21 @@ class ApplicationJob < ActiveJob::Base
 
   around_perform do |job, block|
     Rails.logger.info "[#{job.class}] Starting job, args=#{job.arguments.inspect}"
-    # Let individual jobs decide how to handle exceptions to avoid duplicate logging/Sentry reports.
-    block.call
-    Rails.logger.info "[#{job.class}] Finished successfully"
+    begin
+      block.call
+      Rails.logger.info "[#{job.class}] Finished successfully"
+    rescue StandardError => e
+      Rails.logger.error "[#{job.class}] Unhandled error: #{e.class} #{e.message}"
+      Rails.logger.error e.backtrace.join("\n") if e.backtrace
+      Sentry.capture_exception(e) if defined?(Sentry)
+
+      if job.class.swallow_exceptions
+        Rails.logger.warn "[#{job.class}] Swallowing exception as configured"
+        # swallow and finish
+      else
+        # propagate to allow Sidekiq / ActiveJob to retry according to config
+        raise e
+      end
+    end
   end
 end
