@@ -5,15 +5,13 @@ class UpdateOverdueInterestJob < ApplicationJob
   # an annual rate is divided by 365 days, then multiplies
   # by the number of overdue days.
   def calculate_overdue_interest(payment, project_interest_rate)
-    daily_interest_rate = project_interest_rate / 100.0 / 365
     overdue_days = (Date.current - payment.due_date).to_i
-
     # we start to count as overdue at the next day
-      return 0 if overdue_days <= 1
+    return 0 if overdue_days <= 1
 
-      project_interest_rate = project_interest_rate.to_f
-      daily_interest_rate = project_interest_rate / 100.0 / 365.0
-      (payment.amount.to_f * daily_interest_rate * overdue_days).round(2)
+    rate = project_interest_rate.to_f / 100.0
+    daily_interest_rate = rate / 365.0
+    (payment.amount.to_f * daily_interest_rate * overdue_days).round(2)
   end
 
   def send_notification(payment, overdue_interest)

@@ -10,14 +10,8 @@ class ApplicationJob < ActiveJob::Base
 
   around_perform do |job, block|
     Rails.logger.info "[#{job.class}] Starting job, args=#{job.arguments.inspect}"
-    begin
-      block.call
-      Rails.logger.info "[#{job.class}] Finished successfully"
-    rescue StandardError => e
-      Rails.logger.error "[#{job.class}] Failed: #{e.class} #{e.message}"
-      Rails.logger.error e.backtrace.join("\n") if e.backtrace
-      Sentry.capture_exception(e) if defined?(Sentry)
-      raise e
-    end
+    # Let individual jobs decide how to handle exceptions to avoid duplicate logging/Sentry reports.
+    block.call
+    Rails.logger.info "[#{job.class}] Finished successfully"
   end
 end

@@ -22,11 +22,21 @@ class SendReservationApprovalNotificationJob < ApplicationJob
   private
 
   def normalize_contract(input)
-    # Accept a Contract instance or a contract-like object (responds to :id)
-    return input if input.is_a?(Contract) || input.respond_to?(:id)
+    # Prefer an actual Contract instance
+    return input if input.is_a?(Contract)
 
-    # Otherwise try to find by id (returns nil when not found)
-    Contract.find_by(id: input)
+    # If the input is nil, return nil
+    return nil if input.nil?
+
+    # If input looks like an id (Integer or String numeric), try to find by id
+    if input.is_a?(Integer) || (input.is_a?(String) && input =~ /^\d+$/)
+      return Contract.find_by(id: input.to_i)
+    end
+
+    # For other objects, accept objects that explicitly look like a contract (responds to :id and not a primitive)
+    return input if input.respond_to?(:id)
+
+    nil
   end
 
   def safe_contract_id(contract)
