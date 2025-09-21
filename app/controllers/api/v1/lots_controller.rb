@@ -41,6 +41,7 @@ class Api::V1::LotsController < ApplicationController
         project_name: lot.project&.name || "N/A",
         name: lot.name,
         reserved_by: reservation_text,
+        measurement_unit: lot.measurement_unit || lot.project.measurement_unit,
         price: lot.price,
         length: lot.length,
         width: lot.width,

@@ -5,7 +5,7 @@ RSpec.describe Contract, type: :model do
 	let(:project) do
 		Project.new(
 			name: 'TestProject', description: 'Desc', address: 'Addr',
-			lot_count: 1, price_per_square_vara: 100, interest_rate: 5, guid: 'guid'
+			lot_count: 1, price_per_square_unit: 100, measurement_unit: 'm2', interest_rate: 5, guid: 'guid'
 		)
 	end
 

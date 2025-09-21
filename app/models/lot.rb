@@ -3,35 +3,41 @@
 class Lot < ApplicationRecord
   has_paper_trail
 
-  belongs_to :project  # Relación con el proyecto al que pertenece el lote
-  has_many :contracts, dependent: :destroy  # Relación con las reservas. Se eliminarán si el lote es eliminado.
+  belongs_to :project
+  has_many :contracts, dependent: :destroy
 
+  before_validation :inherit_measurement_unit, if: -> { project.present? && measurement_unit.blank? }
   before_save :calculate_price
 
-  # Validaciones
   validates :name, presence: true
   validates :length, :width, numericality: { greater_than: 0 }, presence: true
 
-  #has_one :current_contract, -> { order(created_at: :desc) }, class_name: 'Contract'
   has_one :current_contract, -> { where(active: true) }, class_name: 'Contract'
-  #delegate :applicant_user, to: :current_contract, allow_nil: true
 
-  # Método para calcular el área del lote
   def area_m2
     length * width
   end
 
-  def area_square_feet
-    area_m2 * 10.7639  # 1 m² = 10.7639 ft²
-  end
-
-  def area_square_vara
-    area_m2 * 1.431  # 1 metro cuadrado = 1.431 varas cuadradas
+  def area_in_project_unit
+    case measurement_unit || project&.measurement_unit
+    when 'm2'
+      area_m2
+    when 'ft2'
+      area_m2 * 10.7639
+    when 'vara2'
+      area_m2 * 1.431
+    else
+      area_m2
+    end
   end
 
   private
 
+  def inherit_measurement_unit
+    self.measurement_unit = project.measurement_unit
+  end
+
   def calculate_price
-    self.price = area_square_vara * project.price_per_square_vara
+    self.price = project.price_for(area_m2) if project
   end
 end
