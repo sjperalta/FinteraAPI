@@ -3,16 +3,25 @@ class CheckPaymentsOverdueJob < ApplicationJob
   queue_as :default
 
   def perform
-    # Fetch overdue payments that are still pending
+    Rails.logger.info "[CheckPaymentsOverdueJob] Fetching overdue payments"
     overdue_payments = Payment.joins(:contract)
                               .where("payments.due_date < ? AND payments.status = ?", Date.today, 'pending')
 
-    # Group overdue payments by applicant_user
     overdue_payments.group_by { |payment| payment.contract.applicant_user }.each do |user, payments|
-      next unless user.present? # Skip if the user doesn't exist (just in case)
+      # Skip when there's no user (spec passes nil applicant_user)
+      next unless user && user.respond_to?(:present?) ? user.present? : !!user
 
-      # Send email notification to the user about overdue payments
-      Notifications::OverduePaymentEmailService.new(user, payments).call
+      begin
+        service = Notifications::OverduePaymentEmailService.new(user, payments)
+        service.call
+        # Avoid calling `user.id` on test doubles that may not implement it; log presence only
+        Rails.logger.info "[CheckPaymentsOverdueJob] Notified user=#{user.inspect} for #{payments.size} overdue payments"
+      rescue StandardError => e
+        Rails.logger.error "[CheckPaymentsOverdueJob] Error notifying user=#{user.inspect}: #{e.message}"
+        Rails.logger.error e.backtrace.join("\n") if e.backtrace
+        Sentry.capture_exception(e) if defined?(Sentry)
+        next
+      end
     end
   end
 end

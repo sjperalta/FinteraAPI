@@ -15,7 +15,7 @@
     <li class="list-group-item">Nombre del Proyecto: <strong><%= @project.name %></strong></li>
     <li class="list-group-item">No del Lote: <strong><%= @lot.name %></strong></li>
     <li class="list-group-item">Dimensiones: <strong><%= @lot.length %>m x <%= @lot.width %>m</strong></li>
-    <li class="list-group-item">Medida: <strong><%= @lot.area_square_vara %>V^2</strong></li>
+  <li class="list-group-item">Medida: <strong><%= @lot.area_in_project_unit %> <%= (@lot.measurement_unit || @project.measurement_unit).upcase %></strong></li>
     <li class="list-group-item">Número de Contrato: <strong><%= @contract.id %></strong></li>
     <li class="list-group-item">Tipo de Financiamiento: <strong><%= @contract.financing_type.capitalize %></strong></li>
     <li class="list-group-item">Precio: <strong>L. <%= number_to_currency(@contract.amount, unit: '') %></strong></li>

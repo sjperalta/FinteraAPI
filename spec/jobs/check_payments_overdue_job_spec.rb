@@ -83,7 +83,7 @@ RSpec.describe SendContractApprovalNotificationJob, type: :job do
       expect(Notifications::ContractApprovalEmailService).to receive(:new).with(contract).and_return(service)
       expect(service).to receive(:call)
 
-      described_class.new.perform(contract)
+  described_class.new.perform(contract)
     end
 
     it 'safely handles missing contract record (nil passed)' do
