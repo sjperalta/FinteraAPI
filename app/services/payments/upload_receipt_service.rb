@@ -1,5 +1,9 @@
+# frozen_string_literal: true
+
 module Payments
   class UploadReceiptService
+    include Notifiable
+
     def initialize(payment:, receipt:, user:)
       @payment = payment
       @receipt = receipt
@@ -18,7 +22,7 @@ module Payments
       notify_admin
 
       true
-    rescue => e
+    rescue StandardError => e
       Rails.logger.error("Error subiendo el comprobante: #{e.message}")
       false
     end
@@ -28,12 +32,12 @@ module Payments
     # Validate if the user can upload the receipt
     def check_if_can_upload
       unless @user.id == @payment.contract.applicant_user_id
-        raise "El usuario no está autorizado para subir este comprobante."
+        raise 'El usuario no está autorizado para subir este comprobante.'
       end
 
-      if @payment.status == 'paid'
-        raise "Este pago ya ha sido completado y no se pueden subir más comprobantes."
-      end
+      return unless @payment.status == 'paid'
+
+      raise 'Este pago ya ha sido completado y no se pueden subir más comprobantes.'
     end
 
     # Attach the receipt file and update the payment status
@@ -43,15 +47,11 @@ module Payments
     end
 
     def send_notification
-      users = User.where(role: 'admin')
-      users.each do |user|
-        Notification.create!(
-          user: user,
-          title: "Pago Actualizado",
-          message: "Has recibido un pago por #{@payment.amount}, Contrato ##{@payment.contract.id}",
-          notification_type: "payment_upload"
-        )
-      end
+      notify_admins(
+        title: 'Pago Actualizado',
+        message: "Has recibido un pago por #{@payment.amount}, Contrato ##{@payment.contract.id}",
+        notification_type: 'payment_upload'
+      )
     end
 
     # Notify admins about the uploaded receipt

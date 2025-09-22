@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'swagger_helper'
 
 RSpec.describe 'Api::V1::PaymentsController', type: :request do
@@ -32,20 +34,20 @@ RSpec.describe 'Api::V1::PaymentsController', type: :request do
       name: 'Lote 1',
       length: 50,
       width: 40,
-      price: 10000,
-      project: project
+      price: 10_000,
+      project:
     )
   end
 
   let!(:contract) do
     Contract.create!(
-      lot: lot,
+      lot:,
       applicant_user_id: user.id,
       payment_term: 12,
       financing_type: 'direct',
       reserve_amount: 2000.00,
       down_payment: 5000.00,
-      balance: 15000.00,
+      balance: 15_000.00,
       currency: 'USD',
       status: 'pending'
     )
@@ -53,7 +55,7 @@ RSpec.describe 'Api::V1::PaymentsController', type: :request do
 
   let!(:payment) do
     Payment.create!(
-      contract: contract,
+      contract:,
       description: 'First payment',
       amount: 500.00,
       interest_amount: 50.00,
@@ -122,7 +124,8 @@ RSpec.describe 'Api::V1::PaymentsController', type: :request do
         let(:id) { payment.id }
 
         before do
-          allow_any_instance_of(Payments::ApprovePaymentService).to receive(:call).and_return({ success: true, payment: payment })
+          allow_any_instance_of(Payments::ApprovePaymentService).to receive(:call).and_return({ success: true,
+                                                                                                payment: })
         end
 
         run_test!
@@ -132,7 +135,8 @@ RSpec.describe 'Api::V1::PaymentsController', type: :request do
         let(:id) { payment.id }
 
         before do
-          allow_any_instance_of(Payments::ApprovePaymentService).to receive(:call).and_return({ success: false, message: 'Approval failed' })
+          allow_any_instance_of(Payments::ApprovePaymentService).to receive(:call).and_return({ success: false,
+                                                                                                message: 'Approval failed' })
         end
 
         run_test!

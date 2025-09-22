@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/services/contracts/approve_contract_service.rb
 
 module Contracts
@@ -17,7 +19,7 @@ module Contracts
       send_approval_notification
 
       { success: true, message: 'Contrato aprobado exitosamente.' }
-    rescue => e
+    rescue StandardError => e
       error_message = "Error aprobando la reserva: #{e.message}"
       Rails.logger.error(error_message)
       { success: false, errors: [error_message] }
@@ -37,9 +39,9 @@ module Contracts
     def save_notification
       Notification.create(
         user: @contract.applicant_user,
-        title: "Contrato Aprobado",
+        title: 'Contrato Aprobado',
         message: "Tu contrato fue aprobado #{@contract.lot.name}",
-        notification_type: "contract_approved"
+        notification_type: 'contract_approved'
       )
     end
 

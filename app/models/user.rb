@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 class User < ApplicationRecord
-  #has_secure_password
+  # has_secure_password
   # Devise modules
   include Discard::Model
   devise :database_authenticatable, :registerable, :recoverable, :confirmable, :validatable
@@ -31,7 +33,7 @@ class User < ApplicationRecord
   before_validation :normalize_identity_and_rtn
 
   # Ensure soft-deleted records are excluded by default
-  #default_scope { where(discarded_at: nil) }
+  # default_scope { where(discarded_at: nil) }
   default_scope -> { kept }
 
   # Verificar si el usuario es administrador
@@ -45,11 +47,11 @@ class User < ApplicationRecord
   end
 
   def generate_jwt
-    payload = { user_id: self.id, exp: 24.hours.from_now.to_i }  # Expira en 24 horas
+    payload = { user_id: id, exp: 24.hours.from_now.to_i } # Expira en 24 horas
     JWT.encode(payload, ENV['SECRET_KEY_BASE'])
   end
 
-   # Método para verificar si el usuario está activo
+  # Método para verificar si el usuario está activo
   def active_for_authentication?
     super && active? && !discarded?
   end

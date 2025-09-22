@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'sidekiq/web'
 
 Rails.application.routes.draw do
@@ -12,7 +14,7 @@ Rails.application.routes.draw do
         registrations: 'api/v1/users'
       }
 
-      resources :users, only: [:index, :show, :create, :update, :destroy] do
+      resources :users, only: %i[index show create update destroy] do
         member do
           put   :toggle_status     # Route for toggling user status
           post  :recover_password
@@ -27,7 +29,7 @@ Rails.application.routes.draw do
         collection do
           post :send_recovery_code       # /api/v1/users/send_recovery_code
           post :verify_recovery_code     # /api/v1/users/verify_recovery_code
-          post :update_password_with_code  # /api/v1/users/update_password_with_code
+          post :update_password_with_code # /api/v1/users/update_password_with_code
         end
       end
 
@@ -37,9 +39,9 @@ Rails.application.routes.draw do
         end
       end
 
-      resources :notifications, only: [:index, :show, :update, :destroy] do
+      resources :notifications, only: %i[index show update destroy] do
         collection do
-          post :mark_all_as_read  # optional
+          post :mark_all_as_read # optional
         end
       end
 
@@ -55,7 +57,7 @@ Rails.application.routes.draw do
 
       resources :contracts, only: [:index]
       resources :audits, only: [:index]
-      resources :payments, only: [:index, :show] do
+      resources :payments, only: %i[index show] do
         member do
           post :approve
           post :upload_receipt
@@ -63,10 +65,9 @@ Rails.application.routes.draw do
           get  :download_receipt
         end
       end
-      resources :projects, only: [:index, :show, :create, :update, :destroy] do
-
+      resources :projects, only: %i[index show create update destroy] do
         member do
-          post :approve      # Aprobar un proyecto
+          post :approve # Aprobar un proyecto
         end
 
         resources :lots do
@@ -77,7 +78,7 @@ Rails.application.routes.draw do
               post :cancel    # Cancelar un contrato
             end
 
-            resources :payments, only: [:index, :show] do
+            resources :payments, only: %i[index show] do
               member do
                 post :approve        # Aprobar un pago
                 post :reject         # Rechazar un pago
@@ -94,7 +95,7 @@ Rails.application.routes.draw do
   mount Rswag::Api::Engine => '/api-docs'
   mount Sidekiq::Web => '/sidekiq'
 
-  get '/service-worker.js', to: proc { |env|
+  get '/service-worker.js', to: proc { |_env|
     [200, { 'Content-Type' => 'application/javascript' }, ['']]
   }
 

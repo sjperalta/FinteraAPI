@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'csv'
 
 module Reports
@@ -22,13 +24,13 @@ module Reports
         payments.each { |p| csv << generate_csv_row(p) }
 
         csv << []
-        csv << [I18n.t("reports.total_revenue.summary", locale: @locale)]
-        csv << [I18n.t("reports.total_revenue.total_paid", locale: @locale), total_paid]
-        csv << [I18n.t("reports.total_revenue.total_interest", locale: @locale), total_interest]
-        csv << [I18n.t("reports.total_revenue.grand_total", locale: @locale), grand_total]
+        csv << [I18n.t('reports.total_revenue.summary', locale: @locale)]
+        csv << [I18n.t('reports.total_revenue.total_paid', locale: @locale), total_paid]
+        csv << [I18n.t('reports.total_revenue.total_interest', locale: @locale), total_interest]
+        csv << [I18n.t('reports.total_revenue.grand_total', locale: @locale), grand_total]
       end
     rescue StandardError => e
-      Rails.logger.error I18n.t("reports.total_revenue.errors.generate_csv", message: e.message, locale: @locale)
+      Rails.logger.error I18n.t('reports.total_revenue.errors.generate_csv', message: e.message, locale: @locale)
       raise e
     end
 

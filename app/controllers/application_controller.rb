@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/controllers/application_controller.rb
 
 class ApplicationController < ActionController::API
@@ -9,27 +11,25 @@ class ApplicationController < ActionController::API
   before_action :set_paper_trail_custom_attributes
   before_action :set_sentry_user
 
-  rescue_from CanCan::AccessDenied do |exception|
-    render json: { error: "No tienes acceso a esta sección" }, status: :forbidden
+  rescue_from CanCan::AccessDenied do |_exception|
+    render json: { error: 'No tienes acceso a esta sección' }, status: :forbidden
   end
 
   private
 
-  def current_user
-    @current_user
-  end
+  attr_reader :current_user
 
   def user_for_paper_trail
     current_user&.id
   end
 
   def set_paper_trail_custom_attributes
-    if defined?(PaperTrail) && current_user
-      PaperTrail.request.controller_info = {
-        ip: request.remote_ip,
-        user_agent: request.user_agent
-      }
-    end
+    return unless defined?(PaperTrail) && current_user
+
+    PaperTrail.request.controller_info = {
+      ip: request.remote_ip,
+      user_agent: request.user_agent
+    }
   end
 
   # Set Sentry user context so errors include the logged in user
@@ -44,7 +44,7 @@ class ApplicationController < ActionController::API
 
     Sentry.set_extras(
       ip: request.remote_ip,
-      params: request.filtered_parameters.except("controller", "action")
+      params: request.filtered_parameters.except('controller', 'action')
     )
   end
 end

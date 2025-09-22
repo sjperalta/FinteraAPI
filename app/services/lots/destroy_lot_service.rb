@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/services/lots/destroy_lot_service.rb
 
 module Lots
@@ -9,7 +11,7 @@ module Lots
     def call
       @lot.destroy
       { success: true, message: 'Lote eliminado con éxito.' }
-    rescue => e
+    rescue StandardError => e
       { success: false, errors: e.message }
     end
   end

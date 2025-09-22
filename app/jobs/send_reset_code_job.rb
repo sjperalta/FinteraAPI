@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/jobs/send_reset_code_job.rb
 class SendResetCodeJob < ApplicationJob
   queue_as :default

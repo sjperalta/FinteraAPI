@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 RSpec.describe Notifications::ReservationApprovalEmailService, type: :service do
@@ -8,11 +10,11 @@ RSpec.describe Notifications::ReservationApprovalEmailService, type: :service do
     @mailer = double('UserMailer')
     @mailer_action = double('MailerAction', deliver_now: true)
     allow(@mailer).to receive(:reservation_approved).and_return(@mailer_action)
-    allow(UserMailer).to receive(:with).with(user: user, contract: contract).and_return(@mailer)
+    allow(UserMailer).to receive(:with).with(user:, contract:).and_return(@mailer)
   end
 
   it 'sends reservation approved email when user present' do
-    expect(UserMailer).to receive(:with).with(user: user, contract: contract)
+    expect(UserMailer).to receive(:with).with(user:, contract:)
     expect(@mailer).to receive(:reservation_approved).and_return(@mailer_action)
     expect(@mailer_action).to receive(:deliver_now)
 
@@ -20,7 +22,7 @@ RSpec.describe Notifications::ReservationApprovalEmailService, type: :service do
   end
 
   it 'does nothing when contract has no user' do
-  contract_without_user = double('Contract', id: 8, applicant_user: nil)
+    contract_without_user = double('Contract', id: 8, applicant_user: nil)
     expect(UserMailer).not_to receive(:with)
 
     described_class.new(contract_without_user).call

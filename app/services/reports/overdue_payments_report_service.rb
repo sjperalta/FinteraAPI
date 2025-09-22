@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'csv'
 
 module Reports
@@ -21,12 +23,12 @@ module Reports
         overdue_payments.each { |p| csv << generate_csv_row(p) }
 
         csv << []
-        csv << [I18n.t("reports.overdue_payments.summary", locale: @locale)]
-        csv << [I18n.t("reports.overdue_payments.total_amount", locale: @locale), total_amount]
-        csv << [I18n.t("reports.overdue_payments.total_interest", locale: @locale), total_interest]
+        csv << [I18n.t('reports.overdue_payments.summary', locale: @locale)]
+        csv << [I18n.t('reports.overdue_payments.total_amount', locale: @locale), total_amount]
+        csv << [I18n.t('reports.overdue_payments.total_interest', locale: @locale), total_interest]
       end
     rescue StandardError => e
-      Rails.logger.error I18n.t("reports.overdue_payments.errors.generate_csv", message: e.message, locale: @locale)
+      Rails.logger.error I18n.t('reports.overdue_payments.errors.generate_csv', message: e.message, locale: @locale)
       raise e
     end
 
@@ -35,7 +37,7 @@ module Reports
     def fetch_overdue_payments
       Payment.joins(contract: :applicant_user)
              .where(status: 'pending', due_date: @start_date..@end_date)
-             .where("payments.due_date < ?", Date.current)
+             .where('payments.due_date < ?', Date.current)
     end
 
     def generate_csv_row(payment)

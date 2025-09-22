@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Ability
   include CanCan::Ability
 
@@ -5,15 +7,15 @@ class Ability
     user ||= User.new # guest user (not logged in)
 
     if user.admin?
-      Rails.logger.debug "User is an admin"
-      can :manage, :all  # Admins can do everything
+      Rails.logger.debug 'User is an admin'
+      can :manage, :all # Admins can do everything
       can :resend_confirmation, User
       can :read, PaperTrail::Version
     elsif user.seller?
-      Rails.logger.debug "User is a seller"
+      Rails.logger.debug 'User is a seller'
       # Sellers can read, create, and update contracts, but only their own
       can :read, Project
-      can :read, Contract, user_id: user.id  # Only their contracts
+      can :read, Contract, user_id: user.id # Only their contracts
       can :update, Contract, user_id: user.id
       can :create, Contract
 
@@ -27,11 +29,11 @@ class Ability
       can :payments, User, id: user.id
       can :summary, User, id: user.id
       can :read, User, id: user.id
-      can :update, User, id: user.id  # Only update their own information
+      can :update, User, id: user.id # Only update their own information
       can :resend_confirmation, User, id: user.id
 
     else
-      Rails.logger.debug "User is a regular user or guest"
+      Rails.logger.debug 'User is a regular user or guest'
       # Regular users or guests
       can [:update], User, id: user.id
       can :create, Contract

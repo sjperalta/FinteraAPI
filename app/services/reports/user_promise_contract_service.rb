@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/services/reports/user_promise_contract_service.rb
 module Reports
   class UserPromiseContractService
@@ -8,16 +10,20 @@ module Reports
 
     def call
       # 1. Busca el contrato y sus relaciones
-  contract = Contract.includes(:lot, lot: :project)
-         .find_by(id: @contract_id)
-  return { success: false, error: I18n.t("reports.user_promise.errors.not_found", locale: @locale) } unless contract
+      contract = Contract.includes(:lot, lot: :project)
+                         .find_by(id: @contract_id)
+      return { success: false, error: I18n.t('reports.user_promise.errors.not_found', locale: @locale) } unless contract
 
       # 2. Identifica al cliente (applicant), el proyecto y el lote
       applicant = contract.applicant_user
       project   = contract.lot.project
       lot       = contract.lot
 
-  return { success: false, error: I18n.t("reports.user_promise.errors.missing_data", locale: @locale) } unless applicant && project && lot
+      unless applicant && project && lot
+        return { success: false,
+                 error: I18n.t('reports.user_promise.errors.missing_data',
+                               locale: @locale) }
+      end
 
       # 3. Obtiene la primera y última cuota (si existen)
       payments = contract.payments.order(:due_date)
@@ -27,17 +33,17 @@ module Reports
 
       # 5. Retorna todos los datos que la plantilla podría necesitar
       {
-        success:         true,
-        contract:        contract,
-        applicant:       applicant,
-        project:         project,
-        lot:             lot,
+        success: true,
+        contract:,
+        applicant:,
+        project:,
+        lot:,
         financing_amount: contract.calculate_financing_amount,
-        first_payment:   first_payment,
-        last_payment:    last_payment
+        first_payment:,
+        last_payment:
       }
     rescue StandardError => e
-      Rails.logger.error I18n.t("reports.user_promise.errors.not_found", message: e.message, locale: @locale)
+      Rails.logger.error I18n.t('reports.user_promise.errors.not_found', message: e.message, locale: @locale)
       { success: false, error: e.message }
     end
   end

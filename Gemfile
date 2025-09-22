@@ -1,7 +1,9 @@
-source "https://rubygems.org"
+# frozen_string_literal: true
+
+source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby "3.3.6"
+ruby '3.3.6'
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem 'rails', '~> 8.0', '>= 8.0.1'
@@ -13,14 +15,14 @@ gem 'pg', '~> 1.5'
 gem 'puma', '>= 6.0'
 
 # Use Redis adapter to run Action Cable in production
-gem "redis", "~> 4.0"
+gem 'redis', '~> 4.0'
 
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin AJAX possible
-gem "rack-cors"
+gem 'rack-cors'
 
 # Authentication and Authorization
-gem 'devise'
 gem 'cancancan'
+gem 'devise'
 gem 'paper_trail', '~> 16.0'
 
 # JSON Web Tokens
@@ -29,8 +31,8 @@ gem 'jwt'
 # API Documentation
 gem 'rswag'
 gem 'rswag-api'
-gem 'rswag-ui'
 gem 'rswag-specs'
+gem 'rswag-ui'
 
 # Background Job Processing
 gem 'sidekiq', '~> 7.0'
@@ -40,10 +42,10 @@ gem 'sidekiq-scheduler'
 gem 'pagy'
 
 # Environment Variables Management
-gem 'dotenv-rails', groups: [:development, :test]
+gem 'dotenv-rails', groups: %i[development test]
 
 # Logging and Boot Optimizations
-gem "bootsnap", require: false
+gem 'bootsnap', require: false
 
 # Onesignal Email
 gem 'onesignal-rails-plugin', '~> 1.0.0'
@@ -59,21 +61,24 @@ gem 'wicked_pdf'
 gem 'wkhtmltopdf-binary'
 
 # Sentry for error tracking
-gem "sentry-ruby"
-gem "sentry-rails"
-gem "sentry-sidekiq"
+gem 'sentry-rails'
+gem 'sentry-ruby'
+gem 'sentry-sidekiq'
 
 group :development, :test do
+  gem 'bundler-audit', require: false
+  gem 'rubocop', require: false
+
   # Testing Framework
   gem 'rspec-rails'
 
   # Debugging Tools
+  gem 'debug', platforms: %i[mri mingw x64_mingw]
+  gem 'pry-byebug', '~> 3.10'
   gem 'pry-rails'
-  gem "pry-byebug", "~> 3.10"
-  gem "debug", platforms: %i[ mri mingw x64_mingw ]
 end
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
-gem "tzinfo-data", platforms: %i[ mingw mswin x64_mingw jruby ]
+gem 'tzinfo-data', platforms: %i[mingw mswin x64_mingw jruby]
 
-gem "discard", "~> 1.4"
+gem 'discard', '~> 1.4'

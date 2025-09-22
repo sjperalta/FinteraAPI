@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class ApplicationJob < ActiveJob::Base
   # New class-level configuration to control whether unhandled exceptions
   # in a job should be swallowed (useful for fire-and-forget notification jobs).
@@ -23,13 +25,12 @@ class ApplicationJob < ActiveJob::Base
       Rails.logger.error e.backtrace.join("\n") if e.backtrace
       Sentry.capture_exception(e) if defined?(Sentry)
 
-      if job.class.swallow_exceptions
-        Rails.logger.warn "[#{job.class}] Swallowing exception as configured"
-        # swallow and finish
-      else
-        # propagate to allow Sidekiq / ActiveJob to retry according to config
-        raise e
-      end
+      raise e unless job.class.swallow_exceptions
+
+      Rails.logger.warn "[#{job.class}] Swallowing exception as configured"
+      # swallow and finish
+
+      # propagate to allow Sidekiq / ActiveJob to retry according to config
     end
   end
 end

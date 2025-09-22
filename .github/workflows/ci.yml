@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  rspec:
+  pipeline-steps:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -56,14 +56,14 @@ jobs:
       - name: Cache gems
         uses: actions/cache@v4
         with:
-          path:
-            - vendor/bundle
-            - ~/.bundle
-            - ~/.cache/bundler
-            - ~/.gem
-          key: "${{ runner.os }}-gems-${{ hashFiles(\"**/Gemfile.lock\") }}-ruby-${{ env.RUBY_VERSION }}"
+          path: |
+            vendor/bundle
+            ~/.bundle
+            ~/.cache/bundler
+            ~/.gem
+          key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}-ruby-${{ env.RUBY_VERSION }}
           restore-keys: |
-            "${{ runner.os }}-gems-"
+            ${{ runner.os }}-gems-
 
       - name: Install system dependencies
         run: |
@@ -88,10 +88,17 @@ jobs:
         run: |
           bundle exec rails db:create db:schema:load
 
+      - name: Run RuboCop (warnings only)
+        continue-on-error: true
+        run: bundle exec rubocop --parallel --format simple || echo "RuboCop found issues (non-blocking)"
+
+      - name: Security audit
+        run: bundle exec bundle-audit check --update
+
       - name: Run specs
         env:
           RAILS_ENV: test
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/fintera_test
           SENTRY_DSN: ""
           SENTRY_ENV: "test"
-        run: bundle exec rspec --format documentation
+        run: bundle exec rspec --format progress

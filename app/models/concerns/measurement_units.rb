@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module MeasurementUnits
   M2_TO_FT2 = 10.7639
   M2_TO_VARA2 = 1.431

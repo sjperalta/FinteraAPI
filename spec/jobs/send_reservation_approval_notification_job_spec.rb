@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 RSpec.describe SendReservationApprovalNotificationJob, type: :job do
@@ -10,8 +12,8 @@ RSpec.describe SendReservationApprovalNotificationJob, type: :job do
     allow(reservation_approval_class).to receive(:new).with(any_args).and_return(notification_service)
     stub_const('Notifications::ReservationApprovalEmailService', reservation_approval_class)
 
-  # ensure job lookup by id returns the double (only when contract is present)
-  allow(Contract).to receive(:find_by).with(id: contract.id).and_return(contract) if contract
+    # ensure job lookup by id returns the double (only when contract is present)
+    allow(Contract).to receive(:find_by).with(id: contract.id).and_return(contract) if contract
 
     allow(notification_service).to receive(:call)
 
@@ -24,7 +26,7 @@ RSpec.describe SendReservationApprovalNotificationJob, type: :job do
         expect(Notifications::ReservationApprovalEmailService).to receive(:new).with(contract).and_return(notification_service)
         expect(notification_service).to receive(:call)
 
-  described_class.perform_now(contract.id)
+        described_class.perform_now(contract.id)
       end
     end
 
@@ -34,7 +36,7 @@ RSpec.describe SendReservationApprovalNotificationJob, type: :job do
       it 'returns early without calling the service' do
         expect(Notifications::ReservationApprovalEmailService).not_to receive(:new)
 
-  described_class.perform_now(nil)
+        described_class.perform_now(nil)
       end
     end
   end

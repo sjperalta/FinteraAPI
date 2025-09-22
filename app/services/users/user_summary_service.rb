@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/services/users/user_summary_service.rb
 module Users
   class UserSummaryService
@@ -7,7 +9,7 @@ module Users
 
     def call
       {
-        currency: currency,
+        currency:,
         balance: balance.to_f,
         totalDue: total_due.to_f,
         totalFees: total_fees.to_f,
@@ -35,10 +37,12 @@ module Users
     def overdue_aggregate
       @overdue_aggregate ||= begin
         scope = @user.payments
-                     .where(status: ['pending', 'submitted', 'correction_required'])
+                     .where(status: %w[pending submitted correction_required])
                      .where('payments.due_date < ?', Date.today)
 
-        scope.pluck(Arel.sql('COALESCE(SUM(payments.amount),0), COALESCE(SUM(payments.interest_amount),0), COUNT(*)')).first || [0,0,0]
+        scope.pluck(Arel.sql('COALESCE(SUM(payments.amount),0), COALESCE(SUM(payments.interest_amount),0), COUNT(*)')).first || [
+          0, 0, 0
+        ]
       end
     end
 

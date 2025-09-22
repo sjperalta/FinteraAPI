@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/models/statistic.rb
 
 class Statistic < ApplicationRecord
@@ -11,6 +13,6 @@ class Statistic < ApplicationRecord
 
   # Example method to calculate total payments for a range of dates
   def self.total_payments_for_period(start_date, end_date)
-    for_period(start_date, end_date).sum("payment_reserve + payment_installments + payment_down_payment")
+    for_period(start_date, end_date).sum('payment_reserve + payment_installments + payment_down_payment')
   end
 end

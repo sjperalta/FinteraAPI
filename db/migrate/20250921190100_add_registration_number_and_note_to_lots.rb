@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class AddRegistrationNumberAndNoteToLots < ActiveRecord::Migration[8.0]
   def change
     add_column :lots, :registration_number, :string

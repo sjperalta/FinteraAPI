@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateRevenues < ActiveRecord::Migration[8.0]
   def change
     create_table :revenues do |t|
@@ -10,6 +12,6 @@ class CreateRevenues < ActiveRecord::Migration[8.0]
     end
 
     # Add an index for quick lookups
-    add_index :revenues, [:payment_type, :year, :month], unique: true
+    add_index :revenues, %i[payment_type year month], unique: true
   end
 end

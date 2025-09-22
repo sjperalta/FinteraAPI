@@ -1,11 +1,13 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 RSpec.describe CheckPaymentsOverdueJob, type: :job do
   describe '#perform' do
     let(:user) { instance_double('User', present?: true) }
     let(:contract) { instance_double('Contract', applicant_user: user) }
-    let(:payment1) { instance_double('Payment', contract: contract) }
-    let(:payment2) { instance_double('Payment', contract: contract) }
+    let(:payment1) { instance_double('Payment', contract:) }
+    let(:payment2) { instance_double('Payment', contract:) }
 
     before do
       # create a class-like double to stub .new calls
@@ -17,7 +19,8 @@ RSpec.describe CheckPaymentsOverdueJob, type: :job do
       allow(Payment).to receive_message_chain(:joins, :where).and_return([payment1, payment2])
 
       service = instance_double('Notifications::OverduePaymentEmailService', call: true)
-      expect(Notifications::OverduePaymentEmailService).to receive(:new).with(user, [payment1, payment2]).and_return(service)
+      expect(Notifications::OverduePaymentEmailService).to receive(:new).with(user,
+                                                                              [payment1, payment2]).and_return(service)
       expect(service).to receive(:call)
 
       described_class.new.perform
@@ -30,7 +33,7 @@ RSpec.describe CheckPaymentsOverdueJob, type: :job do
       expect { described_class.new.perform }.not_to raise_error
     end
 
-    it "skips notifications for payments whose contract has no applicant_user" do
+    it 'skips notifications for payments whose contract has no applicant_user' do
       contract_without_user = instance_double('Contract', applicant_user: nil)
       payment = instance_double('Payment', contract: contract_without_user)
       allow(Payment).to receive_message_chain(:joins, :where).and_return([payment])
@@ -83,7 +86,7 @@ RSpec.describe SendContractApprovalNotificationJob, type: :job do
       expect(Notifications::ContractApprovalEmailService).to receive(:new).with(contract).and_return(service)
       expect(service).to receive(:call)
 
-  described_class.new.perform(contract)
+      described_class.new.perform(contract)
     end
 
     it 'safely handles missing contract record (nil passed)' do

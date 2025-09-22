@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/jobs/notify_admin_payment_receipt_job.rb
 
 class NotifyAdminPaymentReceiptJob < ApplicationJob

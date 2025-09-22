@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Lots
   class UpdateLotService
     def initialize(lot:, lot_params:)

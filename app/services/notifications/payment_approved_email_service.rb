@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 # app/services/notifications/payment_approved_email_service.rb
 
 module Notifications
   class PaymentApprovedEmailService
     def initialize(payment)
       @payment = payment
-      @user = @payment.contract.applicant_user  # El usuario que realizó la solicitud del contrato
+      @user = @payment.contract.applicant_user # El usuario que realizó la solicitud del contrato
     end
 
     def call

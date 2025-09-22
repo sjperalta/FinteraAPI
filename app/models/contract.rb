@@ -1,15 +1,18 @@
+# frozen_string_literal: true
+
 # app/models/contract.rb
 
 class Contract < ApplicationRecord
+  include Notifiable
   include AASM
   has_paper_trail
 
   belongs_to :lot
   belongs_to :creator, foreign_key: :creator_id, class_name: 'User', optional: true
-  #belongs_to :applicant_user, foreign_key: :applicant_user_id, class_name: 'User', optional: true
+  # belongs_to :applicant_user, foreign_key: :applicant_user_id, class_name: 'User', optional: true
   belongs_to :applicant_user, class_name: 'User', foreign_key: 'applicant_user_id', optional: true
   has_many_attached :documents
-  has_many :payments, dependent: :destroy  # Relación con los pagos
+  has_many :payments, dependent: :destroy # Relación con los pagos
   before_create :set_amounts
 
   validates :payment_term, presence: true, numericality: { only_integer: true, greater_than: 0 }
@@ -26,7 +29,7 @@ class Contract < ApplicationRecord
   scope :by_financing_type, ->(type) { where(financing_type: type) }
   scope :by_applicant_user, ->(user_id) { where(applicant_user_id: user_id) }
 
-  STATUS_APPROVED = "approved"
+  STATUS_APPROVED = 'approved'
 
   # State Machine Definition
   aasm column: :status do
@@ -38,37 +41,37 @@ class Contract < ApplicationRecord
 
     # Submit contract
     event :submit do
-      transitions from: [:pending, :rejected], to: :submitted,
-                guard: :valid_for_submission?
+      transitions from: %i[pending rejected], to: :submitted,
+                  guard: :valid_for_submission?
     end
 
     # Approve contract
     event :approve do
-      transitions from: [:pending, :submitted, :rejected], to: :approved,
-                guard: :can_be_approved?,
-                after: [:record_approval, :create_payments, :notify_approval]
+      transitions from: %i[pending submitted rejected], to: :approved,
+                  guard: :can_be_approved?,
+                  after: %i[record_approval create_payments notify_approval]
     end
 
     # Reject contract
     event :reject do
-      transitions from: [:pending, :submitted], to: :rejected,
-                after: :notify_rejection
+      transitions from: %i[pending submitted], to: :rejected,
+                  after: :notify_rejection
     end
 
     # Cancel contract
     event :cancel do
       transitions from: [:rejected], to: :cancelled,
-                after: [:release_lot, :delete_payments, :notify_cancellation]
+                  after: %i[release_lot delete_payments notify_cancellation]
     end
   end
 
   def calculate_financing_amount
-    self.amount - (self.reserve_amount + self.down_payment)
+    amount - (reserve_amount + down_payment)
   end
 
   def set_amounts
-    self.amount = self.lot.price
-    self.balance = self.amount
+    self.amount = lot.price
+    self.balance = amount
   end
 
   # Método para actualizar el saldo pendiente
@@ -93,11 +96,13 @@ class Contract < ApplicationRecord
 
   # Crear pagos para el tipo de financiamiento directo
   def create_direct_payments
-    project_name = self.lot&.project&.name
+    project_name = lot&.project&.name
 
     # Crea el pago de la reserva y la prima
-    Payment.create!(contract: self, description: "Proyecto #{project_name} - Reserva", due_date: Date.today, amount: reserve_amount, status: 'pending', payment_type: 'reservation')
-    Payment.create!(contract: self, description: "Proyecto #{project_name} - Prima", due_date: Date.today.next_month, amount: down_payment, status: 'pending', payment_type: 'down_payment')
+    Payment.create!(contract: self, description: "Proyecto #{project_name} - Reserva", due_date: Date.today,
+                    amount: reserve_amount, status: 'pending', payment_type: 'reservation')
+    Payment.create!(contract: self, description: "Proyecto #{project_name} - Prima", due_date: Date.today.next_month,
+                    amount: down_payment, status: 'pending', payment_type: 'down_payment')
 
     # Crea los pagos restantes
     remaining_balance = amount - reserve_amount - down_payment
@@ -107,49 +112,47 @@ class Contract < ApplicationRecord
       due_date = (Date.today + (i + 2).months)
       Payment.create!(
         contract: self,
-        due_date: due_date,
+        due_date:,
         description: "Proyecto #{project_name} - Cuota #{i + 1}",
         amount: monthly_payment,
         status: 'pending',
-        payment_type: 'installment',
+        payment_type: 'installment'
       )
     end
   end
 
   # Crear un único pago para financiamiento bancario o contado
   def create_single_payment
-    project_name = self.lot&.project&.name
+    project_name = lot&.project&.name
     remaining_balance = amount - reserve_amount
     # Crea el pago de la reserva y el pago completo.
-    Payment.create!(contract: self, description: "Proyecto #{project_name} - Reserva", due_date: Date.today, amount: reserve_amount, status: 'pending', payment_type: 'reservation')
-    Payment.create!(contract: self, description: "Proyecto #{project_name} - Contado", due_date: Date.today.next_month, amount: remaining_balance, status: 'pending', payment_type: 'installment')
+    Payment.create!(contract: self, description: "Proyecto #{project_name} - Reserva", due_date: Date.today,
+                    amount: reserve_amount, status: 'pending', payment_type: 'reservation')
+    Payment.create!(contract: self, description: "Proyecto #{project_name} - Contado", due_date: Date.today.next_month,
+                    amount: remaining_balance, status: 'pending', payment_type: 'installment')
   end
 
   def acceptable_documents
     return unless documents.attached?
 
     documents.each do |document|
-      unless document.byte_size <= 10.megabytes
-        errors.add(:documents, "is too big")
-      end
+      errors.add(:documents, 'is too big') unless document.byte_size <= 10.megabytes
 
-      acceptable_types = ["application/pdf", "image/jpeg", "image/png"]
-      unless acceptable_types.include?(document.content_type)
-        errors.add(:documents, "must be a PDF, JPG, or PNG")
-      end
+      acceptable_types = ['application/pdf', 'image/jpeg', 'image/png']
+      errors.add(:documents, 'must be a PDF, JPG, or PNG') unless acceptable_types.include?(document.content_type)
     end
   end
 
   def valid_for_submission?
     payment_term.present? &&
-    financing_type.present? &&
-    reserve_amount.present? &&
-    down_payment.present? &&
-    applicant_user.present?
+      financing_type.present? &&
+      reserve_amount.present? &&
+      down_payment.present? &&
+      applicant_user.present?
   end
 
   def can_be_approved?
-    valid_for_submission? && (status == 'pending' || status == "submitted" )
+    valid_for_submission? && (status == 'pending' || status == 'submitted')
   end
 
   def can_be_rejected?
@@ -164,20 +167,41 @@ class Contract < ApplicationRecord
   end
 
   def notify_approval
-    Notification.create!(
+    create_notification(
       user: applicant_user,
-      title: "Contrato Aprobado",
+      title: 'Contrato Aprobado',
       message: "Tu contrato para #{lot.name} ha sido aprobado",
-      notification_type: "contract_approved"
+      notification_type: 'contract_approved'
+    )
+
+    notify_admins(
+      title: 'Contrato Aprobado',
+      message: "Contrato ##{id} para #{lot.name} ha sido aprobado.",
+      notification_type: 'contract_approved'
     )
   end
 
   def notify_rejection
-    Notification.create!(
+    create_notification(
       user: applicant_user,
-      title: "Contrato Rechazado",
+      title: 'Contrato Rechazado',
       message: "Tu contrato para #{lot.name} ha sido rechazado, detalle: #{rejection_reason}",
-      notification_type: "contract_rejected"
+      notification_type: 'contract_rejected'
+    )
+  end
+
+  def notify_cancellation
+    create_notification(
+      user: applicant_user,
+      title: 'Contrato Cancelado',
+      message: "Tu contrato para #{lot.name} ha sido cancelado, lote se liberado.",
+      notification_type: 'contract_cancelled'
+    )
+
+    notify_admins(
+      title: 'Contrato Cancelado',
+      message: "El contrato #{lot.name} ha sido cancelado, lote se liberado.",
+      notification_type: 'contract_cancelled'
     )
   end
 
@@ -188,23 +212,5 @@ class Contract < ApplicationRecord
 
   def delete_payments
     payments.destroy_all
-  end
-
-  def notify_cancellation
-    recipients = [
-      { user: applicant_user, message: "Tu contrato para #{lot.name} ha sido cancelado, lote se liberado." },
-      { user: User.find_by(role: 'admin'), message: "El contrato #{lot.name} ha sido cancelado, lote se liberado." }
-    ]
-
-    recipients.each do |recipient|
-      next unless recipient[:user]  # Skip if the user is nil
-
-      Notification.create!(
-        user: recipient[:user],
-        title: "Contrato Cancelado",
-        message: recipient[:message],
-        notification_type: "contract_cancelled"
-      )
-    end
   end
 end

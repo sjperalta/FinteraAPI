@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'swagger_helper'
 
 RSpec.describe 'Api::V1::LotsController', type: :request do
@@ -32,8 +34,8 @@ RSpec.describe 'Api::V1::LotsController', type: :request do
       name: 'Lote 1',
       length: 50,
       width: 40,
-      price: 10000,
-      project: project
+      price: 10_000,
+      project:
     )
   end
 
@@ -107,7 +109,7 @@ RSpec.describe 'Api::V1::LotsController', type: :request do
           registration_number: { type: :string },
           note: { type: :string }
         },
-        required: ['name', 'length', 'width', 'price']
+        required: %w[name length width price]
       }
 
       response '201', 'Lot created' do
@@ -117,7 +119,7 @@ RSpec.describe 'Api::V1::LotsController', type: :request do
             name: 'Lote 2',
             length: 60,
             width: 30,
-            price: 12000,
+            price: 12_000,
             registration_number: 'REG-001',
             note: 'Corner lot'
           }
@@ -155,7 +157,7 @@ RSpec.describe 'Api::V1::LotsController', type: :request do
             name: 'Lote Actualizado',
             length: 55,
             width: 35,
-            price: 15000
+            price: 15_000
           }
         end
 

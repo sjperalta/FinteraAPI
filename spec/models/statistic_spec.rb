@@ -1,8 +1,10 @@
-require "rails_helper"
+# frozen_string_literal: true
+
+require 'rails_helper'
 
 RSpec.describe Statistic, type: :model do
-  describe "validations" do
-    it "is valid with required numeric and date attributes" do
+  describe 'validations' do
+    it 'is valid with required numeric and date attributes' do
       statistic = described_class.new(
         period_date: Date.today,
         total_income: 1000.0,
@@ -16,7 +18,7 @@ RSpec.describe Statistic, type: :model do
       expect(statistic).to be_valid
     end
 
-    it "requires unique period_date" do
+    it 'requires unique period_date' do
       date = Date.today
       described_class.create!(
         period_date: date,
@@ -39,10 +41,10 @@ RSpec.describe Statistic, type: :model do
       )
 
       expect(duplicate).not_to be_valid
-      expect(duplicate.errors[:period_date]).to include("has already been taken")
+      expect(duplicate.errors[:period_date]).to include('has already been taken')
     end
 
-    it "enforces non-negative numeric values" do
+    it 'enforces non-negative numeric values' do
       statistic = described_class.new(
         period_date: Date.today,
         total_income: -1,
@@ -55,14 +57,14 @@ RSpec.describe Statistic, type: :model do
 
       expect(statistic).not_to be_valid
       %i[total_income total_interest payment_reserve payment_installments payment_down_payment].each do |attr|
-        expect(statistic.errors[attr]).to include("must be greater than or equal to 0")
+        expect(statistic.errors[attr]).to include('must be greater than or equal to 0')
       end
-      expect(statistic.errors[:new_customers]).to include("must be greater than or equal to 0")
+      expect(statistic.errors[:new_customers]).to include('must be greater than or equal to 0')
     end
   end
 
-  describe ".for_period" do
-    it "returns statistics within the given range" do
+  describe '.for_period' do
+    it 'returns statistics within the given range' do
       start_date = Date.today.beginning_of_month
       end_date = Date.today.end_of_month
       inside = described_class.create!(
@@ -90,8 +92,8 @@ RSpec.describe Statistic, type: :model do
     end
   end
 
-  describe ".total_payments_for_period" do
-    it "sums payment components across the range using SQL expression" do
+  describe '.total_payments_for_period' do
+    it 'sums payment components across the range using SQL expression' do
       start_date = Date.today.beginning_of_month
       end_date = Date.today.end_of_month
 

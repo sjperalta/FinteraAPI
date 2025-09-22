@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 RSpec.describe Revenue, type: :model do
@@ -21,7 +23,7 @@ RSpec.describe Revenue, type: :model do
       grouped = double('GroupedRelation')
       result_hash = { 'reservation' => 100.0, 'installment' => 250.0 }
 
-      expect(described_class).to receive(:where).with(year: year).and_return(relation)
+      expect(described_class).to receive(:where).with(year:).and_return(relation)
       expect(relation).to receive(:group).with(:payment_type).and_return(grouped)
       expect(grouped).to receive(:sum).with(:amount).and_return(result_hash)
 
@@ -37,7 +39,7 @@ RSpec.describe Revenue, type: :model do
       ordered = double('OrderedRelation')
       amounts = [10.0, 15.5, 20.25]
 
-      expect(described_class).to receive(:where).with(year: year, payment_type: type).and_return(relation)
+      expect(described_class).to receive(:where).with(year:, payment_type: type).and_return(relation)
       expect(relation).to receive(:order).with(:month).and_return(ordered)
       expect(ordered).to receive(:pluck).with(:amount).and_return(amounts)
 

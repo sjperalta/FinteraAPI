@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # spec/spec_helper.rb
 
 require 'devise'
@@ -21,5 +23,5 @@ RSpec.configure do |config|
 
   config.order = :random
   Kernel.srand config.seed
-  config.include Devise::TestHelpers, :type => :controller
+  config.include Devise::TestHelpers, type: :controller
 end

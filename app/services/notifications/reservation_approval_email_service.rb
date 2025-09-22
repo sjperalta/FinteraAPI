@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/services/notifications/reservation_approval_email_service.rb
 module Notifications
   class ReservationApprovalEmailService

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/services/lots/create_lot_service.rb
 
 module Lots
@@ -10,7 +12,7 @@ module Lots
     def call
       lot = @project.lots.build(@lot_params)
       if lot.save
-        { success: true, lot: lot }
+        { success: true, lot: }
       else
         { success: false, errors: lot.errors.full_messages }
       end

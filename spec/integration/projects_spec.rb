@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'swagger_helper'
 
 RSpec.describe 'Api::V1::ProjectsController', type: :request do
@@ -64,7 +66,7 @@ RSpec.describe 'Api::V1::ProjectsController', type: :request do
           commission_rate: { type: :number },
           delivery_date: { type: :string, format: :date }
         },
-  required: ['name', 'description', 'project_type', 'address', 'lot_count', 'price_per_square_unit', 'measurement_unit']
+        required: %w[name description project_type address lot_count price_per_square_unit measurement_unit]
       }
 
       response '201', 'Project created successfully' do

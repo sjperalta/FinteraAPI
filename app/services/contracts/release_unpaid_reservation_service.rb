@@ -1,18 +1,20 @@
-# app/services/release_unpaid_reservation_service.rb
+# frozen_string_literal: true
 
-require 'set'
+# app/services/release_unpaid_reservation_service.rb
 
 module Contracts
   class ReleaseUnpaidReservationService
+    include Notifiable
+
     def call
-      Rails.logger.info "Starting ReleaseUnpaidReservationService"
+      Rails.logger.info 'Starting ReleaseUnpaidReservationService'
 
       released_contract_ids = Set.new
 
       Payment.where(payment_type: 'reservation', status: 'pending')
-            .where("due_date < ?", Date.today)
-            .includes(:contract)
-            .find_each do |payment|
+             .where('due_date < ?', Date.today)
+             .includes(:contract)
+             .find_each do |payment|
         contract = payment.contract
         next unless contract
 
@@ -24,7 +26,7 @@ module Contracts
           # First, if the contract isn't in a state to be cancelled,
           # try to reject it first (which transitions from pending/submitted to rejected).
           if contract.may_reject?
-            contract.rejection_reason = "Pago de reserva expiro, el sistema libero este contrato"
+            contract.rejection_reason = 'Pago de reserva expiro, el sistema libero este contrato'
             contract.reject!
           end
 
@@ -50,14 +52,11 @@ module Contracts
     private
 
     def notify_admin(released_count)
-      User.where(role: 'admin').each do |admin|
-        Notification.create!(
-          user: admin,
-          title: "Contratos liberados",
-          message: "#{released_count} contratos han sido cancelados y liberados debido a falta de pago de reserva.",
-          notification_type: "contracts_released"
-        )
-      end
+      notify_admins(
+        title: 'Contratos liberados',
+        message: "#{released_count} contratos han sido cancelados y liberados debido a falta de pago de reserva.",
+        notification_type: 'contracts_released'
+      )
     end
   end
 end

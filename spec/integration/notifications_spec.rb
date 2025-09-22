@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'swagger_helper'
 
 RSpec.describe 'Api::V1::NotificationsController', type: :request do
@@ -16,7 +18,7 @@ RSpec.describe 'Api::V1::NotificationsController', type: :request do
 
   let!(:notification) do
     Notification.create!(
-      user: user,
+      user:,
       title: 'New Notification',
       message: 'This is a test notification',
       read_at: nil

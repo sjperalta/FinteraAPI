@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Reports
   class UserInformationService
     def initialize(contract_id)
@@ -7,21 +9,27 @@ module Reports
 
     def call
       contract = Contract.includes(:applicant_user, :lot).find_by(id: @contract_id)
-      return { success: false, error: I18n.t("reports.user_information.errors.not_found", locale: @locale) } unless contract
+      unless contract
+        return { success: false,
+                 error: I18n.t('reports.user_information.errors.not_found', locale: @locale) }
+      end
 
       applicant = contract.applicant_user
-      return { success: false, error: I18n.t("reports.user_information.errors.user_not_found", locale: @locale) } unless applicant
+      unless applicant
+        return { success: false,
+                 error: I18n.t('reports.user_information.errors.user_not_found', locale: @locale) }
+      end
 
       {
         success: true,
-        applicant: applicant,
-        contract: contract,
+        applicant:,
+        contract:,
         lot: contract.lot,
         project: contract.lot.project,
         payment: contract.payments&.last
       }
     rescue StandardError => e
-      Rails.logger.error I18n.t("reports.user_information.errors.not_found", message: e.message, locale: @locale)
+      Rails.logger.error I18n.t('reports.user_information.errors.not_found', message: e.message, locale: @locale)
       { success: false, error: e.message }
     end
   end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/services/users/resend_confirmation_service.rb
 module Users
   class ResendConfirmationService
