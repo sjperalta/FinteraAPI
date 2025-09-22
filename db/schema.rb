@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_21_171000) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_21_190200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -78,8 +78,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_21_171000) do
     t.string "address"
     t.string "measurement_unit"
     t.decimal "override_price", precision: 15, scale: 2
+    t.string "registration_number"
+    t.text "note"
     t.index ["name"], name: "index_lots_on_name"
     t.index ["project_id"], name: "index_lots_on_project_id"
+    t.index ["registration_number"], name: "index_lots_on_registration_number"
     t.index ["status"], name: "index_lots_on_status"
   end
 
@@ -126,6 +129,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_21_171000) do
     t.datetime "updated_at", null: false
     t.decimal "commission_rate", precision: 5, scale: 2, default: "0.0", null: false
     t.string "measurement_unit", default: "m2", null: false
+    t.date "delivery_date"
     t.index ["name"], name: "index_projects_on_name"
   end
 
@@ -186,6 +190,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_21_171000) do
     t.string "recovery_code"
     t.datetime "recovery_code_sent_at"
     t.string "address"
+    t.text "note"
     t.index ["discarded_at"], name: "index_users_on_discarded_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["full_name"], name: "index_users_on_full_name"

@@ -48,7 +48,9 @@ class Api::V1::LotsController < ApplicationController
         dimensions: "#{lot.length} x #{lot.width}",
         area: lot.area_m2,
         status: lot.status.titleize,  # Capitalize for better readability
-        balance: contract&.balance || lot.price
+        balance: contract&.balance || lot.price,
+        registration_number: lot.registration_number,
+        note: lot.note
       }
     end
 
@@ -112,19 +114,17 @@ class Api::V1::LotsController < ApplicationController
   def set_project
     @project = Project.find(params[:project_id])
   rescue ActiveRecord::RecordNotFound
-    render json: { error: 'Project not found' }, status: :not_found
+    render json: { error: "Project not found" }, status: :not_found
   end
 
   def set_lot
     @lot = @project.lots.find(params[:id])
   rescue ActiveRecord::RecordNotFound
-    render json: { error: 'Lot not found' }, status: :not_found
+    render json: { error: "Lot not found" }, status: :not_found
   end
 
   def lot_params
     return {} unless params[:lot].is_a?(ActionController::Parameters)
-
-    # We now allow partial updates and additional attributes.
     params.require(:lot).permit(
       :name,
       :length,
@@ -132,7 +132,9 @@ class Api::V1::LotsController < ApplicationController
       :price,
       :override_price,
       :status,
-      :measurement_unit
+      :measurement_unit,
+      :registration_number,
+      :note
     )
   end
 end

@@ -103,7 +103,9 @@ RSpec.describe 'Api::V1::LotsController', type: :request do
           name: { type: :string },
           length: { type: :integer },
           width: { type: :integer },
-          price: { type: :number }
+          price: { type: :number },
+          registration_number: { type: :string },
+          note: { type: :string }
         },
         required: ['name', 'length', 'width', 'price']
       }
@@ -115,7 +117,9 @@ RSpec.describe 'Api::V1::LotsController', type: :request do
             name: 'Lote 2',
             length: 60,
             width: 30,
-            price: 12000
+            price: 12000,
+            registration_number: 'REG-001',
+            note: 'Corner lot'
           }
         end
 

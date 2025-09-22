@@ -310,7 +310,8 @@ end
       :password_confirmation,
       :role,
       :full_name,
-      :phone
+      :phone,
+      :note
     )
   end
 end

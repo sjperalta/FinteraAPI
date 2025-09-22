@@ -41,4 +41,10 @@ RSpec.describe Lot, type: :model do
     expected = subject.length.to_d * subject.width.to_d * project.price_per_square_unit.to_d
     expect(subject.price.to_d).to eq(expected)
   end
+
+  it 'accepts registration_number and note optional fields' do
+    subject.registration_number = "REG-123"
+    subject.note = "Some internal note"
+    expect(subject).to be_valid
+  end
 end

@@ -47,6 +47,13 @@ RSpec.describe User, type: :model do
     expect(subject.inactive_message).to eq(:inactive)
   end
 
+  it 'allows optional note' do
+    subject.note = "Internal note"
+    subject.password = 'password123'
+    subject.password_confirmation = 'password123'
+    expect(subject).to be_valid
+  end
+
   it 'can generate a JWT with user_id payload' do
     # stub id and secret
     allow(subject).to receive(:id).and_return(123)
