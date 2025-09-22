@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 RSpec.describe User, type: :model do
@@ -29,7 +31,7 @@ RSpec.describe User, type: :model do
 
   it 'normalizes identity and rtn by stripping whitespace' do
     subject.identity = '  ID999  '
-    subject.rtn = "  RTN999  "
+    subject.rtn = '  RTN999  '
     subject.valid?
     expect(subject.identity).to eq('ID999')
     expect(subject.rtn).to eq('RTN999')
@@ -48,7 +50,7 @@ RSpec.describe User, type: :model do
   end
 
   it 'allows optional note' do
-    subject.note = "Internal note"
+    subject.note = 'Internal note'
     subject.password = 'password123'
     subject.password_confirmation = 'password123'
     expect(subject).to be_valid

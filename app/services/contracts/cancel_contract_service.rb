@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/services/contracts/cancel_contract_service.rb
 
 module Contracts

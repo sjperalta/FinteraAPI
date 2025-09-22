@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Statistics
   class GenerateStatisticsService
     def initialize(period_date = Date.today)
@@ -25,8 +27,13 @@ module Statistics
     private
 
     def parse_date(date)
-      return date if date.is_a?(Date)  # If already a Date object, return it
-      Date.parse(date) rescue Date.today  # Try to parse, fallback to today if error
+      return date if date.is_a?(Date) # If already a Date object, return it
+
+      begin
+        Date.parse(date)
+      rescue StandardError
+        Date.today
+      end
     end
 
     def period_range
@@ -35,7 +42,7 @@ module Statistics
 
     def calculate_payments
       result = Payment.where(approved_at: period_range)
-                      .pluck(Arel.sql("SUM(amount) AS total_income, SUM(interest_amount) AS total_interest"))
+                      .pluck(Arel.sql('SUM(amount) AS total_income, SUM(interest_amount) AS total_interest'))
                       .first
       { total_income: result[0] || 0, total_interest: result[1] || 0 }
     end
@@ -48,10 +55,10 @@ module Statistics
       users = User.where(role: 'admin')
       users.each do |user|
         Notification.create(
-          user: user,
-          title: "Actualizacion de estadisticas",
-          message: "Se ha ejecutado el servicio de actualizacion de estadisticas.",
-          notification_type: "generate_statistics"
+          user:,
+          title: 'Actualizacion de estadisticas',
+          message: 'Se ha ejecutado el servicio de actualizacion de estadisticas.',
+          notification_type: 'generate_statistics'
         )
       end
     end

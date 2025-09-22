@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 # app/services/notifications/contract_approval_email_service.rb
 
 module Notifications
   class ContractApprovalEmailService
     def initialize(contract)
       @contract = contract
-      @user = @contract.applicant_user  # El usuario que solicitó el contrato
+      @user = @contract.applicant_user # El usuario que solicitó el contrato
     end
 
     def call

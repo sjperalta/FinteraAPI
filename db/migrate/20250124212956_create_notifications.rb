@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # db/migrate/XXXXXXXXXXXXXX_create_notifications.rb
 class CreateNotifications < ActiveRecord::Migration[8.0]
   def change
@@ -11,9 +13,9 @@ class CreateNotifications < ActiveRecord::Migration[8.0]
       t.timestamps
     end
 
-     # Additional indexes
-     add_index :notifications, :read_at
-     add_index :notifications, :notification_type
-     add_index :notifications, :created_at
+    # Additional indexes
+    add_index :notifications, :read_at
+    add_index :notifications, :notification_type
+    add_index :notifications, :created_at
   end
 end

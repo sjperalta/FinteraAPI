@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/models/payment.rb
 class Payment < ApplicationRecord
   include AASM
@@ -35,7 +37,7 @@ class Payment < ApplicationRecord
     event :approve do
       transitions from: :submitted, to: :paid,
                   guard: :can_be_approved?,
-                  after: [:record_approval_timestamp, :update_contract_balance, :notify_approval]
+                  after: %i[record_approval_timestamp update_contract_balance notify_approval]
     end
 
     # Transition from submitted to rejected when payment is rejected
@@ -45,8 +47,8 @@ class Payment < ApplicationRecord
     end
   end
 
-  scope :pending, -> { where(status: "pending") }
-  scope :overdue, -> { pending.where("due_date < ?", Date.current).order(:due_date) }
+  scope :pending, -> { where(status: 'pending') }
+  scope :overdue, -> { pending.where('due_date < ?', Date.current).order(:due_date) }
 
   private
 
@@ -72,27 +74,27 @@ class Payment < ApplicationRecord
   def notify_submission
     create_notification(
       user: contract.applicant_user,
-      title: "Actualización Pago",
+      title: 'Actualización Pago',
       message: "Pago ##{id} a sido enviado para aprobación.",
-      notification_type: "payment_submitted"
+      notification_type: 'payment_submitted'
     )
   end
 
   def notify_approval
     notify_user_and_admins(
       user: contract.applicant_user,
-      title: "Actualización Pago",
+      title: 'Actualización Pago',
       message: "Pago ##{id} ha sido aprobado, monto: #{paid_amount}.",
-      notification_type: "payment_approved"
+      notification_type: 'payment_approved'
     )
   end
 
   def notify_rejection
     create_notification(
       user: contract.applicant_user,
-      title: "Actualización Pago",
+      title: 'Actualización Pago',
       message: "Pago ##{id} ha sido rechazado.",
-      notification_type: "payment_rejected"
+      notification_type: 'payment_rejected'
     )
   end
 
@@ -101,7 +103,7 @@ class Payment < ApplicationRecord
       user: contract.applicant_user,
       title: "Pago Atrasado: #{description}",
       message: "Se ha generado un cargo por mora de #{overdue_interest}.",
-      notification_type: "payment_overdue"
+      notification_type: 'payment_overdue'
     )
   end
 end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/services/authentication/authenticate_user_service.rb
 module Authentication
   class AuthenticateUserService
@@ -5,7 +7,7 @@ module Authentication
     REFRESH_TOKEN_EXPIRY = 30.days.from_now.to_i
 
     def initialize(email:, password:)
-      @user = User.find_by(email: email)
+      @user = User.find_by(email:)
       @password = password
     end
 
@@ -19,8 +21,8 @@ module Authentication
       {
         success: true,
         token: access_token,
-        refresh_token: refresh_token,
-        user: @user.as_json(only: [:id, :full_name, :email, :phone, :role, :confirmed_at])
+        refresh_token:,
+        user: @user.as_json(only: %i[id full_name email phone role confirmed_at])
       }
     end
 

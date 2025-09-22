@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'sidekiq'
 require 'sidekiq-scheduler'
 
@@ -9,13 +11,9 @@ Sidekiq.configure_server do |config|
     sidekiq_config = YAML.load_file(sidekiq_config_path)
 
     # Set Sidekiq queue and concurrency settings from YAML
-    if sidekiq_config[':queues']
-      config.queues = sidekiq_config[':queues'].map(&:to_s)
-    end
+    config.queues = sidekiq_config[':queues'].map(&:to_s) if sidekiq_config[':queues']
 
-    if sidekiq_config[':concurrency']
-      config.concurrency = sidekiq_config[':concurrency'].to_i
-    end
+    config.concurrency = sidekiq_config[':concurrency'].to_i if sidekiq_config[':concurrency']
   else
     Rails.logger.warn("Sidekiq config file not found: #{sidekiq_config_path}")
   end

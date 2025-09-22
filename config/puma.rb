@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Set the number of workers (processes) based on ENV variable, defaults to 2
 workers Integer(ENV.fetch('WEB_CONCURRENCY', 2))
 

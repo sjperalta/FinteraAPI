@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/services/notifications/overdue_payment_email_service.rb
 
 module Notifications

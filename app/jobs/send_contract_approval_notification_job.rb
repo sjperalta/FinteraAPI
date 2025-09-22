@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/jobs/send_contract_approval_notification_job.rb
 
 class SendContractApprovalNotificationJob < ApplicationJob

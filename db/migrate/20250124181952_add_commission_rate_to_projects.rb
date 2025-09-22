@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # db/migrate/20250124000000_add_commission_rate_to_projects.rb
 
 class AddCommissionRateToProjects < ActiveRecord::Migration[8.0]

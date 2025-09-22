@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class AddMeasurementUnitToProjectsAndLots < ActiveRecord::Migration[8.0]
   def change
     add_column :projects, :measurement_unit, :string, null: false, default: 'm2'

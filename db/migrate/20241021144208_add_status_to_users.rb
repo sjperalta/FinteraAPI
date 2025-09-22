@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # db/migrate/xxxxxx_add_status_to_users.rb
 class AddStatusToUsers < ActiveRecord::Migration[6.1]
   def change

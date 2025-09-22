@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 RSpec.describe CheckPaymentsOverdueJob, type: :job do
@@ -28,7 +30,8 @@ RSpec.describe CheckPaymentsOverdueJob, type: :job do
     service1 = instance_double('Notifications::OverduePaymentEmailService')
     service2 = instance_double('Notifications::OverduePaymentEmailService')
 
-    expect(Notifications::OverduePaymentEmailService).to receive(:new).with(user1, [payment1, payment2]).and_return(service1)
+    expect(Notifications::OverduePaymentEmailService).to receive(:new).with(user1,
+                                                                            [payment1, payment2]).and_return(service1)
     expect(service1).to receive(:call)
 
     expect(Notifications::OverduePaymentEmailService).to receive(:new).with(user2, [payment3]).and_return(service2)

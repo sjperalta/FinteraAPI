@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # spec/rails_helper.rb
 
 # Este archivo es generado automáticamente por el comando `rails generate rspec:install`
@@ -9,7 +11,7 @@ ENV['SENTRY_ENV'] ||= 'test'
 require File.expand_path('../config/environment', __dir__)
 
 # Si la base de datos necesita migrarse, abortar si el entorno de producción está activo
-abort("The Rails environment is running in production mode!") if Rails.env.production?
+abort('The Rails environment is running in production mode!') if Rails.env.production?
 
 require 'rspec/rails'
 

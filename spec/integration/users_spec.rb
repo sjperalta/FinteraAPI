@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'swagger_helper'
 
 RSpec.describe 'Api::V1::UsersController', type: :request do
@@ -43,27 +45,27 @@ RSpec.describe 'Api::V1::UsersController', type: :request do
       name: 'Lote 1',
       length: 50,
       width: 40,
-      price: 10000,
-      project: project
+      price: 10_000,
+      project:
     )
   end
   let!(:contract) do
     Contract.create!(
-      lot: lot,
+      lot:,
       applicant_user_id: test_user.id, # Use the created user
       creator_id: admin_user.id,
       payment_term: 12,
       financing_type: 'direct',
       reserve_amount: 2000.00,
       down_payment: 5000.00,
-      balance: 15000.00,
+      balance: 15_000.00,
       currency: 'USD',
       status: 'pending'
     )
   end
   let!(:payment) do
     Payment.create!(
-      contract: contract,
+      contract:,
       description: 'First payment',
       amount: 500.00,
       interest_amount: 50.00,

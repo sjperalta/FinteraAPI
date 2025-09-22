@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/controllers/concerns/sortable.rb
 
 module Sortable
@@ -7,7 +9,7 @@ module Sortable
     # Generic sorting application
     def apply_sorting(scope, params, sortable_fields)
       if params[:sort].present?
-        field, direction = params[:sort].split("-")
+        field, direction = params[:sort].split('-')
         if sortable_fields.include?(field) && %w[asc desc].include?(direction)
           scope = scope.order("#{field} #{direction}")
         end

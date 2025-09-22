@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/services/contracts/create_contract_service.rb
 module Contracts
   class CreateContractService
@@ -14,25 +16,23 @@ module Contracts
 
     def call
       ActiveRecord::Base.transaction do
-        begin
-          user = process_user
-          contract = create_contract(user)
-          process_documents(contract)
-          update_lot_status
-          submit_contract(contract)
-          after_submission(contract)
+        user = process_user
+        contract = create_contract(user)
+        process_documents(contract)
+        update_lot_status
+        submit_contract(contract)
+        after_submission(contract)
 
-          { success: true, contract: contract }
-        rescue ActiveRecord::RecordInvalid => e
-          handle_error("Validation error: #{e.message}")
-          { success: false, errors: errors }
-        rescue AASM::InvalidTransition => e
-          handle_error("State transition error: #{e.message}")
-          { success: false, errors: errors }
-        rescue StandardError => e
-          handle_error("Unexpected error: #{e.message}")
-          { success: false, errors: errors }
-        end
+        { success: true, contract: }
+      rescue ActiveRecord::RecordInvalid => e
+        handle_error("Validation error: #{e.message}")
+        { success: false, errors: }
+      rescue AASM::InvalidTransition => e
+        handle_error("State transition error: #{e.message}")
+        { success: false, errors: }
+      rescue StandardError => e
+        handle_error("Unexpected error: #{e.message}")
+        { success: false, errors: }
       end
     end
 
@@ -54,32 +54,26 @@ module Contracts
       user = User.new(user_params.merge(role: 'user'))
       user.creator = current_user
 
-      if user.save
-        notify_new_user_creation(user)
-        user
-      else
-        raise ActiveRecord::RecordInvalid.new(user)
-      end
+      raise ActiveRecord::RecordInvalid, user unless user.save
+
+      notify_new_user_creation(user)
+      user
     end
 
     def update_existing_user
       user = User.find(contract_params[:applicant_user_id])
 
-      if user.update(user_params)
-        user
-      else
-        raise ActiveRecord::RecordInvalid.new(user)
-      end
+      raise ActiveRecord::RecordInvalid, user unless user.update(user_params)
+
+      user
     end
 
     def create_contract(user)
       contract = lot.contracts.build(contract_attributes(user))
 
-      if contract.save
-        contract
-      else
-        raise ActiveRecord::RecordInvalid.new(contract)
-      end
+      raise ActiveRecord::RecordInvalid, contract unless contract.save
+
+      contract
     end
 
     def contract_attributes(user)
@@ -100,11 +94,9 @@ module Contracts
     end
 
     def validate_document(document)
-      unless valid_document?(document)
-        raise ActiveRecord::RecordInvalid.new(
-          "Invalid document format or size: #{document.original_filename}"
-        )
-      end
+      return if valid_document?(document)
+
+      raise ActiveRecord::RecordInvalid, "Invalid document format or size: #{document.original_filename}"
     end
 
     def valid_document?(document)
@@ -125,6 +117,7 @@ module Contracts
 
     def submit_contract(contract)
       return unless contract.may_submit?
+
       contract.submit!
 
       # Notify reservation approval (new or existing user)
@@ -133,19 +126,19 @@ module Contracts
 
     def notify_new_user_creation(user)
       Notification.create!(
-        user: user,
-        title: "Bienvenido a Fintera",
-        message: "Se ha creado tu cuenta exitosamente",
-        notification_type: "create_new_user"
+        user:,
+        title: 'Bienvenido a Fintera',
+        message: 'Se ha creado tu cuenta exitosamente',
+        notification_type: 'create_new_user'
       )
 
       # Notify admins
       User.where(role: 'admin').each do |admin|
         Notification.create!(
           user: admin,
-          title: "Nuevo Usuario",
+          title: 'Nuevo Usuario',
           message: "Se ha creado un nuevo usuario: #{user.full_name}",
-          notification_type: "create_new_user"
+          notification_type: 'create_new_user'
         )
       end
     end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 RSpec.describe Users::UserSummaryService, type: :service do
@@ -15,7 +17,8 @@ RSpec.describe Users::UserSummaryService, type: :service do
     allow(payments_relation).to receive_message_chain(:joins, :limit, :pluck).and_return(['USD'])
 
     # Balance: payments.pluck(COALESCE(SUM(amount),0), COALESCE(SUM(paid_amount),0)) => [1000, 600]
-    allow(payments_relation).to receive(:pluck).with(an_instance_of(Arel::Nodes::SqlLiteral)).and_return([[1000.0, 600.0]])
+    allow(payments_relation).to receive(:pluck).with(an_instance_of(Arel::Nodes::SqlLiteral)).and_return([[1000.0,
+                                                                                                           600.0]])
 
     # Overdue aggregate: payments.where(...).where(...).pluck(...) => [200, 20, 2]
     allow(payments_relation).to receive_message_chain(:where, :where, :pluck).and_return([[200.0, 20.0, 2]])

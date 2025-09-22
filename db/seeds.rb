@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 puts "Iniciando seeds ambiente: #{ENV['RAILS_ENV']}"
 
 # Verifica si el usuario ya existe antes de crearlo para evitar duplicados
@@ -38,8 +40,8 @@ end
 
 puts "Projecto creado/actualizado: #{project.name}"
 
-lot = Lot.find_or_create_by!(
-  project: project,
+Lot.find_or_create_by!(
+  project:,
   name: 'Lote 1',
   length: 30.0,
   width: 20.0,
@@ -47,7 +49,7 @@ lot = Lot.find_or_create_by!(
 )
 
 lot = Lot.find_or_create_by!(
-  project: project,
+  project:,
   name: 'Lote 2',
   length: 10.0,
   width: 23.0,
@@ -58,12 +60,12 @@ puts "Lote creado/actualizado: #{lot.name} with price #{lot.price}"
 
 # Crear un contrato asociado al lote y al usuario
 contract = Contract.find_or_create_by!(
-  lot: lot,
+  lot:,
   applicant_user_id: user.id,
   payment_term: 12,
   financing_type: 'direct',
-  reserve_amount: 50000.00,
-  down_payment: 210000.00,
+  reserve_amount: 50_000.00,
+  down_payment: 210_000.00,
   status: 'approved',
   currency: 'HNL'
 )

@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 # app/services/notifications/admin_payment_receipt_notification_service.rb
 
 module Notifications
   class AdminPaymentReceiptNotificationService
     def initialize(payment)
       @payment = payment
-      @admin_email = ENV['ADMIN_EMAIL']  # Puedes configurar esto dinámicamente si tienes múltiples administradores
+      @admin_email = ENV['ADMIN_EMAIL'] # Puedes configurar esto dinámicamente si tienes múltiples administradores
     end
 
     def call

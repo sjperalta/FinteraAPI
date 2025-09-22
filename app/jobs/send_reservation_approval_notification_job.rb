@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/jobs/send_reservation_approval_notification_job.rb
 
 class SendReservationApprovalNotificationJob < ApplicationJob
@@ -20,14 +22,13 @@ class SendReservationApprovalNotificationJob < ApplicationJob
   def normalize_contract(input)
     return input if input.is_a?(Contract)
     return nil if input.nil?
-    if input.is_a?(Integer) || (input.is_a?(String) && /^\d+$/.match?(input))
-      return Contract.find_by(id: input.to_i)
-    end
+    return Contract.find_by(id: input.to_i) if input.is_a?(Integer) || (input.is_a?(String) && /^\d+$/.match?(input))
     return input if input.respond_to?(:id)
+
     nil
   end
 
   def safe_contract_id(contract)
-    contract.respond_to?(:id) ? contract.id : "unknown"
+    contract.respond_to?(:id) ? contract.id : 'unknown'
   end
 end

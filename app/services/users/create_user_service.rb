@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Users
   class CreateUserService
     def initialize(user_params:, creator_id: nil)
@@ -10,20 +12,20 @@ module Users
       users.each do |admin|
         Notification.create(
           user: admin,
-          title: "Nuevo Usuario.",
+          title: 'Nuevo Usuario.',
           message: "Se han create un nuevo usuario #{user.full_name}",
-          notification_type: "create_new_user"
+          notification_type: 'create_new_user'
         )
       end
     end
 
     def welcome_message(user)
       Notification.create(
-          user: user,
-          title: "Bienvenido!",
-          message: "Hola #{user.full_name}, gracias por ser parte de Fintera.",
-          notification_type: "onboard_user"
-        )
+        user:,
+        title: 'Bienvenido!',
+        message: "Hola #{user.full_name}, gracias por ser parte de Fintera.",
+        notification_type: 'onboard_user'
+      )
     end
 
     def call
@@ -37,11 +39,11 @@ module Users
 
         # Si estás utilizando confirmable en Devise, se envía el email de confirmación
         user.send_confirmation_instructions if user.respond_to?(:send_confirmation_instructions)
-        { success: true, user: user }
+        { success: true, user: }
       else
         { success: false, errors: user.errors.full_messages }
       end
-    rescue => e
+    rescue StandardError => e
       Rails.logger.error("Error creating user: #{e.message}")
       { success: false, errors: [e.message] }
     end

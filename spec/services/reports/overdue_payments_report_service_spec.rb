@@ -1,11 +1,14 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 RSpec.describe Reports::OverduePaymentsReportService do
-  let(:start_date) { Date.new(2020,1,1) }
-  let(:end_date) { Date.new(2025,12,31) }
+  let(:start_date) { Date.new(2020, 1, 1) }
+  let(:end_date) { Date.new(2025, 12, 31) }
 
   it 'generates localized headers and totals' do
-    payment = double('Payment', id: 1, contract: double('Contract', applicant_user: double('User', full_name: 'Juan', email: 'j@e', phone: '123')), description: 'Desc', amount: 50.0, interest_amount: 2.5, due_date: Date.new(2025,9,1))
+    payment = double('Payment', id: 1,
+                                contract: double('Contract', applicant_user: double('User', full_name: 'Juan', email: 'j@e', phone: '123')), description: 'Desc', amount: 50.0, interest_amount: 2.5, due_date: Date.new(2025, 9, 1))
     relation = double('Relation')
 
     allow(Payment).to receive_message_chain(:joins, :where, :where).and_return(relation)

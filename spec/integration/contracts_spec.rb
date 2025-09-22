@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'swagger_helper'
 
 RSpec.describe 'Api::V1::ContractsController', type: :request do
@@ -32,14 +34,14 @@ RSpec.describe 'Api::V1::ContractsController', type: :request do
       name: 'Lote 1',
       length: 50,
       width: 40,
-      price: 10000,
-      project: project
+      price: 10_000,
+      project:
     )
   end
 
   let!(:contract) do
     Contract.create!(
-      lot: lot,
+      lot:,
       applicant_user_id: 1,
       payment_term: 12,
       financing_type: 'direct',
@@ -119,11 +121,11 @@ RSpec.describe 'Api::V1::ContractsController', type: :request do
         properties: {
           contract:
           {
-              payment_term: { type: :integer },
-              financing_type: { type: :string },
-              applicant_user_id: { type: :integer },
-              reserve_amount: { type: :number },
-              down_payment: { type: :number }
+            payment_term: { type: :integer },
+            financing_type: { type: :string },
+            applicant_user_id: { type: :integer },
+            reserve_amount: { type: :number },
+            down_payment: { type: :number }
           },
           user:
           {
@@ -134,7 +136,7 @@ RSpec.describe 'Api::V1::ContractsController', type: :request do
             email: { type: :string }
           }
         },
-        required: ['contract', 'user']
+        required: %w[contract user]
       }
 
       response '201', 'Contract created' do
@@ -150,11 +152,11 @@ RSpec.describe 'Api::V1::ContractsController', type: :request do
               down_payment: 5000.00
             },
             user: {
-              full_name: "John Doe",
-              phone: "123456789",
-              identity: "987654321",
-              rtn: "1234567890",
-              email: "john.doe@example.com"
+              full_name: 'John Doe',
+              phone: '123456789',
+              identity: '987654321',
+              rtn: '1234567890',
+              email: 'john.doe@example.com'
             }
           }
         end
@@ -175,11 +177,11 @@ RSpec.describe 'Api::V1::ContractsController', type: :request do
               down_payment: 5000.00
             },
             user: {
-              full_name: "John Doe",
-              phone: "123456789",
-              identity: "987654321",
-              rtn: "1234567890",
-              email: "john.doe@example.com"
+              full_name: 'John Doe',
+              phone: '123456789',
+              identity: '987654321',
+              rtn: '1234567890',
+              email: 'john.doe@example.com'
             }
           }
         end
@@ -234,7 +236,7 @@ RSpec.describe 'Api::V1::ContractsController', type: :request do
   path '/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{id}/cancel' do
     let!(:contract) do
       Contract.create!(
-        lot: lot,
+        lot:,
         status: 'rejected',
         applicant_user_id: 1,
         payment_term: 12,

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'csv'
 
 module Reports
@@ -7,7 +9,6 @@ module Reports
       @end_date = end_date
       @locale = I18n.default_locale
     end
-
 
     def call(locale: nil)
       @locale = locale || I18n.default_locale
@@ -21,7 +22,7 @@ module Reports
         end
       end
     rescue StandardError => e
-      Rails.logger.error I18n.t("reports.commissions.errors.generate_csv", message: e.message, locale: @locale)
+      Rails.logger.error I18n.t('reports.commissions.errors.generate_csv', message: e.message, locale: @locale)
       raise e
     end
 
@@ -32,7 +33,7 @@ module Reports
     end
 
     def generate_csv_row(contract)
-      full_name = contract.creator&.full_name || "N/A"
+      full_name = contract.creator&.full_name || 'N/A'
       commission_rate = contract.lot.project.commission_rate || 0
       total_commission = (contract.amount * (commission_rate / 100)).round(2)
 

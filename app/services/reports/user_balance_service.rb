@@ -1,13 +1,19 @@
+# frozen_string_literal: true
+
 module Reports
   class UserBalanceService
     def initialize(user_id)
       @user = User.find_by(id: user_id)
-      @admin_user = User.find_by(role: "admin")
+      @admin_user = User.find_by(role: 'admin')
       @locale = I18n.default_locale
     end
 
     def call
-      return { success: false, error: I18n.t("reports.user_balance.errors.user_not_found", locale: @locale) } unless @user
+      unless @user
+        return { success: false,
+                 error: I18n.t('reports.user_balance.errors.user_not_found', locale: @locale) }
+      end
+
       notify_user
 
       {
@@ -17,10 +23,9 @@ module Reports
         pending_payments: fetch_pending_payments
       }
     rescue StandardError => e
-      Rails.logger.error I18n.t("reports.user_balance.errors.user_not_found", message: e.message, locale: @locale)
+      Rails.logger.error I18n.t('reports.user_balance.errors.user_not_found', message: e.message, locale: @locale)
       { success: false, error: e.message }
     end
-
 
     private
 
@@ -34,11 +39,12 @@ module Reports
 
     def notify_user
       return nil if @admin_user.blank?
+
       Notification.create(
         user: @admin_user,
-        title: I18n.t("reports.user_balance.notifications.title", locale: @locale),
-        message: I18n.t("reports.user_balance.notifications.message", locale: @locale, user: @user.full_name),
-        notification_type: "create_user_balance"
+        title: I18n.t('reports.user_balance.notifications.title', locale: @locale),
+        message: I18n.t('reports.user_balance.notifications.message', locale: @locale, user: @user.full_name),
+        notification_type: 'create_user_balance'
       )
     end
   end

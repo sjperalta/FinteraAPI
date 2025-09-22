@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Notifiable
   extend ActiveSupport::Concern
 
@@ -7,38 +9,38 @@ module Notifiable
     return unless user
 
     Notification.create!(
-      user: user,
-      title: title,
-      message: message,
-      notification_type: notification_type
+      user:,
+      title:,
+      message:,
+      notification_type:
     )
   rescue StandardError => e
     Rails.logger.error "Failed to create notification: #{e.message}"
   end
 
   def notify_admins(title:, message:, notification_type:)
-    User.where(role: "admin").find_each do |admin|
+    User.where(role: 'admin').find_each do |admin|
       create_notification(
         user: admin,
-        title: title,
-        message: message,
-        notification_type: notification_type
+        title:,
+        message:,
+        notification_type:
       )
     end
   end
 
   def notify_user_and_admins(user:, title:, message:, notification_type:)
     create_notification(
-      user: user,
-      title: title,
-      message: message,
-      notification_type: notification_type
+      user:,
+      title:,
+      message:,
+      notification_type:
     )
 
     notify_admins(
-      title: title,
-      message: message,
-      notification_type: notification_type
+      title:,
+      message:,
+      notification_type:
     )
   end
 end

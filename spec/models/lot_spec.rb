@@ -1,8 +1,13 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 RSpec.describe Lot, type: :model do
-  let(:project) { Project.new(name: 'P', description: 'D', address: 'A', price_per_square_unit: 100.0, measurement_unit: 'm2', interest_rate: 1.0, commission_rate: 5.0) }
-  subject { described_class.new(name: 'Lote A', length: 10.0, width: 5.0, project: project) }
+  let(:project) do
+    Project.new(name: 'P', description: 'D', address: 'A', price_per_square_unit: 100.0, measurement_unit: 'm2',
+                interest_rate: 1.0, commission_rate: 5.0)
+  end
+  subject { described_class.new(name: 'Lote A', length: 10.0, width: 5.0, project:) }
 
   it 'is valid with required attributes' do
     expect(subject).to be_valid
@@ -43,8 +48,8 @@ RSpec.describe Lot, type: :model do
   end
 
   it 'accepts registration_number and note optional fields' do
-    subject.registration_number = "REG-123"
-    subject.note = "Some internal note"
+    subject.registration_number = 'REG-123'
+    subject.note = 'Some internal note'
     expect(subject).to be_valid
   end
 end

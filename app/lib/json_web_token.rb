@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # app/lib/json_web_token.rb
 
 class JsonWebToken
@@ -11,7 +13,7 @@ class JsonWebToken
   def self.decode(token)
     body = JWT.decode(token, SECRET_KEY)[0]
     HashWithIndifferentAccess.new(body)
-  rescue JWT::DecodeError => e
+  rescue JWT::DecodeError
     nil
   end
 end

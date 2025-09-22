@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ApplicationHelper
   # Usando un ejemplo simple, con un método de conversión a palabras.
   #

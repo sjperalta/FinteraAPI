@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'swagger_helper'
 
 RSpec.describe 'Api::V1::AuthController', type: :request do
@@ -16,7 +18,7 @@ RSpec.describe 'Api::V1::AuthController', type: :request do
 
   let(:valid_credentials) { { email: user.email, password: 'password123' } }
   let(:invalid_credentials) { { email: user.email, password: 'wrongpassword' } }
-  let(:refresh_token) { RefreshToken.create!(user: user, token: SecureRandom.hex) }
+  let(:refresh_token) { RefreshToken.create!(user:, token: SecureRandom.hex) }
   let(:Authorization) { "Bearer #{user.generate_jwt}" }
 
   path '/api/v1/auth/login' do
@@ -73,14 +75,16 @@ RSpec.describe 'Api::V1::AuthController', type: :request do
 
       response '200', 'Logged out successfully' do
         let(:Authorization) { "Bearer #{user.generate_jwt}" }
-        let(:refresh_token) { { refresh_token: RefreshToken.create!(user: user, token: SecureRandom.hex, expires_at: DateTime.now).token } }
+        let(:refresh_token) do
+          { refresh_token: RefreshToken.create!(user:, token: SecureRandom.hex, expires_at: DateTime.now).token }
+        end
 
         run_test!
       end
 
       response '401', 'Invalid or missing token' do
-        let(:Authorization) { "Bearer invalid_token" }
-        let(:refresh_token) { "invalid_refresh_token" }
+        let(:Authorization) { 'Bearer invalid_token' }
+        let(:refresh_token) { 'invalid_refresh_token' }
 
         run_test!
       end
@@ -105,7 +109,8 @@ RSpec.describe 'Api::V1::AuthController', type: :request do
         let(:refresh_request) { { refresh_token: 'valid_refresh_token' } }
 
         before do
-          allow_any_instance_of(Api::V1::AuthController).to receive(:decode_token).and_return({ user_id: user.id, exp: (Time.now + 1.hour).to_i })
+          allow_any_instance_of(Api::V1::AuthController).to receive(:decode_token).and_return({ user_id: user.id,
+                                                                                                exp: (Time.now + 1.hour).to_i })
           allow_any_instance_of(Api::V1::AuthController).to receive(:generate_token).and_return('new_access_token')
         end
 
