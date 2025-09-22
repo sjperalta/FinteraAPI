@@ -40,6 +40,7 @@ class Api::V1::LotsController < ApplicationController
         project_id: lot.project_id,
         project_name: lot.project&.name || "N/A",
         name: lot.name,
+        address: lot.address,
         reserved_by: reservation_text,
         measurement_unit: lot.measurement_unit || lot.project.measurement_unit,
         price: lot.price,
@@ -48,7 +49,11 @@ class Api::V1::LotsController < ApplicationController
         dimensions: "#{lot.length} x #{lot.width}",
         area: lot.area_m2,
         status: lot.status.titleize,  # Capitalize for better readability
-        balance: contract&.balance || lot.price
+        balance: contract&.balance || lot.price,
+        registration_number: lot.registration_number,
+        note: lot.note,
+        created_at: lot.created_at,
+        updated_at: lot.updated_at
       }
     end
 
@@ -112,16 +117,28 @@ class Api::V1::LotsController < ApplicationController
   def set_project
     @project = Project.find(params[:project_id])
   rescue ActiveRecord::RecordNotFound
-    render json: { error: 'Project not found' }, status: :not_found
+    render json: { error: "Project not found" }, status: :not_found
   end
 
   def set_lot
     @lot = @project.lots.find(params[:id])
   rescue ActiveRecord::RecordNotFound
-    render json: { error: 'Lot not found' }, status: :not_found
+    render json: { error: "Lot not found" }, status: :not_found
   end
 
   def lot_params
-    params.require(:lot).permit(:name, :length, :width, :price)
+    return {} unless params[:lot].is_a?(ActionController::Parameters)
+    params.require(:lot).permit(
+      :name,
+      :length,
+      :width,
+      :price,
+      :address,
+      :override_price,
+      :status,
+      :measurement_unit,
+      :registration_number,
+      :note
+    )
   end
 end

@@ -29,6 +29,15 @@ class Lot < ApplicationRecord
   end
 
   def calculate_price
-    self.price = project.price_for(area_m2) if project
+    return unless project
+
+    if override_price.present?
+      self.price = override_price
+    else
+      # Formula: length * width * project.price_per_square_unit
+      # Using to_d to ensure decimal precision
+      base_area = length.to_d * width.to_d
+      self.price = base_area * project.price_per_square_unit.to_d
+    end
   end
 end

@@ -1,7 +1,18 @@
 require 'rails_helper'
 
 RSpec.describe Project, type: :model do
-  subject { described_class.new(name: 'P', description: 'Desc', address: 'Addr', price_per_square_unit: 10.0, measurement_unit: 'm2', interest_rate: 1.0, commission_rate: 5.0) }
+  subject do
+    described_class.new(
+      name: "P",
+      description: "Desc",
+      address: "Addr",
+      price_per_square_unit: 10.0,
+      measurement_unit: "m2",
+      interest_rate: 1.0,
+      commission_rate: 5.0,
+      delivery_date: Date.today
+    )
+  end
 
   it 'is valid with required attributes' do
     expect(subject).to be_valid

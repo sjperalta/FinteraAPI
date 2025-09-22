@@ -1,7 +1,8 @@
 module Users
   class CreateUserService
-    def initialize(user_params:)
+    def initialize(user_params:, creator_id: nil)
       @user_params = user_params
+      @creator_id = creator_id
     end
 
     def notify_admin(user)
@@ -27,10 +28,13 @@ module Users
 
     def call
       user = User.new(@user_params)
-      notify_admin(user)
-      welcome_message(user)
+      user.created_by = @creator_id if @creator_id.present?
 
       if user.save
+        # Create notifications after successful save
+        notify_admin(user)
+        welcome_message(user)
+
         # Si estás utilizando confirmable en Devise, se envía el email de confirmación
         user.send_confirmation_instructions if user.respond_to?(:send_confirmation_instructions)
         { success: true, user: user }

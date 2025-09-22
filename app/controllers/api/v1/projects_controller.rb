@@ -36,12 +36,15 @@ class Api::V1::ProjectsController < ApplicationController
         name: project.name,
         description: project.description,
         project_type: project.project_type,
-  price_per_square_unit: project.price_per_square_unit,
+        price_per_square_unit: project.price_per_square_unit,
         address: project.address,
         total_lots: project.lot_count,
         available: project.lots.where(status: 'available').count,
         reserved: project.lots.where(status: 'reserved').count,
-        total_area: total_area
+        total_area: total_area,
+        delivery_date: project.delivery_date,
+        created_at: project.created_at,
+        updated_at: project.updated_at
       }
     end
 
@@ -94,6 +97,17 @@ class Api::V1::ProjectsController < ApplicationController
   end
 
   def project_params
-    params.require(:project).permit(:name, :description, :project_type, :address, :lot_count, :price_per_square_unit, :measurement_unit, :interest_rate, :commission_rate)
+    params.require(:project).permit(
+      :name,
+      :description,
+      :project_type,
+      :address,
+      :lot_count,
+      :price_per_square_unit,
+      :measurement_unit,
+      :interest_rate,
+      :commission_rate,
+      :delivery_date
+    )
   end
 end

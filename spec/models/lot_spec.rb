@@ -20,10 +20,31 @@ RSpec.describe Lot, type: :model do
     expect(subject.area_in_project_unit).to be_within(0.0001).of(50.0 * 1.431)
   end
 
-  it 'sets the price before save using project price_per_square_unit' do
-    # Avoid persisting by calling the callback directly
-    allow(project).to receive(:price_for).and_call_original
+  it 'calculates price using formula length * width * project.price_per_square_unit when no override' do
     subject.send(:calculate_price)
-    expect(subject.price).to be_present
+    expected = subject.length.to_d * subject.width.to_d * project.price_per_square_unit.to_d
+    expect(subject.price.to_d).to eq(expected)
+  end
+
+  it 'uses override_price when present' do
+    subject.override_price = 9999.99
+    subject.send(:calculate_price)
+    expect(subject.price.to_d).to eq(9999.99.to_d)
+  end
+
+  it 'recalculates formula after clearing override_price' do
+    subject.override_price = 5000
+    subject.send(:calculate_price)
+    expect(subject.price.to_d).to eq(5000.to_d)
+    subject.override_price = nil
+    subject.send(:calculate_price)
+    expected = subject.length.to_d * subject.width.to_d * project.price_per_square_unit.to_d
+    expect(subject.price.to_d).to eq(expected)
+  end
+
+  it 'accepts registration_number and note optional fields' do
+    subject.registration_number = "REG-123"
+    subject.note = "Some internal note"
+    expect(subject).to be_valid
   end
 end

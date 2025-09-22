@@ -61,7 +61,8 @@ RSpec.describe 'Api::V1::ProjectsController', type: :request do
           price_per_square_unit: { type: :number },
           measurement_unit: { type: :string },
           interest_rate: { type: :number },
-          commission_rate: { type: :number }
+          commission_rate: { type: :number },
+          delivery_date: { type: :string, format: :date }
         },
   required: ['name', 'description', 'project_type', 'address', 'lot_count', 'price_per_square_unit', 'measurement_unit']
       }
@@ -77,7 +78,8 @@ RSpec.describe 'Api::V1::ProjectsController', type: :request do
             price_per_square_unit: 150.0,
             measurement_unit: 'm2',
             interest_rate: 5.5,
-            commission_rate: 2.0
+            commission_rate: 2.0,
+            delivery_date: Date.today.to_s
           }
         end
         run_test!
@@ -132,7 +134,8 @@ RSpec.describe 'Api::V1::ProjectsController', type: :request do
           price_per_square_unit: { type: :number },
           measurement_unit: { type: :string },
           interest_rate: { type: :number },
-          commission_rate: { type: :number }
+          commission_rate: { type: :number },
+          delivery_date: { type: :string, format: :date }
         }
       }
 
