@@ -1,11 +1,21 @@
 # app/models/payment.rb
 class Payment < ApplicationRecord
   include AASM
+  include Notifiable
 
   belongs_to :contract
   has_one_attached :document
 
+  # Constants
+  PAYMENT_TYPES = %w[reservation down_payment installment full advance].freeze
+  VALID_STATUSES = %w[pending submitted paid rejected].freeze
+
+  # Validations
   validates :amount, :due_date, :status, presence: true
+  validates :payment_type, presence: true, inclusion: { in: PAYMENT_TYPES }
+  validates :status, inclusion: { in: VALID_STATUSES }
+  validates :amount, numericality: { greater_than: 0 }
+  validates :interest_amount, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
 
   # State Machine Definition
   aasm column: :status do
@@ -35,7 +45,7 @@ class Payment < ApplicationRecord
     end
   end
 
-  scope :pending, -> { where(status: 'pending') }
+  scope :pending, -> { where(status: "pending") }
   scope :overdue, -> { pending.where("due_date < ?", Date.current).order(:due_date) }
 
   private
@@ -60,39 +70,38 @@ class Payment < ApplicationRecord
   end
 
   def notify_submission
-    Notification.create!(
+    create_notification(
       user: contract.applicant_user,
       title: "Actualización Pago",
       message: "Pago ##{id} a sido enviado para aprobación.",
-      notification_type: 'payment_submitted'
+      notification_type: "payment_submitted"
     )
   end
 
   def notify_approval
-    Notification.create!(
+    notify_user_and_admins(
       user: contract.applicant_user,
       title: "Actualización Pago",
       message: "Pago ##{id} ha sido aprobado, monto: #{paid_amount}.",
-      notification_type: 'payment_approved'
+      notification_type: "payment_approved"
     )
-
-    # Notify admins
-    User.where(role: 'admin').each do |admin|
-      Notification.create!(
-        user: admin,
-        title: "Actualización Pago",
-        message: "Pago ##{id} ha sido aprobado, monto: #{paid_amount}.",
-        notification_type: 'payment_approved'
-      )
-    end
   end
 
   def notify_rejection
-    Notification.create!(
+    create_notification(
       user: contract.applicant_user,
       title: "Actualización Pago",
       message: "Pago ##{id} ha sido rechazado.",
-      notification_type: 'payment_rejected'
+      notification_type: "payment_rejected"
+    )
+  end
+
+  def notify_overdue_interest(overdue_interest)
+    create_notification(
+      user: contract.applicant_user,
+      title: "Pago Atrasado: #{description}",
+      message: "Se ha generado un cargo por mora de #{overdue_interest}.",
+      notification_type: "payment_overdue"
     )
   end
 end

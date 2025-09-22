@@ -104,4 +104,33 @@ RSpec.describe Contract, type: :model do
 			expect(subject.aasm.current_state).to eq(:cancelled)
 		end
 	end
+
+	describe "#notify_approval" do
+		it "creates a notification for applicant and admins" do
+			user = double("User", id: 1)
+			admin = double("User", id: 2)
+			contract = described_class.new
+			allow(contract).to receive(:applicant_user).and_return(user)
+			allow(contract).to receive_message_chain(:lot, :name).and_return("Lote 1")
+			allow(contract).to receive(:id).and_return(42)
+
+			allow(User).to receive_message_chain(:where, :find_each).and_yield(admin)
+
+			expect(Notification).to receive(:create!).with(
+				user: user,
+				title: "Contrato Aprobado",
+				message: "Tu contrato para Lote 1 ha sido aprobado",
+				notification_type: "contract_approved"
+			)
+
+			expect(Notification).to receive(:create!).with(
+				user: admin,
+				title: "Contrato Aprobado",
+				message: "Contrato #42 para Lote 1 ha sido aprobado.",
+				notification_type: "contract_approved"
+			)
+
+			contract.send(:notify_approval)
+		end
+	end
 end

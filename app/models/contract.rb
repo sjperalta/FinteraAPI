@@ -1,6 +1,7 @@
 # app/models/contract.rb
 
 class Contract < ApplicationRecord
+  include Notifiable
   include AASM
   has_paper_trail
 
@@ -164,20 +165,41 @@ class Contract < ApplicationRecord
   end
 
   def notify_approval
-    Notification.create!(
+    create_notification(
       user: applicant_user,
       title: "Contrato Aprobado",
       message: "Tu contrato para #{lot.name} ha sido aprobado",
       notification_type: "contract_approved"
     )
+
+    notify_admins(
+      title: "Contrato Aprobado",
+      message: "Contrato ##{id} para #{lot.name} ha sido aprobado.",
+      notification_type: "contract_approved"
+    )
   end
 
   def notify_rejection
-    Notification.create!(
+    create_notification(
       user: applicant_user,
       title: "Contrato Rechazado",
       message: "Tu contrato para #{lot.name} ha sido rechazado, detalle: #{rejection_reason}",
       notification_type: "contract_rejected"
+    )
+  end
+
+  def notify_cancellation
+    create_notification(
+      user: applicant_user,
+      title: "Contrato Cancelado",
+      message: "Tu contrato para #{lot.name} ha sido cancelado, lote se liberado.",
+      notification_type: "contract_cancelled"
+    )
+
+    notify_admins(
+      title: "Contrato Cancelado",
+      message: "El contrato #{lot.name} ha sido cancelado, lote se liberado.",
+      notification_type: "contract_cancelled"
     )
   end
 
@@ -188,23 +210,5 @@ class Contract < ApplicationRecord
 
   def delete_payments
     payments.destroy_all
-  end
-
-  def notify_cancellation
-    recipients = [
-      { user: applicant_user, message: "Tu contrato para #{lot.name} ha sido cancelado, lote se liberado." },
-      { user: User.find_by(role: 'admin'), message: "El contrato #{lot.name} ha sido cancelado, lote se liberado." }
-    ]
-
-    recipients.each do |recipient|
-      next unless recipient[:user]  # Skip if the user is nil
-
-      Notification.create!(
-        user: recipient[:user],
-        title: "Contrato Cancelado",
-        message: recipient[:message],
-        notification_type: "contract_cancelled"
-      )
-    end
   end
 end

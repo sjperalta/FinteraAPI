@@ -1,5 +1,7 @@
 module Payments
   class UploadReceiptService
+    include Notifiable
+
     def initialize(payment:, receipt:, user:)
       @payment = payment
       @receipt = receipt
@@ -43,15 +45,11 @@ module Payments
     end
 
     def send_notification
-      users = User.where(role: 'admin')
-      users.each do |user|
-        Notification.create!(
-          user: user,
-          title: "Pago Actualizado",
-          message: "Has recibido un pago por #{@payment.amount}, Contrato ##{@payment.contract.id}",
-          notification_type: "payment_upload"
-        )
-      end
+      notify_admins(
+        title: "Pago Actualizado",
+        message: "Has recibido un pago por #{@payment.amount}, Contrato ##{@payment.contract.id}",
+        notification_type: "payment_upload"
+      )
     end
 
     # Notify admins about the uploaded receipt

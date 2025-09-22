@@ -4,6 +4,8 @@ require 'set'
 
 module Contracts
   class ReleaseUnpaidReservationService
+    include Notifiable
+
     def call
       Rails.logger.info "Starting ReleaseUnpaidReservationService"
 
@@ -50,14 +52,11 @@ module Contracts
     private
 
     def notify_admin(released_count)
-      User.where(role: 'admin').each do |admin|
-        Notification.create!(
-          user: admin,
-          title: "Contratos liberados",
-          message: "#{released_count} contratos han sido cancelados y liberados debido a falta de pago de reserva.",
-          notification_type: "contracts_released"
-        )
-      end
+      notify_admins(
+        title: "Contratos liberados",
+        message: "#{released_count} contratos han sido cancelados y liberados debido a falta de pago de reserva.",
+        notification_type: "contracts_released"
+      )
     end
   end
 end

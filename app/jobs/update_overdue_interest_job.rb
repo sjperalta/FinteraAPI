@@ -1,4 +1,5 @@
 class UpdateOverdueInterestJob < ApplicationJob
+  include Notifiable
   queue_as :default
 
   DAYS_PER_YEAR = 365.0
@@ -12,22 +13,7 @@ class UpdateOverdueInterestJob < ApplicationJob
   end
 
   def send_notification(payment, overdue_interest)
-    Notification.create(
-      user: payment.contract.applicant_user,
-      title: "Pago Atrasado: #{payment.description}",
-      message: "Se ha generado un cargo por mora de #{overdue_interest}.",
-      notification_type: "payment_overdue"
-    )
-  end
-
-  def notify_admin(admin, count)
-    return unless admin
-    Notification.create(
-      user: admin,
-      title: "Se Ejecuto Servicio de Actualización Saldos en Mora.",
-      message: "Se ha generado un cargo por mora a #{count} usuarios.",
-      notification_type: "payment_overdue_admin"
-    )
+    payment.notify_overdue_interest(overdue_interest)
   end
 
   # Allow admin notification errors to be swallowed so the job does not fail if notifications fail.
@@ -35,8 +21,10 @@ class UpdateOverdueInterestJob < ApplicationJob
 
   def perform
     Rails.logger.info "[UpdateOverdueInterestJob] starting overdue interest update"
+    # Exclude installment payments from overdue interest calculation
     overdue_payments = Payment.joins(contract: { lot: :project })
                               .where("payments.due_date < ? AND payments.status = ?", Date.current, "pending")
+                              .where.not(payment_type: "installment")
 
     processed_count = 0
     overdue_payments.each do |payment|
@@ -57,8 +45,11 @@ class UpdateOverdueInterestJob < ApplicationJob
       end
     end
 
-    admin = User.find_by(role: "admin")
-    notify_admin(admin, processed_count)
+    notify_admins(
+      title: "Se Ejecuto Servicio de Actualización Saldos en Mora.",
+      message: "Se ha generado un cargo por mora a #{processed_count} usuarios.",
+      notification_type: "payment_overdue_admin"
+    )
     Rails.logger.info "[UpdateOverdueInterestJob] admin notified about #{processed_count} updates"
   end
 end
