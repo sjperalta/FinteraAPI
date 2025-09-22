@@ -29,10 +29,12 @@ module Users
     def call
       user = User.new(@user_params)
       user.created_by = @creator_id if @creator_id.present?
-      notify_admin(user)
-      welcome_message(user)
 
       if user.save
+        # Create notifications after successful save
+        notify_admin(user)
+        welcome_message(user)
+
         # Si estás utilizando confirmable en Devise, se envía el email de confirmación
         user.send_confirmation_instructions if user.respond_to?(:send_confirmation_instructions)
         { success: true, user: user }

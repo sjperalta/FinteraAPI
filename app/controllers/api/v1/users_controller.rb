@@ -10,7 +10,9 @@ class Api::V1::UsersController < ApplicationController
     :update_password_with_code
   ]
   load_and_authorize_resource
-  before_action :set_user, only: [:show, :update, :contracts, :payments, :summary, :upload_receipt]
+  skip_load_resource only: [:restore]
+  skip_authorize_resource only: [:restore]
+  before_action :set_user, only: [:show, :update, :contracts, :payments, :summary, :upload_receipt, :restore]
   before_action :set_payment, only: [:upload_receipt]
 
   SEARCHABLE_FIELDS = %w[email full_name phone identity rtn role].freeze

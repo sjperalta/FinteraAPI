@@ -3,7 +3,6 @@ require 'swagger_helper'
 RSpec.describe 'Api::V1::UsersController', type: :request do
   let!(:admin_user) do
     User.create(
-      id: 1,
       email: 'admin@example.com',
       full_name: 'Admin User',
       phone: '50449494442',
@@ -15,7 +14,7 @@ RSpec.describe 'Api::V1::UsersController', type: :request do
       confirmed_at: Time.now
     )
   end
-  let!(:user) do
+  let!(:test_user) do
     User.create!(
       full_name: 'New User',
       email: 'newuser@example.com',
@@ -51,7 +50,7 @@ RSpec.describe 'Api::V1::UsersController', type: :request do
   let!(:contract) do
     Contract.create!(
       lot: lot,
-      applicant_user_id: 1, # Use the created user
+      applicant_user_id: test_user.id, # Use the created user
       creator_id: admin_user.id,
       payment_term: 12,
       financing_type: 'direct',
@@ -102,39 +101,41 @@ RSpec.describe 'Api::V1::UsersController', type: :request do
         type: :object,
         properties: {
           full_name: { type: :string },
+          password: { type: :string },
+          password_confirmation: { type: :string },
           email: { type: :string },
           phone: { type: :string },
           identity: { type: :string },
           rtn: { type: :string },
-          role: { type: :string },
-          password: { type: :string },
-          password_confirmation: { type: :string }
+          role: { type: :string }
         },
         required: %w[full_name email phone identity rtn role password password_confirmation]
       }
 
       let(:Authorization) { "Bearer #{admin_user.generate_jwt}" }
 
-      # response '201', 'User created successfully' do
-      #   let(:user_params) do
-      #     {
-      #       full_name: 'New User',
-      #       email: 'newuser@example.com',
-      #       phone: '5054445555',
-      #       identity: '20202020202020',
-      #       rtn: '202020202020202',
-      #       role: 'user',
-      #       password: 'password123',
-      #       password_confirmation: 'password123',
-      #     }
-      #   end
-      #   let(:user) { User.create!(user_params) } # Ensure it's a real ActiveRecord instance
+      response '201', 'User created successfully' do
+        let(:user) do
+          {
+            user: {
+              full_name: 'Created User',
+              password: 'password@123',
+              password_confirmation: 'password@123',
+              email: 'createduser@example.com',
+              phone: '5054445556',
+              identity: '30303030303030',
+              rtn: '303030303030303',
+              role: 'user'
+            }
+          }
+        end
 
-      #   run_test!
-      # end
+        run_test!
+      end
 
       response '422', 'Validation error' do
-        let(:user) { { full_name: '', email: '' } }
+        let(:user) { { user: { full_name: '', email: '' } } }
+
         run_test!
       end
     end
@@ -150,11 +151,11 @@ RSpec.describe 'Api::V1::UsersController', type: :request do
       parameter name: :id, in: :path, type: :integer, required: true, description: 'User ID'
 
       response '200', 'User retrieved successfully' do
-        let(:id) { user.id }
+        let(:id) { test_user.id }
         run_test! do |response|
           data = JSON.parse(response.body)
-          expect(data['id']).to eq(user.id)
-          expect(data['email']).to eq(user.email)
+          expect(data['id']).to eq(test_user.id)
+          expect(data['email']).to eq(test_user.email)
         end
       end
 
@@ -182,13 +183,13 @@ RSpec.describe 'Api::V1::UsersController', type: :request do
       }
 
       response '200', 'User updated successfully' do
-        let(:id) { user.id }
+        let(:id) { test_user.id }
         let(:update_params) { { full_name: 'Updated Name' } }
         run_test!
       end
 
       response '422', 'Validation error' do
-        let(:id) { user.id }
+        let(:id) { test_user.id }
         let(:update_params) { { full_name: '' } }
         run_test!
       end
@@ -205,7 +206,7 @@ RSpec.describe 'Api::V1::UsersController', type: :request do
       parameter name: :id, in: :path, type: :integer, required: true, description: 'User ID'
 
       response '200', 'User soft deleted successfully' do
-        let(:id) { user.id }
+        let(:id) { test_user.id }
         let(:Authorization) { "Bearer #{admin_user.generate_jwt}" } # Admin user
 
         run_test! do |response|
@@ -215,8 +216,8 @@ RSpec.describe 'Api::V1::UsersController', type: :request do
       end
 
       response '403', 'Not authorized' do
-        let(:id) { user.id }
-        let(:Authorization) { "Bearer #{user.generate_jwt}" } # Normal user should not have access
+        let(:id) { test_user.id }
+        let(:Authorization) { "Bearer #{test_user.generate_jwt}" } # Normal user should not have access
 
         run_test!
       end
@@ -232,20 +233,34 @@ RSpec.describe 'Api::V1::UsersController', type: :request do
 
       parameter name: :id, in: :path, type: :integer, required: true, description: 'User ID'
 
-      # response '200', 'User restored successfully' do
-      #   let(:id) { user.id }
-      #   let(:Authorization) { "Bearer #{admin_user.generate_jwt}" }
+      response '200', 'User restored successfully' do
+        let!(:deleted_user) do
+          u = User.create(
+            email: 'to_restore@example.com',
+            password: 'password123',
+            full_name: 'To Restore',
+            phone: '50449990011',
+            identity: '90909090909090',
+            rtn: '909090909090909',
+            role: 'user',
+            confirmed_at: Time.now
+          )
+          u.discard
+          u
+        end
 
-      #   run_test! do |response|
-      #     data = JSON.parse(response.body)
-      #     expect(data['message']).to eq('User restored successfully')
-      #   end
-      # end
+        let(:id) { deleted_user.id }
+        let(:Authorization) { "Bearer #{admin_user.generate_jwt}" }
+
+        run_test! do |response|
+          data = JSON.parse(response.body)
+          expect(data['message']).to eq('User restored successfully')
+        end
+      end
 
       response '403', 'Not authorized' do
         let!(:user) do
           User.create(
-            id: 2,
             email: 'user@example.com',
             password: 'password123',
             full_name: 'Test User',
@@ -256,8 +271,8 @@ RSpec.describe 'Api::V1::UsersController', type: :request do
             confirmed_at: Time.now
           )
         end
-        let(:id) { user.id }
-        let(:Authorization) { "Bearer #{user.generate_jwt}" } # Normal user
+        let(:id) { test_user.id }
+        let(:Authorization) { "Bearer #{test_user.generate_jwt}" } # Normal user
 
         run_test!
       end
@@ -272,7 +287,7 @@ RSpec.describe 'Api::V1::UsersController', type: :request do
       parameter name: :id, in: :path, type: :integer, required: true
 
       response '200', 'Contracts retrieved' do
-        let(:id) { user.id }
+        let(:id) { test_user.id }
         run_test!
       end
 
@@ -291,7 +306,7 @@ RSpec.describe 'Api::V1::UsersController', type: :request do
       parameter name: :id, in: :path, type: :integer, required: true
 
       response '200', 'Payments retrieved' do
-        let(:id) { user.id }
+        let(:id) { test_user.id }
         run_test!
       end
     end
@@ -305,7 +320,7 @@ RSpec.describe 'Api::V1::UsersController', type: :request do
       parameter name: :id, in: :path, type: :integer, required: true
 
       response '200', 'User summary retrieved' do
-        let(:id) { user.id }
+        let(:id) { test_user.id }
         run_test!
       end
     end
