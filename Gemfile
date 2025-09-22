@@ -66,7 +66,9 @@ gem 'sentry-ruby'
 gem 'sentry-sidekiq'
 
 group :development, :test do
+  gem 'bundler-audit', require: false
   gem 'rubocop', require: false
+
   # Testing Framework
   gem 'rspec-rails'
 
