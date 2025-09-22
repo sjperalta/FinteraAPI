@@ -27,8 +27,8 @@ module Users
     end
 
     def call
-  user = User.new(@user_params)
-  user.created_by = @creator_id if @creator_id.present?
+      user = User.new(@user_params)
+      user.created_by = @creator_id if @creator_id.present?
       notify_admin(user)
       welcome_message(user)
 

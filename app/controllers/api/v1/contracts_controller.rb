@@ -13,46 +13,24 @@ class Api::V1::ContractsController < ApplicationController
 
   # GET /api/v1/contracts?search_term=xxx&sort=xx-asc
   def index
-    # Fetch contracts related to the specified lot with eager loading to prevent N+1 queries
-    contracts = Contract.all.includes(:lot)
+    # Start with a relation and apply access scope, filters and sorting before loading
+    contracts = Contract.all
 
-    # If user is not admin, narrow scope to contracts owned by the current user
-    unless current_user.admin?
-      contracts = contracts.where(creator_id: current_user.id)
-    end
+    # If user is not admin, narrow scope to contracts created by the current user
+    contracts = contracts.where(creator_id: current_user.id) unless current_user.admin?
 
-    # Apply search if search_term is present
+    # Apply search and sorting on the relation
     contracts = apply_filters(contracts, params, SEARCHABLE_FIELDS)
-
-    # Apply sorting if sort parameters are present
     contracts = apply_sorting(contracts, params, SORTABLE_FIELDS)
 
-    # Paginate the contracts using Pagy
+    # load associations to avoid N+1 (lot -> project, applicant_user, creator, payments)
+    contracts = contracts.includes(lot: :project).includes(:applicant_user, :creator, :payments)
+
+    # Paginate the contracts using Pagy (loads the records)
     @pagy, @contracts = pagy(contracts, items: params[:per_page] || 20, page: params[:page])
 
-    # Map contracts with additional calculated fields if necessary
-    contracts_with_calculated_fields = @contracts.map do |contract|
-      {
-        id: contract.id,
-        contract_id: contract.id,
-        project_id: contract&.lot&.project_id,
-        lot_id: contract.lot_id,
-        lot_name: contract&.lot&.name,
-        applicant_user_id: contract.applicant_user_id,
-        created_by: contract&.creator&.full_name,
-        customer_name: contract.applicant_user.full_name,
-        payment_term: contract.payment_term,
-        financing_type: contract.financing_type,
-        reserve_amount: contract.reserve_amount,
-        down_payment: contract.down_payment,
-        status: contract.status.titleize,
-        balance: contract.balance,
-        documents: contract.documents, # Assuming there's a documents association or attribute
-        created_at: contract.created_at,
-        updated_at: contract.updated_at
-        # Add more fields or associations as needed
-      }
-    end
+    # Map contracts into serializable hashes using an extracted helper to keep this action tidy
+    contracts_with_calculated_fields = @contracts.map { |c| contract_json(c) }
 
     # Render JSON response with contracts and pagination metadata
     render json: {
@@ -185,7 +163,8 @@ class Api::V1::ContractsController < ApplicationController
       :phone,
       :identity,
       :rtn,
-      :email
+      :email,
+      :address
     )
   end
 
@@ -202,6 +181,8 @@ class Api::V1::ContractsController < ApplicationController
       project_id: contract&.lot&.project_id,
       lot_id: contract.lot_id,
       applicant_user_id: contract.applicant_user_id,
+      applicant_name: contract.applicant_user&.full_name,
+      amount: contract.amount,
       payment_term: contract.payment_term,
       financing_type: contract.financing_type,
       reserve_amount: contract.reserve_amount,
@@ -213,6 +194,41 @@ class Api::V1::ContractsController < ApplicationController
       updated_at: contract.updated_at,
       approved_at: contract.approved_at
       # Add more fields or associations as needed
+    }
+  end
+
+  def contract_json(contract)
+    payment_schedule = contract.payments.sort_by(&:due_date).map do |p|
+      {
+        due_date: p.due_date,
+        amount: p.amount,
+        status: p.status.titleize,
+        payment_type: p.payment_type,
+        paid_amount: p.paid_amount,
+        interest_amount: p.interest_amount
+      }
+    end
+
+    {
+      id: contract.id,
+      contract_id: contract.id,
+      project_id: contract&.lot&.project_id,
+      lot_id: contract.lot_id,
+      lot_name: contract&.lot&.name,
+      applicant_user_id: contract.applicant_user_id,
+      created_by: contract&.creator&.full_name,
+      applicant_name: contract.applicant_user.full_name,
+      amount: contract.amount,
+      payment_term: contract.payment_term,
+      financing_type: contract.financing_type,
+      reserve_amount: contract.reserve_amount,
+      down_payment: contract.down_payment,
+      status: contract.status.titleize,
+      balance: contract.balance,
+      documents: contract.documents,
+      created_at: contract.created_at,
+      updated_at: contract.updated_at,
+      payment_schedule: payment_schedule
     }
   end
 end

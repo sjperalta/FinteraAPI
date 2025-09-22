@@ -48,7 +48,7 @@ class Api::V1::UsersController < ApplicationController
 
   # GET /api/v1/user/:id (muestra un usuario en particular)
   def show
-    render json: @user.as_json(only: [:id, :full_name, :identity, :rtn, :email, :phone, :role, :status]), status: :ok
+    render json: @user.as_json(only: fields_for_render), status: :ok
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'User not found' }, status: :not_found
   end
@@ -57,7 +57,7 @@ class Api::V1::UsersController < ApplicationController
   # POST /api/v1/users
   # Example for creating users (admin or seller?).
   def create
-  service = Users::CreateUserService.new(user_params: user_params, creator_id: current_user&.id)
+    service = Users::CreateUserService.new(user_params: user_params, creator_id: current_user&.id)
     result = service.call
     if result[:success]
       render json: { success: true, message: 'User created. Confirmation sent.' }, status: :created
@@ -298,20 +298,24 @@ end
   end
 
   def fields_for_render
-    [:id, :full_name, :identity, :rtn, :email, :phone, :role, :status]
+    [:id, :full_name, :identity, :rtn, :email, :address, :phone, :role, :status, :created_by, :created_at, :note]
   end
 
   def user_params
     params.require(:user).permit(
       :identity,
       :rtn,
+      :address,
       :email,
       :password,
       :password_confirmation,
       :role,
       :full_name,
       :phone,
-      :note
+      :note,
+      :created_at,
+      :created_by,
+      :status
     )
   end
 end
