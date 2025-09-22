@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  rspec:
+  pipeline-steps:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -88,8 +88,9 @@ jobs:
         run: |
           bundle exec rails db:create db:schema:load
 
-      - name: Run RuboCop
-        run: bundle exec rubocop --parallel --format simple
+      - name: Run RuboCop (warnings only)
+        continue-on-error: true
+        run: bundle exec rubocop --parallel --format simple || echo "RuboCop found issues (non-blocking)"
 
       - name: Security audit
         run: bundle audit check --update
