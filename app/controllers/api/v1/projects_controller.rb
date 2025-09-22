@@ -42,7 +42,9 @@ class Api::V1::ProjectsController < ApplicationController
         available: project.lots.where(status: 'available').count,
         reserved: project.lots.where(status: 'reserved').count,
         total_area: total_area,
-        delivery_date: project.delivery_date
+        delivery_date: project.delivery_date,
+        created_at: project.created_at,
+        updated_at: project.updated_at
       }
     end
 

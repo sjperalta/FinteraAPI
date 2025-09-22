@@ -12,6 +12,7 @@ class User < ApplicationRecord
   has_many :audits, dependent: :destroy
   has_many :notifications, foreign_key: :user_id, dependent: :destroy
   has_many :refresh_tokens, dependent: :destroy
+  belongs_to :creator, class_name: 'User', foreign_key: :created_by, optional: true
 
   validates :full_name, presence: true
   validates :phone, presence: true

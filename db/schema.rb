@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_21_190200) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_21_191500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -190,7 +190,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_21_190200) do
     t.string "recovery_code"
     t.datetime "recovery_code_sent_at"
     t.string "address"
+    t.bigint "created_by"
     t.text "note"
+    t.index ["created_by"], name: "index_users_on_created_by"
     t.index ["discarded_at"], name: "index_users_on_discarded_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["full_name"], name: "index_users_on_full_name"
@@ -222,4 +224,5 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_21_190200) do
   add_foreign_key "notifications", "users"
   add_foreign_key "payments", "contracts"
   add_foreign_key "refresh_tokens", "users"
+  add_foreign_key "users", "users", column: "created_by"
 end

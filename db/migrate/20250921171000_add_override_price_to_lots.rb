@@ -1,9 +1,5 @@
 class AddOverridePriceToLots < ActiveRecord::Migration[8.0]
-  def up
+  def change
     add_column :lots, :override_price, :decimal, precision: 15, scale: 2
-  end
-
-  def down
-    remove_column :lots, :override_price
   end
 end

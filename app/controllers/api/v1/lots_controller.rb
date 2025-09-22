@@ -40,6 +40,7 @@ class Api::V1::LotsController < ApplicationController
         project_id: lot.project_id,
         project_name: lot.project&.name || "N/A",
         name: lot.name,
+        address: lot.address,
         reserved_by: reservation_text,
         measurement_unit: lot.measurement_unit || lot.project.measurement_unit,
         price: lot.price,
@@ -50,7 +51,9 @@ class Api::V1::LotsController < ApplicationController
         status: lot.status.titleize,  # Capitalize for better readability
         balance: contract&.balance || lot.price,
         registration_number: lot.registration_number,
-        note: lot.note
+        note: lot.note,
+        created_at: lot.created_at,
+        updated_at: lot.updated_at
       }
     end
 
@@ -130,6 +133,7 @@ class Api::V1::LotsController < ApplicationController
       :length,
       :width,
       :price,
+      :address,
       :override_price,
       :status,
       :measurement_unit,

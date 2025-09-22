@@ -1,7 +1,8 @@
 module Users
   class CreateUserService
-    def initialize(user_params:)
+    def initialize(user_params:, creator_id: nil)
       @user_params = user_params
+      @creator_id = creator_id
     end
 
     def notify_admin(user)
@@ -26,7 +27,8 @@ module Users
     end
 
     def call
-      user = User.new(@user_params)
+  user = User.new(@user_params)
+  user.created_by = @creator_id if @creator_id.present?
       notify_admin(user)
       welcome_message(user)
 

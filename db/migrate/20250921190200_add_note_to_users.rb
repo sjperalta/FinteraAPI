@@ -1,9 +1,5 @@
-class AddNoteToUsers < ActiveRecord::Migration[7.0]
-  def up
+class AddNoteToUsers < ActiveRecord::Migration[8.0]
+  def change
     add_column :users, :note, :text
-  end
-
-  def down
-    remove_column :users, :note
   end
 end
