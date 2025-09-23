@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# Migration to add indexes to various tables for improved query performance.
 class AddIndexToLots < ActiveRecord::Migration[7.0]
   def change
     add_index :lots, :name

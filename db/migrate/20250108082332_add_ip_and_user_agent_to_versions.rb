@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# Migration to add IP address and user agent tracking to paper_trail versions table.
 class AddIpAndUserAgentToVersions < ActiveRecord::Migration[7.0]
   def change
     add_column :versions, :ip, :string

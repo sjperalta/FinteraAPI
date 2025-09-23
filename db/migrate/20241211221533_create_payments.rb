@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# Migration to create the payments table for storing payment records associated with contracts.
 class CreatePayments < ActiveRecord::Migration[7.0]
   def change
     create_table :payments do |t|

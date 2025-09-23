@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class UserMailer < ApplicationMailer
-  default from: ENV['DEFAULT_EMAIL']
+  default from: ENV.fetch('DEFAULT_EMAIL', nil)
 
   # Método compartido para establecer el usuario
   before_action :set_user

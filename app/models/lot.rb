@@ -1,16 +1,20 @@
 # frozen_string_literal: true
 
 # app/models/lot.rb
-
+# Model representing a lot within a project, including area and price calculations.
 class Lot < ApplicationRecord
   has_paper_trail
 
-  belongs_to :project
+  belongs_to :project, counter_cache: :lot_count
   has_many :contracts, dependent: :destroy
 
   before_validation :inherit_measurement_unit, if: -> { project.present? && measurement_unit.blank? }
   before_save :calculate_price
+  after_initialize :set_defaults
 
+  LOT_STATUS = %w[available reserved sold].freeze
+
+  validates :status, inclusion: { in: LOT_STATUS }
   validates :name, presence: true
   validates :length, :width, numericality: { greater_than: 0 }, presence: true
 
@@ -25,6 +29,10 @@ class Lot < ApplicationRecord
   end
 
   private
+
+  def set_defaults
+    self.status ||= 'available'
+  end
 
   def inherit_measurement_unit
     self.measurement_unit = project.measurement_unit

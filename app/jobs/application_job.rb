@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# Base class for all ActiveJob jobs in the application.
 class ApplicationJob < ActiveJob::Base
   # New class-level configuration to control whether unhandled exceptions
   # in a job should be swallowed (useful for fire-and-forget notification jobs).

@@ -88,6 +88,12 @@ Rails.application.routes.draw do
           end
         end
       end
+
+      resources :projects do
+        collection do
+          post :import
+        end
+      end
     end
   end
 

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 # app/models/payment.rb
+# Model representing a payment associated with a contract, including state management and notifications.
 class Payment < ApplicationRecord
   include AASM
   include Notifiable

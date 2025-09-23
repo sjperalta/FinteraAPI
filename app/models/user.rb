@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# app/models/user.rb
+# Model representing a user in the system, including authentication and role management.
 class User < ApplicationRecord
   # has_secure_password
   # Devise modules
@@ -48,7 +50,7 @@ class User < ApplicationRecord
 
   def generate_jwt
     payload = { user_id: id, exp: 24.hours.from_now.to_i } # Expira en 24 horas
-    JWT.encode(payload, ENV['SECRET_KEY_BASE'])
+    JWT.encode(payload, ENV.fetch('SECRET_KEY_BASE', nil))
   end
 
   # Método para verificar si el usuario está activo
@@ -58,7 +60,7 @@ class User < ApplicationRecord
 
   # Mensaje de error cuando el usuario está inactivo
   def inactive_message
-    !active? ? :inactive : super
+    active? ? super : :inactive
   end
 
   def can_resend_confirmation_email?
