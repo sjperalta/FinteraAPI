@@ -35,7 +35,7 @@ module Contracts
             contract.cancel!
             released_contract_ids.add(contract.id)
           else
-            Rails.logger.warn "Contract ##{contract.id} cannot be cancelled via AASM (current state: #{contract.aasm_state})."
+            Rails.logger.warn "Contract ##{contract.id} cannot be cancelled via AASM (current state: #{contract.status})."
           end
         end
       end

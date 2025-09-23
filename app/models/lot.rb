@@ -28,6 +28,11 @@ class Lot < ApplicationRecord
     MeasurementUnits.convert_area(area_m2, measurement_unit || project&.measurement_unit)
   end
 
+  # Method to get the effective price (override if present, otherwise calculated)
+  def effective_price
+    override_price.present? ? override_price : price
+  end
+
   private
 
   def set_defaults
@@ -42,10 +47,11 @@ class Lot < ApplicationRecord
     return unless project
 
     if override_price.present?
-      self.price = override_price
+      # Don't override the price field, keep the original calculated price
+      # The override_price field will be used for display/billing purposes
+      return
     else
-      # Formula: length * width * project.price_per_square_unit
-      # Using to_d to ensure decimal precision
+      # Only calculate and set price if no override is present
       base_area = length.to_d * width.to_d
       self.price = base_area * project.price_per_square_unit.to_d
     end

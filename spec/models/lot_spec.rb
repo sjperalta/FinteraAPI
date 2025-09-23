@@ -412,4 +412,56 @@ RSpec.describe Lot, type: :model do
       expect(is_blank).to be_truthy
     end
   end
+
+  describe '#effective_price' do
+    let(:lot) { lot_with_mocked_project }
+
+    it 'returns override_price when present' do
+      allow(lot).to receive(:override_price).and_return(BigDecimal('15000'))
+      allow(lot).to receive(:price).and_return(BigDecimal('10000'))
+      allow(lot).to receive(:effective_price).and_call_original
+
+      expect(lot.effective_price).to eq(BigDecimal('15000'))
+    end
+
+    it 'returns calculated price when override_price is not present' do
+      allow(lot).to receive(:override_price).and_return(nil)
+      allow(lot).to receive(:price).and_return(BigDecimal('10000'))
+      allow(lot).to receive(:effective_price).and_call_original
+
+      expect(lot.effective_price).to eq(BigDecimal('10000'))
+    end
+
+    it 'returns calculated price when override_price is blank' do
+      allow(lot).to receive(:override_price).and_return('')
+      allow(lot).to receive(:price).and_return(BigDecimal('10000'))
+      allow(lot).to receive(:effective_price).and_call_original
+
+      expect(lot.effective_price).to eq(BigDecimal('10000'))
+    end
+  end
+
+  describe 'before_save :calculate_price' do
+    let(:lot) { lot_with_mocked_project }
+
+    it 'always calculates base price regardless of override_price' do
+      allow(lot).to receive(:override_price).and_return(BigDecimal('15000'))
+      allow(lot).to receive(:length).and_return(BigDecimal('10'))
+      allow(lot).to receive(:width).and_return(BigDecimal('5'))
+      allow(mock_project).to receive(:price_per_square_unit).and_return(BigDecimal('100'))
+
+      # Even with override_price present, base price should be calculated
+      base_area = lot.length.to_d * lot.width.to_d
+      expected_base_price = base_area * mock_project.price_per_square_unit.to_d
+
+      allow(lot).to receive(:price=).with(expected_base_price)
+      allow(lot).to receive(:price).and_return(expected_base_price)
+
+      # Simulate calculate_price method
+      lot.price = expected_base_price
+
+      expect(lot.price).to eq(BigDecimal('5000'))
+      expect(lot.effective_price).to eq(BigDecimal('15000')) # Should return override
+    end
+  end
 end

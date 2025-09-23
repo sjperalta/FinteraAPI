@@ -147,11 +147,13 @@ module Api
 
       # PATCH /api/v1/users/change_password
       def change_password
-        if @user.id == password_change_params[:userId]
-          user_for_password_change
-        elsif @user.admin?
-          user = User.find(password_change_params[:userId])
-          handle_admin_password_change(user) # admin can override password
+        # Load the target user from params; user_for_password_change will render errors if missing
+        user = user_for_password_change
+        return unless user
+
+        # Allow users to change their own password or admins to change any user's password
+        if @user.id == password_change_params[:userId].to_i || @user.admin?
+          handle_admin_password_change(user)
         else
           render json: { errors: ['Change user password is not allowed'] }, status: :unauthorized
         end
@@ -295,6 +297,10 @@ module Api
 
       def new_pass
         params[:password_change][:new_password]
+      end
+
+      def password_change_params
+        params.require(:password_change).permit(:userId, :new_password, :new_password_confirmation)
       end
 
       def valid_password?(password)

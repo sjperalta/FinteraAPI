@@ -255,11 +255,38 @@ RSpec.describe 'Api::V1::ContractsController', type: :request do
       parameter name: :project_id, in: :path, type: :integer, required: true
       parameter name: :lot_id, in: :path, type: :integer, required: true
       parameter name: :id, in: :path, type: :integer, required: true
+      parameter name: :reason, in: :query, type: :string, required: false, description: 'Cancellation reason'
 
       response '200', 'Contract canceled' do
         let(:project_id) { project.id }
         let(:lot_id) { lot.id }
         let(:id) { contract.id }
+
+        run_test! do |response|
+          data = JSON.parse(response.body)
+          expect(data['message']).to eq('Contrato cancelado exitosamente')
+
+          # Verify the contract was actually cancelled
+          cancelled_contract = Contract.find(contract.id)
+          expect(cancelled_contract.status).to eq('cancelled')
+          expect(cancelled_contract.note).to include('Contrato cancelado')
+          expect(cancelled_contract.active).to be_falsey
+
+          # Verify lot was released
+          released_lot = Lot.find(lot.id)
+          expect(released_lot.status).to eq('available')
+        end
+      end
+
+      response '422', 'Cannot cancel contract' do
+        let(:project_id) { project.id }
+        let(:lot_id) { lot.id }
+        let(:id) { contract.id }
+
+        before do
+          # Set contract to a state that cannot be cancelled
+          contract.update!(status: 'approved')
+        end
 
         run_test!
       end

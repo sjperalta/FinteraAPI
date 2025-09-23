@@ -10,7 +10,7 @@ module Api
       include Filterable
       before_action :authenticate_user!
       load_and_authorize_resource
-      before_action :set_payment, only: %i[show approve reject upload_receipt]
+      before_action :set_payment, only: %i[show approve reject upload_receipt apply]
 
       # Define searchable and sortable fields
       SEARCHABLE_FIELDS = %w[status due_date amount contract_id].freeze
@@ -92,6 +92,55 @@ module Api
         else
           render json: { error: 'Failed to process payment submission' }, status: :unprocessable_content
         end
+      end
+
+      # POST /payments/:id/apply
+      def apply
+        # Handle both nested and flat parameter structures
+        payment_data = params.fetch(:payment, params)
+        payment_params = payment_data.permit(:amount, :interest_amount, :total_amount)
+
+        # Assign attributes from params
+        @payment.assign_attributes(payment_params)
+        @payment.payment_date = Time.current
+
+        # Check if the state transition is possible before attempting
+        unless @payment.may_pay?
+          render json: {
+            error: 'Cannot apply payment.',
+            message: "Payment is in '#{@payment.status}' status and cannot be paid directly."
+          }, status: :unprocessable_content
+          return
+        end
+
+        # Attempt to transition state and save. The `pay!` method will save the record.
+        if @payment.pay!
+          render json: {
+            message: 'Payment applied successfully',
+            payment: @payment.as_json(
+              only: %i[id description amount interest_amount status due_date contract_id created_at
+                       approved_at payment_date],
+              include: {
+                contract: {
+                  only: %i[id balance status created_at currency]
+                }
+              }
+            )
+          }, status: :ok
+        else
+          # This block may not be reached if pay! raises an exception, but is good for safety
+          render json: {
+            error: 'Failed to apply payment',
+            errors: @payment.errors.full_messages
+          }, status: :unprocessable_content
+        end
+      rescue AASM::InvalidTransition => e
+        render json: { error: 'State transition failed', message: e.message }, status: :unprocessable_content
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { error: 'Validation failed', errors: e.record.errors.full_messages }, status: :unprocessable_content
+      rescue StandardError => e
+        Rails.logger.error "Apply Payment Error: #{e.message}\n#{e.backtrace.join("\n")}"
+        render json: { error: 'An unexpected error occurred.' }, status: :internal_server_error
       end
 
       # Add this new action

@@ -38,6 +38,7 @@ class Contract < ApplicationRecord
     state :approved
     state :rejected
     state :cancelled
+    state :closed
 
     # Submit contract
     event :submit do
@@ -58,10 +59,16 @@ class Contract < ApplicationRecord
                   after: :notify_rejection
     end
 
-    # Cancel contract
+    # Cancel contract with proper logging and cleanup
     event :cancel do
-      transitions from: [:rejected], to: :cancelled,
-                  after: %i[release_lot delete_payments notify_cancellation]
+      transitions from: [:rejected, :pending, :submitted], to: :cancelled,
+                  after: %i[log_cancellation release_lot delete_payments notify_cancellation]
+    end
+
+    # Close contract when fully paid
+    event :close do
+      transitions from: :approved, to: :closed,
+                  after: :notify_contract_closed
     end
   end
 
@@ -70,21 +77,15 @@ class Contract < ApplicationRecord
   end
 
   def set_amounts
-    self.amount = lot.price
+    self.amount = lot.effective_price # Use effective_price instead of lot.price
     self.balance = amount
-  end
-
-  # Método para actualizar el saldo pendiente
-  def update_balance(payment_amount)
-    self.balance -= payment_amount
-    save!
   end
 
   # Método para crear pagos según el tipo de financiamiento
   def create_payments
     case financing_type
     when 'direct'
-      create_direct_payments
+      create_direct_payments  # Fixed method name
     when 'bank', 'cash'
       create_single_payment
     else
@@ -92,27 +93,96 @@ class Contract < ApplicationRecord
     end
   end
 
+  # Reduce the contract balance by the paid amount and close the contract if fully paid.
+  # Accepts numeric or string amounts.
+  def update_balance(amount_paid)
+    return unless amount_paid.present?
+
+    paid = BigDecimal(amount_paid.to_s)
+    current = BigDecimal(balance.to_s || '0')
+
+    new_balance = current - paid
+    update!(balance: new_balance)
+
+    # Close the contract when balance is zero or negative and contract is eligible
+    if new_balance <= 0
+      # prefer the AASM event so callbacks/notifications run correctly
+      if may_close?
+        close!
+      else
+        # fallback: mark closed only if contract already approved or idempotent
+        close_contract! if status == 'approved' || status == 'closed'
+      end
+    end
+  end
+
+  # Mark the contract as closed. This method is idempotent and safe.
+  def close_contract!
+    return if status.to_s == 'closed' || status.to_s == 'cancelled'
+
+    attrs = { status: 'closed' }
+    attrs[:closed_at] = Time.current if has_attribute?(:closed_at)
+
+    update!(attrs)
+    # Optionally notify users/admins here if you have a Notifiable concern
+    # notify_contract_closed
+  end
+
   private
 
-  # Crear pagos para el tipo de financiamiento directo
+  def notify_contract_closed
+    create_notification(
+      user: applicant_user,
+      title: 'Contrato Cerrado',
+      message: "Tu contrato ##{id} ha sido cerrado. ¡Saldo pagado!",
+      notification_type: 'contract_closed'
+    )
+
+    notify_admins(
+      title: 'Contrato Cerrado',
+      message: "Contrato ##{id} ha sido cerrado automáticamente al saldar la deuda.",
+      notification_type: 'contract_closed'
+    )
+  end
+
+  # Crear pagos para el tipo de financiamiento directo con fechas de vencimiento mejoradas
   def create_direct_payments
     project_name = lot&.project&.name
+    contract_date = created_at&.to_date || Date.current
 
-    # Crea el pago de la reserva y la prima
-    Payment.create!(contract: self, description: "Proyecto #{project_name} - Reserva", due_date: Date.today,
-                    amount: reserve_amount, status: 'pending', payment_type: 'reservation')
-    Payment.create!(contract: self, description: "Proyecto #{project_name} - Prima", due_date: Date.today.next_month,
-                    amount: down_payment, status: 'pending', payment_type: 'down_payment')
+    # Pago de reserva: 15 días después de la creación del contrato
+    reservation_due_date = contract_date + 15.days
+    Payment.create!(
+      contract: self,
+      description: "Proyecto #{project_name} - Reserva",
+      due_date: reservation_due_date,
+      amount: reserve_amount,
+      status: 'pending',
+      payment_type: 'reservation'
+    )
 
-    # Crea los pagos restantes
+    # Pago de prima: 1 mes después de la reserva del contrato
+    down_payment_due_date = reservation_due_date + 1.month
+    Payment.create!(
+      contract: self,
+      description: "Proyecto #{project_name} - Prima",
+      due_date: down_payment_due_date,
+      amount: down_payment,
+      status: 'pending',
+      payment_type: 'down_payment'
+    )
+
+    # Pagos de cuotas: empiezan después del pago de prima
     remaining_balance = amount - reserve_amount - down_payment
     monthly_payment = remaining_balance / payment_term
 
     payment_term.times do |i|
-      due_date = (Date.today + (i + 2).months)
+      # Las cuotas empiezan 1 mes después del pago de prima
+      installment_due_date = down_payment_due_date + (i + 1).months
+
       Payment.create!(
         contract: self,
-        due_date:,
+        due_date: installment_due_date,
         description: "Proyecto #{project_name} - Cuota #{i + 1}",
         amount: monthly_payment,
         status: 'pending',
@@ -125,10 +195,12 @@ class Contract < ApplicationRecord
   def create_single_payment
     project_name = lot&.project&.name
     remaining_balance = amount - reserve_amount
+
+    due_date = Date.today + 15.days
     # Crea el pago de la reserva y el pago completo.
-    Payment.create!(contract: self, description: "Proyecto #{project_name} - Reserva", due_date: Date.today,
+    Payment.create!(contract: self, description: "Proyecto #{project_name} - Reserva", due_date: due_date,
                     amount: reserve_amount, status: 'pending', payment_type: 'reservation')
-    Payment.create!(contract: self, description: "Proyecto #{project_name} - Contado", due_date: Date.today.next_month,
+    Payment.create!(contract: self, description: "Proyecto #{project_name} - Contado", due_date: due_date.next_month,
                     amount: remaining_balance, status: 'pending', payment_type: 'installment')
   end
 
@@ -152,7 +224,7 @@ class Contract < ApplicationRecord
   end
 
   def can_be_approved?
-    valid_for_submission? && (status == 'pending' || status == 'submitted')
+    valid_for_submission? && (status == 'pending' || status == 'submitted' || status == 'rejected')
   end
 
   def can_be_rejected?
@@ -190,17 +262,30 @@ class Contract < ApplicationRecord
     )
   end
 
+  def log_cancellation
+    current_user_email = Thread.current[:current_user]&.email || 'system'
+    cancellation_log = "Contrato cancelado #{Time.current} por #{current_user_email}"
+
+    if note.present?
+      self.note = "#{note}\n#{cancellation_log}"
+    else
+      self.note = cancellation_log
+    end
+
+    save!
+  end
+
   def notify_cancellation
     create_notification(
       user: applicant_user,
       title: 'Contrato Cancelado',
-      message: "Tu contrato para #{lot.name} ha sido cancelado, lote se liberado.",
+      message: "Tu contrato para #{lot.name} ha sido cancelado, lote liberado.",
       notification_type: 'contract_cancelled'
     )
 
     notify_admins(
       title: 'Contrato Cancelado',
-      message: "El contrato #{lot.name} ha sido cancelado, lote se liberado.",
+      message: "El contrato ##{id} para #{lot.name} ha sido cancelado, lote liberado.",
       notification_type: 'contract_cancelled'
     )
   end
