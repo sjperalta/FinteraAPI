@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # app/models/statistic.rb
-
+# Model representing statistical data for a given period.
 class Statistic < ApplicationRecord
   validates :period_date, presence: true, uniqueness: true
   validates :total_income, :total_interest, :payment_reserve, :payment_installments, :payment_down_payment,

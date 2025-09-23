@@ -59,10 +59,10 @@ RSpec.describe User, type: :model do
   it 'can generate a JWT with user_id payload' do
     # stub id and secret
     allow(subject).to receive(:id).and_return(123)
-    original = ENV['SECRET_KEY_BASE']
+    original = ENV.fetch('SECRET_KEY_BASE', nil)
     ENV['SECRET_KEY_BASE'] = 'test-secret'
     token = subject.generate_jwt
-    payload, = JWT.decode(token, ENV['SECRET_KEY_BASE'], true, algorithm: 'HS256')
+    payload, = JWT.decode(token, ENV.fetch('SECRET_KEY_BASE', nil), true, algorithm: 'HS256')
     expect(payload['user_id']).to eq(123)
     ENV['SECRET_KEY_BASE'] = original
   end

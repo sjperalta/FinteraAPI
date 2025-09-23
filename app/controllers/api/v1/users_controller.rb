@@ -67,7 +67,7 @@ module Api
         if result[:success]
           render json: { success: true, message: 'User created. Confirmation sent.' }, status: :created
         else
-          render json: { success: false, errors: result[:errors] }, status: :unprocessable_entity
+          render json: { success: false, errors: result[:errors] }, status: :unprocessable_content
         end
       end
 
@@ -77,7 +77,7 @@ module Api
         if @user.update(user_params.except(:id))
           render json: { success: true, message: 'User updated successfully' }, status: :ok
         else
-          render json: { success: false, errors: @user.errors.full_messages }, status: :unprocessable_entity
+          render json: { success: false, errors: @user.errors.full_messages }, status: :unprocessable_content
         end
       end
 
@@ -87,7 +87,7 @@ module Api
           if @user.soft_delete
             render json: { message: 'User soft deleted successfully' }, status: :ok
           else
-            render json: { error: 'Failed to soft delete user' }, status: :unprocessable_entity
+            render json: { error: 'Failed to soft delete user' }, status: :unprocessable_content
           end
         else
           render json: { error: 'Not authorized' }, status: :forbidden
@@ -100,7 +100,7 @@ module Api
           if @user.restore
             render json: { message: 'User restored successfully' }, status: :ok
           else
-            render json: { error: 'Failed to restore user' }, status: :unprocessable_entity
+            render json: { error: 'Failed to restore user' }, status: :unprocessable_content
           end
         else
           render json: { error: 'Not authorized' }, status: :forbidden
@@ -116,7 +116,7 @@ module Api
             message = new_status == 'active' ? 'User activated' : 'User deactivated'
             render json: { success: true, message: }, status: :ok
           else
-            render json: { success: false, errors: @user.errors.full_messages }, status: :unprocessable_entity
+            render json: { success: false, errors: @user.errors.full_messages }, status: :unprocessable_content
           end
         else
           render json: { error: 'Not authorized' }, status: :forbidden
@@ -130,7 +130,7 @@ module Api
         if result[:success]
           render json: { message: result[:message] }, status: :ok
         else
-          render json: { message: result[:message] }, status: :unprocessable_entity
+          render json: { message: result[:message] }, status: :unprocessable_content
         end
       end
 
@@ -190,7 +190,7 @@ module Api
         if user.recovery_code == params[:code] && user.recovery_code_sent_at >= 15.minutes.ago
           render json: { success: true, message: 'Code verified successfully.' }, status: :ok
         else
-          render json: { success: false, error: 'Invalid or expired code.' }, status: :unprocessable_entity
+          render json: { success: false, error: 'Invalid or expired code.' }, status: :unprocessable_content
         end
       end
 
@@ -198,7 +198,7 @@ module Api
       def update_password_with_code
         unless valid_password?(params[:new_password])
           return render json: { error: 'Contraseña muy debil, deberia estar compuesta de una minuscula, una Mayuscula, y numeros' },
-                        status: :unprocessable_entity
+                        status: :unprocessable_content
         end
 
         user = User.find_by(email: params[:email]&.downcase)
@@ -217,10 +217,10 @@ module Api
             )
             render json: { success: true, message: 'Password updated successfully.' }, status: :ok
           else
-            render json: { success: false, error: 'Password confirmation mismatch.' }, status: :unprocessable_entity
+            render json: { success: false, error: 'Password confirmation mismatch.' }, status: :unprocessable_content
           end
         else
-          render json: { success: false, error: 'Invalid or expired code.' }, status: :unprocessable_entity
+          render json: { success: false, error: 'Invalid or expired code.' }, status: :unprocessable_content
         end
       end
 
@@ -289,7 +289,7 @@ module Api
         if user.update(password: new_pass, password_confirmation: new_pass)
           render json: { success: true, message: 'Password updated by admin' }, status: :ok
         else
-          render json: { success: false, errors: user.errors.full_messages }, status: :unprocessable_entity
+          render json: { success: false, errors: user.errors.full_messages }, status: :unprocessable_content
         end
       end
 

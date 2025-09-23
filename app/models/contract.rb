@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # app/models/contract.rb
-
+# Model representing a contract for a lot, including state management and payment scheduling.
 class Contract < ApplicationRecord
   include Notifiable
   include AASM

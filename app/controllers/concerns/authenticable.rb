@@ -18,14 +18,14 @@ module Authenticable
     end
 
     def decode_token(token)
-      JWT.decode(token, ENV['SECRET_KEY_BASE'], true, { algorithm: 'HS256' })[0].symbolize_keys
+      JWT.decode(token, ENV.fetch('SECRET_KEY_BASE', nil), true, { algorithm: 'HS256' })[0].symbolize_keys
     rescue JWT::DecodeError
       nil
     end
 
     def generate_token(payload)
       payload[:iat] = Time.now.to_i
-      JWT.encode(payload, ENV['SECRET_KEY_BASE'])
+      JWT.encode(payload, ENV.fetch('SECRET_KEY_BASE', nil))
     end
   end
 end

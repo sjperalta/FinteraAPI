@@ -3,6 +3,7 @@
 # app/services/contracts/cancel_contract_service.rb
 
 module Contracts
+  # Service to handle contract cancellation and related lot status update.
   class CancelContractService
     def initialize(contract:)
       @contract = contract

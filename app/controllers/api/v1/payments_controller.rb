@@ -68,7 +68,7 @@ module Api
           render json: {
             error: result[:message],
             errors: result[:errors]
-          }, status: :unprocessable_entity
+          }, status: :unprocessable_content
         end
       end
 
@@ -77,7 +77,7 @@ module Api
         if @payment.may_reject? && @payment.reject!
           render json: { message: 'Payment rejected successfully' }, status: :ok
         else
-          render json: { error: 'Failed to reject payment' }, status: :unprocessable_entity
+          render json: { error: 'Failed to reject payment' }, status: :unprocessable_content
         end
       end
 
@@ -90,7 +90,7 @@ module Api
         if @payment.may_submit? && @payment.submit!
           render json: { message: 'Receipt uploaded and payment submitted successfully' }, status: :ok
         else
-          render json: { error: 'Failed to process payment submission' }, status: :unprocessable_entity
+          render json: { error: 'Failed to process payment submission' }, status: :unprocessable_content
         end
       end
 

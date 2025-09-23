@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# Migration to create the revenues table for storing revenue data by payment type, year, and month.
 class CreateRevenues < ActiveRecord::Migration[8.0]
   def change
     create_table :revenues do |t|

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# app/models/revenue.rb
 class Revenue < ApplicationRecord
   # Constants
   PAYMENT_TYPES = %w[reservation down_payment installment].freeze

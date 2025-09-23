@@ -10,6 +10,6 @@ class AdminMailer < ApplicationMailer
     @payment = params[:payment]
     @reservation = @payment.contract
 
-    mail(to: ENV['ADMIN_EMAIL'], subject: 'Nuevo recibo de pago subido')
+    mail(to: ENV.fetch('ADMIN_EMAIL', nil), subject: 'Nuevo recibo de pago subido')
   end
 end

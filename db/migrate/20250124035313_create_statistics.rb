@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# Migration to create the statistics table for storing periodic financial and operational metrics.
 class CreateStatistics < ActiveRecord::Migration[8.0]
   def change
     create_table :statistics do |t|

@@ -77,8 +77,45 @@ module Api
         if result[:success]
           render json: { message: 'Project created successfully', project: result[:project] }, status: :created
         else
-          render json: { errors: result[:errors] }, status: :unprocessable_entity
+          render json: { errors: result[:errors] }, status: :unprocessable_content
         end
+      end
+
+      # POST /api/v1/projects/import
+      def import
+        file = params[:file]
+        options = (params[:options] || {}).to_unsafe_h.transform_values { |v| v.to_s == '1' }
+
+        return render json: { error: 'No file uploaded' }, status: :bad_request unless file.respond_to?(:path)
+
+        service = Projects::ImportService.new(file:, options:, current_user:)
+        result = service.call
+
+        if result[:errors].empty?
+          render json: {
+            message: 'Import completed',
+            imported: result[:imported_projects],
+            updated: result[:updated_projects],
+            skipped: result[:skipped_projects],
+            imported_lots: result[:imported_lots],
+            updated_lots: result[:updated_lots],
+            skipped_lots: result[:skipped_lots]
+          }, status: :ok
+        else
+          render json: {
+            message: 'Import completed with errors',
+            imported: result[:imported_projects],
+            updated: result[:updated_projects],
+            skipped: result[:skipped_projects],
+            imported_lots: result[:imported_lots],
+            updated_lots: result[:updated_lots],
+            skipped_lots: result[:skipped_lots],
+            errors: result[:errors]
+          }, status: :ok
+        end
+      rescue StandardError => e
+        Rails.logger.error "[ProjectsController#import] #{e.message}\n#{e.backtrace.join("\n")}"
+        render json: { error: 'Error processing import' }, status: :internal_server_error
       end
 
       # PUT /api/v1/projects/:id
@@ -86,7 +123,7 @@ module Api
         if @project.update(project_params)
           render json: { message: 'Project updated successfully' }, status: :ok
         else
-          render json: { errors: @project.errors.full_messages }, status: :unprocessable_entity
+          render json: { errors: @project.errors.full_messages }, status: :unprocessable_content
         end
       end
 

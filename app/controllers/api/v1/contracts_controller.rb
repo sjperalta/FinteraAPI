@@ -71,7 +71,7 @@ module Api
         else
           render json: {
             errors: result[:errors]
-          }, status: :unprocessable_entity
+          }, status: :unprocessable_content
         end
       end
 
@@ -89,7 +89,7 @@ module Api
           render json: {
             error: 'No se puede aprobar el contrato en su estado actual',
             status: @contract.status
-          }, status: :unprocessable_entity
+          }, status: :unprocessable_content
         end
       end
 
@@ -107,7 +107,7 @@ module Api
           render json: {
             error: 'No se puede rechazar el contrato en su estado actual',
             status: @contract.status
-          }, status: :unprocessable_entity
+          }, status: :unprocessable_content
         end
       end
 
@@ -124,7 +124,7 @@ module Api
           render json: {
             error: 'No se puede cancelar el contrato en su estado actual',
             status: @contract.status
-          }, status: :unprocessable_entity
+          }, status: :unprocessable_content
         end
       end
 

@@ -33,10 +33,10 @@ module Api
         # Map lots with calculated fields
         lots_with_calculated_fields = @lots.map do |lot|
           contract = lot.current_contract
-          reservation_text = if !contract&.applicant_user.nil?
-                               "#{contract.applicant_user.full_name}##{contract.applicant_user.id}"
-                             else
+          reservation_text = if contract&.applicant_user.nil?
                                'N/A'
+                             else
+                               "#{contract.applicant_user.full_name}##{contract.applicant_user.id}"
                              end
 
           {
@@ -84,7 +84,7 @@ module Api
         if result[:success]
           render json: result[:lot], status: :created
         else
-          render json: { errors: result[:errors] }, status: :unprocessable_entity
+          render json: { errors: result[:errors] }, status: :unprocessable_content
         end
       end
 
@@ -99,7 +99,7 @@ module Api
         if result[:success]
           render json: { message: 'Lot updated successfully', lot: result[:lot] }, status: :ok
         else
-          render json: { errors: result[:errors] }, status: :unprocessable_entity
+          render json: { errors: result[:errors] }, status: :unprocessable_content
         end
       end
 
@@ -111,7 +111,7 @@ module Api
         if result[:success]
           render json: { message: result[:message] }, status: :ok
         else
-          render json: { errors: result[:errors] }, status: :unprocessable_entity
+          render json: { errors: result[:errors] }, status: :unprocessable_content
         end
       end
 

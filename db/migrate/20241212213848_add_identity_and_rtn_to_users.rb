@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# Migration to add identity and RTN (Tax Identification Number) columns to users table.
 class AddIdentityAndRtnToUsers < ActiveRecord::Migration[7.0]
   def change
     add_column :users, :identity, :string

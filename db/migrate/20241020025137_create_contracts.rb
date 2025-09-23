@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# Migration to create the contracts table for storing contract agreements between users and lots.
 class CreateContracts < ActiveRecord::Migration[7.0]
   def change
     create_table :contracts do |t|

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-puts "Iniciando seeds ambiente: #{ENV['RAILS_ENV']}"
+puts "Iniciando seeds ambiente: #{ENV.fetch('RAILS_ENV', nil)}"
 
 # Verifica si el usuario ya existe antes de crearlo para evitar duplicados
 admin_user = User.find_or_create_by!(email: 'admin@example.com') do |user|

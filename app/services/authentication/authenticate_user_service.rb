@@ -30,7 +30,7 @@ module Authentication
 
     def generate_token(payload)
       payload[:iat] = Time.now.to_i # Issued at
-      JWT.encode(payload, ENV['SECRET_KEY_BASE'])
+      JWT.encode(payload, ENV.fetch('SECRET_KEY_BASE', nil))
     end
   end
 end

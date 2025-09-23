@@ -9,11 +9,7 @@ class SendContractApprovalNotificationJob < ApplicationJob
   self.swallow_exceptions = true
 
   def perform(contract)
-    contract = if contract.is_a?(Contract) || contract.respond_to?(:id)
-                 contract
-               else
-                 Contract.find_by(id: contract)
-               end
+    contract = Contract.find_by(id: contract) unless contract.is_a?(Contract) || contract.respond_to?(:id)
 
     return if contract.nil? || (contract.respond_to?(:blank?) && contract.blank?)
 

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# Migration to create the lots table for storing individual lot information within projects.
 class CreateLots < ActiveRecord::Migration[7.0]
   def change
     create_table :lots do |t|

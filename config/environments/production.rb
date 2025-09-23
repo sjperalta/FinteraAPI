@@ -71,8 +71,8 @@ Rails.application.configure do
   config.action_mailer.delivery_method = :onesignal
 
   config.action_mailer.onesignal_settings = {
-    app_key: ENV['ONE_SIGNAL_APP_KEY'],
-    app_id: ENV['ONE_SIGNAL_APP_ID']
+    app_key: ENV.fetch('ONE_SIGNAL_APP_KEY', nil),
+    app_id: ENV.fetch('ONE_SIGNAL_APP_ID', nil)
   }
 
   # Ignore bad email addresses and do not raise email delivery errors.
@@ -89,7 +89,7 @@ Rails.application.configure do
   config.active_support.report_deprecations = false
 
   # Use default logging formatter so that PID and timestamp are not suppressed.
-  config.log_formatter = ::Logger::Formatter.new
+  config.log_formatter = Logger::Formatter.new
 
   # Use a different logger for distributed setups.
   # require "syslog/logger"

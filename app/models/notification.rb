@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # app/models/notification.rb
-
+# Model representing a notification sent to users.
 class Notification < ApplicationRecord
   # Associations
   belongs_to :user
