@@ -18,7 +18,11 @@
   <li class="list-group-item">Medida: <strong><%= @lot.area_in_project_unit %> <%= (@lot.measurement_unit || @project.measurement_unit).upcase %></strong></li>
     <li class="list-group-item">Número de Contrato: <strong><%= @contract.id %></strong></li>
     <li class="list-group-item">Tipo de Financiamiento: <strong><%= @contract.financing_type.capitalize %></strong></li>
-    <li class="list-group-item">Precio: <strong>L. <%= number_to_currency(@contract.amount, unit: '') %></strong></li>
+    <li class="list-group-item">Precio: <strong>L. <%= number_to_currency(@lot.effective_price, unit: '') %></strong></li>
+    <% if @lot.override_price.present? %>
+      <li class="list-group-item">Precio Base: <strong>L. <%= number_to_currency(@lot.price, unit: '') %></strong></li>
+      <li class="list-group-item">Precio Personalizado: <strong>L. <%= number_to_currency(@lot.override_price, unit: '') %></strong></li>
+    <% end %>
     <li class="list-group-item">Reserva: <strong>L. <%= number_to_currency(@contract.reserve_amount, unit: '') %></strong></li>
     <li class="list-group-item">Prima: <strong>L. <%= number_to_currency(@contract.down_payment, unit: '') %></strong></li>
     <li class="list-group-item">Cuota: <strong>L. <%= number_to_currency(@payment.amount, unit: '') %></strong></li>

@@ -14,6 +14,11 @@ module Statistics
         statistic.assign_attributes(
           total_income: payments_data[:total_income],
           total_interest: payments_data[:total_interest],
+          payment_reserve: payments_data[:payment_reserve],
+          payment_installments: payments_data[:payment_installments],
+          payment_down_payment: payments_data[:payment_down_payment],
+          on_time_payment: payments_data[:on_time_payment],
+          delayed_payment: payments_data[:delayed_payment],
           new_customers: calculate_new_customers
         )
         statistic.save!
@@ -41,10 +46,27 @@ module Statistics
     end
 
     def calculate_payments
-      result = Payment.where(approved_at: period_range)
-                      .pluck(Arel.sql('SUM(amount) AS total_income, SUM(interest_amount) AS total_interest'))
-                      .first
-      { total_income: result[0] || 0, total_interest: result[1] || 0 }
+      payments = Payment.where(approved_at: period_range)
+      totals = payments.pluck(Arel.sql('SUM(amount) AS total_income, SUM(interest_amount) AS total_interest')).first
+
+      # Breakdown by payment_type
+      reserve_total = payments.where(payment_type: 'reservation').sum(:amount) || 0
+      down_payment_total = payments.where(payment_type: 'down_payment').sum(:amount) || 0
+      installments_total = payments.where(payment_type: 'installment').sum(:amount) || 0
+
+      # On-time vs delayed (approved_at <= due_date considered on-time)
+      on_time_total = payments.where('approved_at <= due_date').sum(:amount) || 0
+      delayed_total = payments.where('approved_at > due_date').sum(:amount) || 0
+
+      {
+        total_income: totals[0] || 0,
+        total_interest: totals[1] || 0,
+        payment_reserve: reserve_total,
+        payment_down_payment: down_payment_total,
+        payment_installments: installments_total,
+        on_time_payment: on_time_total,
+        delayed_payment: delayed_total
+      }
     end
 
     def calculate_new_customers

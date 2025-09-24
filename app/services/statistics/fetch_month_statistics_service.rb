@@ -11,29 +11,27 @@ module Statistics
                       Date.today
                     end.beginning_of_month
 
-      # Fetch the statistics record for the current month.
-      current_stat = Statistic.find_by(period_date:) ||
-                     Statistic.new(total_income: 0, total_interest: 0, new_customers: 0)
+      # Fetch the statistics record for the requested month (nil if none)
+      current_stat = Statistic.find_by(period_date: period_date)
 
-      # Fetch the statistics record for the previous month.
+      # Fetch the statistics record for the previous month (used to compute growths)
       previous_period = period_date.prev_month.beginning_of_month
-      previous_stat = Statistic.find_by(period_date: previous_period) ||
-                      Statistic.new(total_income: 0, total_interest: 0, new_customers: 0)
+      previous_stat = Statistic.find_by(period_date: previous_period)
 
-      # Calculate growth percentages using the helper method.
-      total_income_growth = calculate_growth(current_stat.total_income, previous_stat.total_income)
-      total_interest_growth = calculate_growth(current_stat.total_interest, previous_stat.total_interest)
-      new_customers_growth = calculate_growth(current_stat.new_customers, previous_stat.new_customers)
+      # Calculate growth percentages (useful for logging or clients that call separately)
+      total_income_growth = calculate_growth(current_stat&.total_income || 0, previous_stat&.total_income || 0)
+      total_interest_growth = calculate_growth(current_stat&.total_interest || 0, previous_stat&.total_interest || 0)
+      new_customers_growth = calculate_growth(current_stat&.new_customers || 0, previous_stat&.new_customers || 0)
 
-      # Return the statistics hash with growth percentages.
-      {
-        total_income: current_stat.total_income || 0,
-        total_income_growth:,
-        total_interest: current_stat.total_interest || 0,
-        total_interest_growth:,
-        new_customers: current_stat.new_customers || 0,
-        new_customers_growth:
-      }
+      # Attach growth values to the record as virtual attributes for downstream consumption if needed
+      if current_stat
+        current_stat.define_singleton_method(:total_income_growth) { total_income_growth }
+        current_stat.define_singleton_method(:total_interest_growth) { total_interest_growth }
+        current_stat.define_singleton_method(:new_customers_growth) { new_customers_growth }
+      end
+
+      # Return the Statistic record (or nil). Controller will handle rendering.
+      current_stat
     rescue StandardError => e
       Rails.logger.error "Error fetching statistics for month=#{month}, year=#{year}: #{e.message}"
       {

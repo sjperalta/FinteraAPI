@@ -38,7 +38,7 @@ class Payment < ApplicationRecord
     event :approve do
       transitions from: :submitted, to: :paid,
                   guard: :can_be_approved?,
-                  after: %i[record_approval_timestamp update_contract_balance notify_approval]
+                  after: [:record_approval_timestamp, :update_contract_balance, :notify_approval]
     end
 
     # Transition from submitted to rejected when payment is rejected
@@ -46,10 +46,26 @@ class Payment < ApplicationRecord
       transitions from: :submitted, to: :rejected,
                   after: :notify_rejection
     end
+
+    # when the payment is made directly (e.g., cash payment, bank transfer)
+    # it should check the balance is 0 or less, then close the contract
+    event :pay do
+      transitions from: [:pending, :submitted], to: :paid,
+                  after: [:record_approval_timestamp, :update_contract_balance, :notify_approval]
+    end
   end
 
   scope :pending, -> { where(status: 'pending') }
   scope :overdue, -> { pending.where('due_date < ?', Date.current).order(:due_date) }
+
+  def notify_overdue_interest(overdue_interest)
+    create_notification(
+      user: contract.applicant_user,
+      title: "Pago Atrasado: #{description}",
+      message: "Se ha generado un cargo por mora de #{overdue_interest}.",
+      notification_type: 'payment_overdue'
+    )
+  end
 
   private
 
@@ -96,15 +112,6 @@ class Payment < ApplicationRecord
       title: 'Actualización Pago',
       message: "Pago ##{id} ha sido rechazado.",
       notification_type: 'payment_rejected'
-    )
-  end
-
-  def notify_overdue_interest(overdue_interest)
-    create_notification(
-      user: contract.applicant_user,
-      title: "Pago Atrasado: #{description}",
-      message: "Se ha generado un cargo por mora de #{overdue_interest}.",
-      notification_type: 'payment_overdue'
     )
   end
 end

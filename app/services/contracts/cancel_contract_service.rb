@@ -5,17 +5,39 @@
 module Contracts
   # Service to handle contract cancellation and related lot status update.
   class CancelContractService
-    def initialize(contract:)
+    def initialize(contract:, current_user: nil, reason: nil)
       @contract = contract
+      @current_user = current_user
+      @reason = reason
     end
 
     def call
-      @contract.lot.update(status: 'available')
-      if @contract.update(status: 'cancelled', active: false)
-        { success: true, message: 'Solicitud cancelada' }
-      else
-        { success: false, errors: @contract.errors.full_messages }
+      return { success: false, errors: ['Contract cannot be cancelled in current state'] } unless @contract.may_cancel?
+
+      ActiveRecord::Base.transaction do
+        # Set current user in thread for logging
+        Thread.current[:current_user] = @current_user
+
+        # Add custom reason if provided
+        if @reason.present?
+          cancellation_note = "Reason: #{@reason}"
+          if @contract.note.present?
+            @contract.note = "#{@contract.note}\n#{cancellation_note}"
+          else
+            @contract.note = cancellation_note
+          end
+          @contract.save!
+        end
+
+        @contract.cancel!
+
+        { success: true, message: 'Contrato cancelado exitosamente', contract: @contract }
       end
+    rescue StandardError => e
+      Rails.logger.error "Failed to cancel contract #{@contract.id}: #{e.message}"
+      { success: false, errors: [e.message] }
+    ensure
+      Thread.current[:current_user] = nil
     end
   end
 end

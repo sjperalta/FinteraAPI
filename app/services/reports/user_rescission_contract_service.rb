@@ -10,7 +10,8 @@ module Reports
     end
 
     def call
-      contract = Contract.includes(:lot, lot: :project).find_by(id: @contract_id, status: 'rejected')
+      #load cancelled or rejected contracts
+      contract = Contract.includes(:lot, lot: :project).find_by(id: @contract_id, status: %w[cancelled rejected])
       unless contract
         return { success: false,
                  error: I18n.t('reports.user_rescission.errors.not_found', locale: @locale) }

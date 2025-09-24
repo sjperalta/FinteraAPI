@@ -35,7 +35,8 @@ RSpec.describe Contract, type: :model do
       payment_term: 12,
       financing_type: 'direct',
       reserve_amount: 1_000,
-      down_payment: 2_000
+      down_payment: 2_000,
+      amount: 10_000  # Add the amount field that was missing
     )
   end
 
@@ -133,6 +134,205 @@ RSpec.describe Contract, type: :model do
       )
 
       contract.send(:notify_approval)
+    end
+  end
+
+  describe 'cancel workflow' do
+    it 'logs cancellation with current user' do
+      user = double('User', email: 'admin@example.com')
+      Thread.current[:current_user] = user
+
+      subject.submit
+      subject.reject
+
+      expect(subject).to receive(:release_lot)
+      expect(subject).to receive(:delete_payments)
+      expect(subject).to receive(:notify_cancellation)
+
+      subject.cancel
+
+      expect(subject.aasm.current_state).to eq(:cancelled)
+      expect(subject.note).to include('Contrato cancelado')
+      expect(subject.note).to include('por admin@example.com')
+    ensure
+      Thread.current[:current_user] = nil
+    end
+
+    it 'logs cancellation as system when no user' do
+      subject.submit
+      subject.reject
+
+      expect(subject).to receive(:release_lot)
+      expect(subject).to receive(:delete_payments)
+      expect(subject).to receive(:notify_cancellation)
+
+      subject.cancel
+
+      expect(subject.note).to include('por system')
+    end
+
+    it 'appends to existing notes' do
+      subject.note = 'Existing note'
+      user = double('User', email: 'admin@example.com')
+      Thread.current[:current_user] = user
+
+      subject.submit
+      subject.reject
+      subject.cancel
+
+      expect(subject.note).to include('Existing note')
+      expect(subject.note).to include('Contrato cancelado')
+    ensure
+      Thread.current[:current_user] = nil
+    end
+  end
+
+  describe '#create_direct_payments' do
+    let(:contract_date) { Date.new(2024, 1, 15) }
+
+    before do
+      allow(subject).to receive(:created_at).and_return(contract_date.to_time)
+    end
+
+    it 'creates payments with proper due dates' do
+      # Mock project name access
+      allow(subject).to receive_message_chain(:lot, :project, :name).and_return('TestProject')
+
+      # Calculate expected values
+      remaining_balance = subject.amount - subject.reserve_amount - subject.down_payment
+      monthly_payment = remaining_balance / subject.payment_term
+
+      # Expect reservation payment (15 days after contract)
+      expect(Payment).to receive(:create!).with(
+        hash_including(
+          contract: subject,
+          description: "Proyecto TestProject - Reserva",
+          due_date: contract_date + 15.days, # January 30, 2024
+          amount: subject.reserve_amount,
+          status: 'pending',
+          payment_type: 'reservation'
+        )
+      ).ordered
+
+      # Expect down payment (1 month after reservation due date)
+      reservation_due_date = contract_date + 15.days
+      down_payment_due_date = reservation_due_date + 1.month
+      expect(Payment).to receive(:create!).with(
+        hash_including(
+          contract: subject,
+          description: "Proyecto TestProject - Prima",
+          due_date: down_payment_due_date, # reservation + 1 month (e.g. Feb 29, 2024)
+          amount: subject.down_payment,
+          status: 'pending',
+          payment_type: 'down_payment'
+        )
+      ).ordered
+
+      # Expect installment payments (monthly after down payment)
+      subject.payment_term.times do |i|
+        installment_due_date = down_payment_due_date + (i + 1).months
+        expect(Payment).to receive(:create!).with(
+          hash_including(
+            contract: subject,
+            description: "Proyecto TestProject - Cuota #{i + 1}",
+            due_date: installment_due_date,
+            amount: monthly_payment,
+            status: 'pending',
+            payment_type: 'installment'
+          )
+        ).ordered
+      end
+
+      subject.send(:create_direct_payments)
+    end
+  end
+
+  describe 'payment schedule timing' do
+    let(:contract_date) { Date.new(2024, 1, 15) }
+
+    before do
+      allow(subject).to receive(:created_at).and_return(contract_date.to_time)
+      allow(subject).to receive_message_chain(:lot, :project, :name).and_return('TestProject')
+    end
+
+    it 'schedules reservation payment 15 days after contract creation' do
+      expect(Payment).to receive(:create!).with(
+        hash_including(
+          due_date: Date.new(2024, 1, 30), # 15 days after January 15
+          payment_type: 'reservation'
+        )
+      ).ordered
+
+      # Allow other payments to be created
+      allow(Payment).to receive(:create!).and_return(true)
+
+      subject.send(:create_direct_payments)
+    end
+
+    it 'schedules down payment 1 month after contract creation' do
+      # Allow reservation payment
+      allow(Payment).to receive(:create!).and_return(true)
+
+      # reservation is Jan 30, 2024 -> down payment is reservation + 1 month => Feb 29, 2024
+      expect(Payment).to receive(:create!).with(
+        hash_including(
+          due_date: Date.new(2024, 2, 29),
+          payment_type: 'down_payment'
+        )
+      ).ordered
+
+      subject.send(:create_direct_payments)
+    end
+
+    it 'schedules first installment 1 month after down payment' do
+      # Allow reservation and down payments
+      allow(Payment).to receive(:create!).and_return(true)
+
+      # down payment is Feb 29, 2024 -> first installment is down_payment + 1 month => Mar 29, 2024
+      expect(Payment).to receive(:create!).with(
+        hash_including(
+          due_date: Date.new(2024, 3, 29),
+          payment_type: 'installment',
+          description: match(/Cuota 1/)
+        )
+      ).ordered
+
+      subject.send(:create_direct_payments)
+    end
+  end
+
+  describe '#update_balance' do
+    before do
+      # ensure starting balance corresponds to amount set in subject
+      allow(subject).to receive(:balance).and_return(subject.amount)
+      allow(subject).to receive(:may_close?).and_return(true)
+      allow(subject).to receive(:close!).and_return(true)
+      allow(subject).to receive(:close_contract!).and_return(true)
+    end
+
+    it 'closes contract when balance reaches zero' do
+      expect(subject).to receive(:update!).with(hash_including(balance: 0)).and_return(true)
+      expect(subject).to receive(:may_close?).and_return(true)
+      expect(subject).to receive(:close!).and_return(true)
+
+      subject.update_balance(subject.amount)
+    end
+
+    it 'closes contract when balance goes below zero' do
+      expect(subject).to receive(:update!).with(hash_including(balance: a_value < 0)).and_return(true)
+      expect(subject).to receive(:may_close?).and_return(true)
+      expect(subject).to receive(:close!).and_return(true)
+
+      subject.update_balance(subject.amount + 100)
+    end
+
+    it 'does not close contract when balance remains positive' do
+      partial = subject.amount / 2
+      expect(subject).to receive(:update!).with(hash_including(balance: subject.amount - partial)).and_return(true)
+      expect(subject).not_to receive(:close!)
+      expect(subject).not_to receive(:close_contract!)
+
+      subject.update_balance(partial)
     end
   end
 end
