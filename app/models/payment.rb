@@ -38,7 +38,7 @@ class Payment < ApplicationRecord
     event :approve do
       transitions from: :submitted, to: :paid,
                   guard: :can_be_approved?,
-                  after: [:record_approval_timestamp, :update_contract_balance, :notify_approval]
+                  after: %i[record_approval_timestamp update_contract_balance notify_approval]
     end
 
     # Transition from submitted to rejected when payment is rejected
@@ -50,8 +50,8 @@ class Payment < ApplicationRecord
     # when the payment is made directly (e.g., cash payment, bank transfer)
     # it should check the balance is 0 or less, then close the contract
     event :pay do
-      transitions from: [:pending, :submitted], to: :paid,
-                  after: [:record_approval_timestamp, :update_contract_balance, :notify_approval]
+      transitions from: %i[pending submitted], to: :paid,
+                  after: %i[record_approval_timestamp update_contract_balance notify_approval]
     end
   end
 

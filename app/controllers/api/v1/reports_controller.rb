@@ -2,6 +2,7 @@
 
 module Api
   module V1
+    # Controller for generating various reports in CSV and PDF formats
     class ReportsController < ActionController::Base
       def commissions_csv
         generate_csv(Reports::CommissionsReportService, 'commissions_report.csv')

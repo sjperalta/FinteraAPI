@@ -4,6 +4,7 @@
 
 module Api
   module V1
+    # Controller for managing user notifications
     class NotificationsController < ApplicationController
       before_action :authenticate_user! # if using Devise, etc.
       before_action :set_notification, only: %i[show update destroy]

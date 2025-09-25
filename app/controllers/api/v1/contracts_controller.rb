@@ -4,6 +4,7 @@
 
 module Api
   module V1
+    # Controller for managing contracts
     class ContractsController < ApplicationController
       include Pagy::Backend
       include Sortable
@@ -119,7 +120,7 @@ module Api
 
         service = Contracts::CancelContractService.new(
           contract: @contract,
-          current_user: current_user,
+          current_user:,
           reason: params[:reason]
         )
 
@@ -211,7 +212,7 @@ module Api
           created_at: contract.created_at,
           updated_at: contract.updated_at,
           approved_at: contract.approved_at,
-          rejection_reason: contract.rejection_reason,
+          rejection_reason: contract.rejection_reason
           # Add more fields or associations as needed
         }
       end
@@ -228,7 +229,7 @@ module Api
             payment_type: p.payment_type.humanize,
             paid_amount: p.paid_amount || 0,
             interest_amount: p.interest_amount || 0,
-            overdue_days: overdue_days,
+            overdue_days:,
             description: p.description
           }
         end
@@ -262,22 +263,23 @@ module Api
           cancellation_notes: contract.note,
           balance: contract.balance,
           total_interest_collected: total_interest,
-          total_paid: total_paid,
+          total_paid:,
           documents: contract.documents,
           created_at: contract.created_at,
           updated_at: contract.updated_at,
-          payment_schedule: payment_schedule
+          payment_schedule:
         }
       end
 
-      private
       # Masks an identity string keeping the first 2 and last 2 chars visible.
       # For very short values it returns asterisks of the same length.
       def mask_identity(identity)
         return nil if identity.nil?
+
         s = identity.to_s
         return '*' * s.length if s.length <= 4
-        "#{s[0,2]}#{'*' * (s.length - 4)}#{s[-2,2]}"
+
+        "#{s[0, 2]}#{'*' * (s.length - 4)}#{s[-2, 2]}"
       end
     end
   end

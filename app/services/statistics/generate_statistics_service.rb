@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Statistics
+  # Service to generate monthly statistics
   class GenerateStatisticsService
     def initialize(period_date = Date.today)
       @period_date = parse_date(period_date)

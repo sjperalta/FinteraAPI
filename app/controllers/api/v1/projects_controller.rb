@@ -4,6 +4,7 @@
 
 module Api
   module V1
+    # Controller for managing projects
     class ProjectsController < ApplicationController
       include Pagy::Backend
       include Sortable

@@ -2,6 +2,7 @@
 
 module Api
   module V1
+    # Controller for managing statistics
     class StatisticsController < ApplicationController
       before_action :authenticate_user!
       load_and_authorize_resource
@@ -68,7 +69,7 @@ module Api
         datasets_light = []
         datasets_dark = []
 
-        %w[reservation down_payment installment].each_with_index do |payment_type, index|
+        %w[reservation down_payment installment].each_with_index do |payment_type, _index|
           # Get monthly data for this payment type
           monthly_data = (1..12).map do |m|
             rec = Revenue.find_by(payment_type:, year:, month: m)

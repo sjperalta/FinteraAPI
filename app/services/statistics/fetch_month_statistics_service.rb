@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Statistics
+  # Service to fetch statistics for a given month and year,
   class FetchMonthStatisticsService
     def self.call(month: nil, year: nil)
       # Determine the period_date based on provided month and year,
@@ -12,7 +13,7 @@ module Statistics
                     end.beginning_of_month
 
       # Fetch the statistics record for the requested month (nil if none)
-      current_stat = Statistic.find_by(period_date: period_date)
+      current_stat = Statistic.find_by(period_date:)
 
       # Fetch the statistics record for the previous month (used to compute growths)
       previous_period = period_date.prev_month.beginning_of_month
