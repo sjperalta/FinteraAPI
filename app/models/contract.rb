@@ -61,7 +61,7 @@ class Contract < ApplicationRecord
 
     # Cancel contract with proper logging and cleanup
     event :cancel do
-      transitions from: [:rejected, :pending, :submitted], to: :cancelled,
+      transitions from: %i[rejected pending submitted], to: :cancelled,
                   after: %i[log_cancellation release_lot delete_payments notify_cancellation]
     end
 
@@ -85,7 +85,7 @@ class Contract < ApplicationRecord
   def create_payments
     case financing_type
     when 'direct'
-      create_direct_payments  # Fixed method name
+      create_direct_payments # Fixed method name
     when 'bank', 'cash'
       create_single_payment
     else
@@ -105,15 +105,15 @@ class Contract < ApplicationRecord
     update!(balance: new_balance)
 
     # Close the contract when balance is zero or negative and contract is eligible
-    if new_balance <= 0
-      # prefer the AASM event so callbacks/notifications run correctly
-      if may_close?
-        close!
-      else
-        # fallback: mark closed only if contract already approved or idempotent
-        close_contract! if status == 'approved' || status == 'closed'
-      end
+    return unless new_balance <= 0
+
+    # prefer the AASM event so callbacks/notifications run correctly
+    if may_close?
+      close!
+    elsif status == 'approved' || status == 'closed'
+      close_contract!
     end
+    # fallback: mark closed only if contract already approved or idempotent
   end
 
   # Mark the contract as closed. This method is idempotent and safe.
@@ -198,7 +198,7 @@ class Contract < ApplicationRecord
 
     due_date = Date.today + 15.days
     # Crea el pago de la reserva y el pago completo.
-    Payment.create!(contract: self, description: "Proyecto #{project_name} - Reserva", due_date: due_date,
+    Payment.create!(contract: self, description: "Proyecto #{project_name} - Reserva", due_date:,
                     amount: reserve_amount, status: 'pending', payment_type: 'reservation')
     Payment.create!(contract: self, description: "Proyecto #{project_name} - Contado", due_date: due_date.next_month,
                     amount: remaining_balance, status: 'pending', payment_type: 'installment')
@@ -266,11 +266,11 @@ class Contract < ApplicationRecord
     current_user_email = Thread.current[:current_user]&.email || 'system'
     cancellation_log = "Contrato cancelado #{Time.current} por #{current_user_email}"
 
-    if note.present?
-      self.note = "#{note}\n#{cancellation_log}"
-    else
-      self.note = cancellation_log
-    end
+    self.note = if note.present?
+                  "#{note}\n#{cancellation_log}"
+                else
+                  cancellation_log
+                end
 
     save!
   end

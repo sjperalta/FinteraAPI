@@ -4,6 +4,7 @@
 
 module Api
   module V1
+    # Controller for managing lots within projects
     class LotsController < ApplicationController
       include Pagy::Backend
       include Sortable

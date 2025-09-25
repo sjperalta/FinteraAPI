@@ -21,11 +21,11 @@ module Contracts
         # Add custom reason if provided
         if @reason.present?
           cancellation_note = "Reason: #{@reason}"
-          if @contract.note.present?
-            @contract.note = "#{@contract.note}\n#{cancellation_note}"
-          else
-            @contract.note = cancellation_note
-          end
+          @contract.note = if @contract.note.present?
+                             "#{@contract.note}\n#{cancellation_note}"
+                           else
+                             cancellation_note
+                           end
           @contract.save!
         end
 

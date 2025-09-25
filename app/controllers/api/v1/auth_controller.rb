@@ -4,6 +4,7 @@
 
 module Api
   module V1
+    # Controller for user authentication (login, logout, token refresh)
     class AuthController < ApplicationController
       skip_before_action :authenticate_user!, only: %i[login refresh]
 

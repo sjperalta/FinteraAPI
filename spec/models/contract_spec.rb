@@ -36,7 +36,7 @@ RSpec.describe Contract, type: :model do
       financing_type: 'direct',
       reserve_amount: 1_000,
       down_payment: 2_000,
-      amount: 10_000  # Add the amount field that was missing
+      amount: 10_000 # Add the amount field that was missing
     )
   end
 
@@ -206,7 +206,7 @@ RSpec.describe Contract, type: :model do
       expect(Payment).to receive(:create!).with(
         hash_including(
           contract: subject,
-          description: "Proyecto TestProject - Reserva",
+          description: 'Proyecto TestProject - Reserva',
           due_date: contract_date + 15.days, # January 30, 2024
           amount: subject.reserve_amount,
           status: 'pending',
@@ -220,7 +220,7 @@ RSpec.describe Contract, type: :model do
       expect(Payment).to receive(:create!).with(
         hash_including(
           contract: subject,
-          description: "Proyecto TestProject - Prima",
+          description: 'Proyecto TestProject - Prima',
           due_date: down_payment_due_date, # reservation + 1 month (e.g. Feb 29, 2024)
           amount: subject.down_payment,
           status: 'pending',

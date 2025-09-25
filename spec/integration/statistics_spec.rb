@@ -1,7 +1,21 @@
+# frozen_string_literal: true
+
 require 'swagger_helper'
 
 RSpec.describe 'Api::V1::Statistics', type: :request do
-  let(:user) { User.new(FactoryBot.attributes_for(:user)).tap(&:save!) }
+  # create a user without FactoryBot
+  let(:user) do
+    User.new(
+      email: 'test.user@example.com',
+      password: 'password123',
+      full_name: 'Test User',
+      phone: '0000000000',
+      identity: '1234567890',
+      rtn: '1234567890',
+      role: 'admin',
+      confirmed_at: Time.current
+    ).tap(&:save!)
+  end
 
   before do
     # Stub authentication for request specs
@@ -19,12 +33,24 @@ RSpec.describe 'Api::V1::Statistics', type: :request do
 
       response '200', 'Revenue flow retrieved successfully' do
         let(:year) { Date.current.year }
-        # Seed revenues so they exist before the request runs
-        let!(:rev_attrs_1) { FactoryBot.attributes_for(:revenue, payment_type: 'reservation', year: year, month: 1, amount: 1000.0) }
-        let!(:rev1) { Revenue.new(rev_attrs_1).save! }
+        # Seed revenues so they exist before the request runs (no FactoryBot)
+        let!(:rev1) do
+          Revenue.new(
+            payment_type: 'reservation',
+            year:,
+            month: 1,
+            amount: 1000.0
+          ).tap(&:save!)
+        end
 
-        let!(:rev_attrs_2) { FactoryBot.attributes_for(:revenue, payment_type: 'installment', year: year, month: Date.current.month, amount: 2500.0) }
-        let!(:rev2) { Revenue.new(rev_attrs_2).save! }
+        let!(:rev2) do
+          Revenue.new(
+            payment_type: 'installment',
+            year:,
+            month: Date.current.month,
+            amount: 2500.0
+          ).tap(&:save!)
+        end
 
         run_test! do |response|
           data = JSON.parse(response.body)
@@ -38,13 +64,12 @@ RSpec.describe 'Api::V1::Statistics', type: :request do
           expect(data['datasets_light'].length).to eq(3)
 
           reservation_dataset = data['datasets_light'].detect { |d| d['label'] == 'Reserva' }
-          expect(reservation_dataset['data'][0]).to eq(1000.0)
+          expect(reservation_dataset['data'][0].to_f).to eq(1000.0)
 
           installment_dataset = data['datasets_light'].detect { |d| d['label'] == 'Cuotas' }
-          expect(installment_dataset['data'][Date.current.month - 1]).to eq(2500.0)
+          expect(installment_dataset['data'][Date.current.month - 1].to_f).to eq(2500.0)
         end
       end
     end
   end
-
 end

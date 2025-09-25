@@ -2,6 +2,7 @@
 
 module Api
   module V1
+    # Controller for managing statistics
     class StatisticsController < ApplicationController
       before_action :authenticate_user!
       load_and_authorize_resource
@@ -12,7 +13,7 @@ module Api
         year  = params[:year].present? ? params[:year].to_i : nil
 
         # Call the service with the provided parameters (or default values)
-        statistic = Statistics::FetchMonthStatisticsService.call(month: month, year: year)
+        statistic = Statistics::FetchMonthStatisticsService.call(month:, year:)
 
         # if statistic is nil then return dummy response with zeros
         if statistic.blank?
@@ -29,19 +30,19 @@ module Api
 
         # Return a focused JSON payload including the newly computed fields
         render json: statistic.as_json(only: %i[
-          id
-          period_date
-          total_income
-          total_interest
-          payment_reserve
-          payment_down_payment
-          payment_installments
-          on_time_payment
-          delayed_payment
-          new_customers
-          created_at
-          updated_at
-        ]), status: :ok
+                                         id
+                                         period_date
+                                         total_income
+                                         total_interest
+                                         payment_reserve
+                                         payment_down_payment
+                                         payment_installments
+                                         on_time_payment
+                                         delayed_payment
+                                         new_customers
+                                         created_at
+                                         updated_at
+                                       ]), status: :ok
       end
 
       def revenue_flow
@@ -54,24 +55,26 @@ module Api
         end
 
         # Base colors for light and dark themes
-        light_base_color = "rgba(237, 242, 247, 1)"
-        dark_base_color = "rgba(42, 49, 60, 1)"
+        light_base_color = 'rgba(237, 242, 247, 1)'
+        dark_base_color = 'rgba(42, 49, 60, 1)'
 
         # Accent colors for each payment type
         colors = {
-          'reservation' => "rgba(250, 204, 21, 1)",  # yellow/warning
-          'down_payment' => "rgba(74, 222, 128, 1)", # green/success
-          'installment' => "rgba(255, 120, 75, 1)"   # orange
+          'reservation' => 'rgba(250, 204, 21, 1)',  # yellow/warning
+          'down_payment' => 'rgba(74, 222, 128, 1)', # green/success
+          'installment' => 'rgba(255, 120, 75, 1)'   # orange
         }
 
         # Build datasets for light and dark themes
         datasets_light = []
         datasets_dark = []
 
-        %w[reservation down_payment installment].each_with_index do |payment_type, index|
+        %w[reservation down_payment installment].each_with_index do |payment_type, _index|
           # Get monthly data for this payment type
-          monthly_data = (1..12).map do |month|
-            Revenue.find_by(payment_type: payment_type, year: year, month: month)&.amount || 0.0
+          monthly_data = (1..12).map do |m|
+            rec = Revenue.find_by(payment_type:, year:, month: m)
+            # Ensure we serialize numbers (not strings) by converting to float
+            (rec&.amount || 0.0).to_f
           end
 
           # Create background colors array - highlight current month
@@ -110,10 +113,10 @@ module Api
         end
 
         render json: {
-          year: year,
-          current_month: current_month,
-          datasets_light: datasets_light,
-          datasets_dark: datasets_dark,
+          year:,
+          current_month:,
+          datasets_light:,
+          datasets_dark:,
           labels: %w[Jan Feb Mar April May Jun July Aug Sep Oct Nov Dec]
         }, status: :ok
       end

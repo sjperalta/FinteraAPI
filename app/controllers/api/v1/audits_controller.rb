@@ -4,6 +4,7 @@
 
 module Api
   module V1
+    # Controller for managing audits
     class AuditsController < ApplicationController
       include Pagy::Backend
       include Sortable

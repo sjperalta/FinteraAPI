@@ -10,7 +10,7 @@ module Reports
     end
 
     def call
-      #load cancelled or rejected contracts
+      # load cancelled or rejected contracts
       contract = Contract.includes(:lot, lot: :project).find_by(id: @contract_id, status: %w[cancelled rejected])
       unless contract
         return { success: false,

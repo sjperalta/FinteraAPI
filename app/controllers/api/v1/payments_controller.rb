@@ -4,6 +4,7 @@
 
 module Api
   module V1
+    # Controller for managing payments
     class PaymentsController < ApplicationController
       include Pagy::Backend
       include Sortable
@@ -137,7 +138,8 @@ module Api
       rescue AASM::InvalidTransition => e
         render json: { error: 'State transition failed', message: e.message }, status: :unprocessable_content
       rescue ActiveRecord::RecordInvalid => e
-        render json: { error: 'Validation failed', errors: e.record.errors.full_messages }, status: :unprocessable_content
+        render json: { error: 'Validation failed', errors: e.record.errors.full_messages },
+               status: :unprocessable_content
       rescue StandardError => e
         Rails.logger.error "Apply Payment Error: #{e.message}\n#{e.backtrace.join("\n")}"
         render json: { error: 'An unexpected error occurred.' }, status: :internal_server_error

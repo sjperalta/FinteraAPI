@@ -6,7 +6,7 @@ module Authenticable
   included do
     # Generic sorting application
     def authenticate_user!
-      token = request.headers['Authorization']&.split(' ')&.last
+      token = request.headers['Authorization']&.split&.last
       return render json: { error: 'Unauthorized' }, status: :unauthorized unless token
 
       decoded_token = decode_token(token)

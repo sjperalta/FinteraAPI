@@ -46,14 +46,13 @@ class Lot < ApplicationRecord
   def calculate_price
     return unless project
 
-    if override_price.present?
-      # Don't override the price field, keep the original calculated price
-      # The override_price field will be used for display/billing purposes
-      return
-    else
-      # Only calculate and set price if no override is present
-      base_area = length.to_d * width.to_d
-      self.price = base_area * project.price_per_square_unit.to_d
-    end
+    return if override_price.present?
+
+    # Don't override the price field, keep the original calculated price
+    # The override_price field will be used for display/billing purposes
+
+    # Only calculate and set price if no override is present
+    base_area = length.to_d * width.to_d
+    self.price = base_area * project.price_per_square_unit.to_d
   end
 end
