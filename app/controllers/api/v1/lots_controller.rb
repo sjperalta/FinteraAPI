@@ -15,12 +15,22 @@ module Api
 
       # Define allowed sort fields
       SORTABLE_FIELDS = %w[project_id price width name status created_at].freeze
-      SEARCHABLE_FIELDS = %w[name status].freeze
+      SEARCHABLE_FIELDS = %w[name
+        address
+        status
+        project.name
+        project.address
+        project.description
+        current_contract.applicant_user.full_name
+        current_contract.applicant_user.email
+        current_contract.applicant_user.identity
+        current_contract.creator.full_name
+      ].freeze
       MODEL = 'lots'
 
       # GET /projects/:project_id/lots
       def index
-        lots = @project.lots.includes(:project, :current_contract)
+        lots = @project.lots.includes(:project, :current_contract).includes(current_contract: %i[applicant_user creator])
 
         # Apply filters based on query parameters
         lots = apply_filters(lots, params, SEARCHABLE_FIELDS)

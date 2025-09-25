@@ -11,16 +11,24 @@ module Api
       include Filterable
       before_action :authenticate_user!
       load_and_authorize_resource
-      before_action :set_payment, only: %i[show approve reject upload_receipt apply]
+      before_action :set_payment, only: %i[show approve reject upload_receipt undo]
 
       # Define searchable and sortable fields
-      SEARCHABLE_FIELDS = %w[description status due_date amount contract_id].freeze
-      SORTABLE_FIELDS = %w[created_at amount due_date status].freeze
+      SEARCHABLE_FIELDS = %w[
+        payment_type
+        description
+        amount
+        status
+        contract.lot.name
+        contract.applicant_user.full_name
+      ].freeze
+
+      SORTABLE_FIELDS = %w[payments.created_at amount due_date status].freeze
 
       # GET /payments
       def index
         # Initialize the scope with necessary associations and select relevant fields
-        payments = Payment.joins(:contract).includes(:contract).select('payments.*, contracts.balance, contracts.status as contract_status, contracts.created_at as contract_created_at')
+        payments = Payment.joins(:contract).includes(contract: %i[applicant_user lot])
 
         # Apply filtering based on searchable fields
         payments = apply_filters(payments, params, SEARCHABLE_FIELDS)
@@ -38,7 +46,15 @@ module Api
                      approved_at payment_date],
             include: {
               contract: {
-                only: %i[id balance status created_at currency]
+                only: %i[id balance status created_at currency],
+                include: {
+                  applicant_user: {
+                    only: %i[id full_name identity phone]
+                  },
+                  lot: {
+                    only: %i[id name address]
+                  }
+                }
               }
             }
           ),
