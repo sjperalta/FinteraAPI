@@ -55,12 +55,11 @@ RSpec.describe Contract, type: :model do
       subject.approved_at = Time.current
       subject.active = true
     end
-    allow(subject).to receive(:create_payments)
-    allow(subject).to receive(:notify_approval)
-    allow(subject).to receive(:notify_rejection)
+    # Don't stub notify_approval to allow the actual ContractNotifier to be called
+    # Don't stub notify_rejection to allow the actual ContractNotifier to be called
     allow(subject).to receive(:release_lot)
     allow(subject).to receive(:delete_payments)
-    allow(subject).to receive(:notify_cancellation)
+    # Don't stub notify_cancellation to allow the actual ContractNotifier to be called
   end
 
   describe 'AASM minimal transitions' do
@@ -81,10 +80,18 @@ RSpec.describe Contract, type: :model do
 
     it 'approves from submitted and runs callbacks' do
       subject.submit
-      expect(subject).to receive(:record_approval)
-      expect(subject).to receive(:create_payments)
-      expect(subject).to receive(:notify_approval)
+
+      # Mock notification creation to avoid database calls
+      allow(Notification).to receive(:create!)
+      allow(User).to receive(:admins).and_return([])
+
+      expect(Contracts::PaymentCreationService).to receive(:new).with(subject).and_call_original
+      expect_any_instance_of(Contracts::PaymentCreationService).to receive(:call)
+      expect(Contracts::ContractNotifier).to receive(:new).with(subject).and_call_original
+      expect_any_instance_of(Contracts::ContractNotifier).to receive(:notify_approved).and_call_original
+
       subject.approve
+
       expect(subject.aasm.current_state).to eq(:approved)
       expect(subject.approved_at).not_to be_nil
       expect(subject.active).to be true
@@ -92,32 +99,43 @@ RSpec.describe Contract, type: :model do
 
     it 'rejects from submitted' do
       subject.submit
-      expect(subject).to receive(:notify_rejection)
+
+      # Mock the notification creation to avoid actual database calls
+      allow(Notification).to receive(:create!)
+
+      expect(Contracts::ContractNotifier).to receive(:new).with(subject).and_call_original
+      expect_any_instance_of(Contracts::ContractNotifier).to receive(:notify_rejected).and_call_original
+
       subject.reject
+
       expect(subject.aasm.current_state).to eq(:rejected)
     end
 
     it 'cancels from rejected' do
       subject.submit
-      subject.reject
-      expect(subject).to receive(:release_lot)
-      expect(subject).to receive(:delete_payments)
-      expect(subject).to receive(:notify_cancellation)
+
+      # Mock the notification creation to avoid actual database calls
+      allow(Notification).to receive(:create!)
+
+      expect(Contracts::ContractNotifier).to receive(:new).with(subject).and_call_original
+      expect_any_instance_of(Contracts::ContractNotifier).to receive(:notify_cancelled).and_call_original
+
       subject.cancel
+
       expect(subject.aasm.current_state).to eq(:cancelled)
     end
   end
 
   describe '#notify_approval' do
     it 'creates a notification for applicant and admins' do
-      user = double('User', id: 1)
-      admin = double('User', id: 2)
+      user = User.new(id: 1, email: 'user@example.com')
+      admin = User.new(id: 2, email: 'admin@example.com')
       contract = described_class.new
       allow(contract).to receive(:applicant_user).and_return(user)
       allow(contract).to receive_message_chain(:lot, :name).and_return('Lote 1')
       allow(contract).to receive(:id).and_return(42)
 
-      allow(User).to receive_message_chain(:where, :find_each).and_yield(admin)
+      allow(User).to receive(:admins).and_return([admin])
 
       expect(Notification).to receive(:create!).with(
         user:,
@@ -142,12 +160,14 @@ RSpec.describe Contract, type: :model do
       user = double('User', email: 'admin@example.com')
       Thread.current[:current_user] = user
 
+      # Mock notification creation to avoid database calls (needed for both reject and cancel)
+      allow(Notification).to receive(:create!)
+
       subject.submit
       subject.reject
 
       expect(subject).to receive(:release_lot)
       expect(subject).to receive(:delete_payments)
-      expect(subject).to receive(:notify_cancellation)
 
       subject.cancel
 
@@ -159,12 +179,14 @@ RSpec.describe Contract, type: :model do
     end
 
     it 'logs cancellation as system when no user' do
+      # Mock notification creation to avoid database calls (needed for both reject and cancel)
+      allow(Notification).to receive(:create!)
+
       subject.submit
       subject.reject
 
       expect(subject).to receive(:release_lot)
       expect(subject).to receive(:delete_payments)
-      expect(subject).to receive(:notify_cancellation)
 
       subject.cancel
 
@@ -175,6 +197,9 @@ RSpec.describe Contract, type: :model do
       subject.note = 'Existing note'
       user = double('User', email: 'admin@example.com')
       Thread.current[:current_user] = user
+
+      # Mock notification creation to avoid database calls (needed for both reject and cancel)
+      allow(Notification).to receive(:create!)
 
       subject.submit
       subject.reject
@@ -201,6 +226,9 @@ RSpec.describe Contract, type: :model do
       # Calculate expected values
       remaining_balance = subject.amount - subject.reserve_amount - subject.down_payment
       monthly_payment = remaining_balance / subject.payment_term
+
+      # Expect PaymentCreationService to be called
+      expect(Contracts::PaymentCreationService).to receive(:new).with(subject).and_call_original
 
       # Expect reservation payment (15 days after contract)
       expect(Payment).to receive(:create!).with(
@@ -243,7 +271,7 @@ RSpec.describe Contract, type: :model do
         ).ordered
       end
 
-      subject.send(:create_direct_payments)
+      Contracts::PaymentCreationService.new(subject).call
     end
   end
 
@@ -266,7 +294,7 @@ RSpec.describe Contract, type: :model do
       # Allow other payments to be created
       allow(Payment).to receive(:create!).and_return(true)
 
-      subject.send(:create_direct_payments)
+      Contracts::PaymentCreationService.new(subject).send(:create_direct_payments)
     end
 
     it 'schedules down payment 1 month after contract creation' do
@@ -281,7 +309,7 @@ RSpec.describe Contract, type: :model do
         )
       ).ordered
 
-      subject.send(:create_direct_payments)
+      Contracts::PaymentCreationService.new(subject).send(:create_direct_payments)
     end
 
     it 'schedules first installment 1 month after down payment' do
@@ -297,7 +325,7 @@ RSpec.describe Contract, type: :model do
         )
       ).ordered
 
-      subject.send(:create_direct_payments)
+      Contracts::PaymentCreationService.new(subject).send(:create_direct_payments)
     end
   end
 
@@ -307,7 +335,6 @@ RSpec.describe Contract, type: :model do
       allow(subject).to receive(:balance).and_return(subject.amount)
       allow(subject).to receive(:may_close?).and_return(true)
       allow(subject).to receive(:close!).and_return(true)
-      allow(subject).to receive(:close_contract!).and_return(true)
     end
 
     it 'closes contract when balance reaches zero' do
@@ -330,7 +357,6 @@ RSpec.describe Contract, type: :model do
       partial = subject.amount / 2
       expect(subject).to receive(:update!).with(hash_including(balance: subject.amount - partial)).and_return(true)
       expect(subject).not_to receive(:close!)
-      expect(subject).not_to receive(:close_contract!)
 
       subject.update_balance(partial)
     end

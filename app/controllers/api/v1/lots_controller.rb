@@ -34,12 +34,6 @@ module Api
         # Map lots with calculated fields
         lots_with_calculated_fields = @lots.map do |lot|
           contract = lot.current_contract
-          reservation_text = if contract&.applicant_user.nil?
-                               'N/A'
-                             else
-                               "#{contract.applicant_user.full_name}##{contract.applicant_user.id}"
-                             end
-
           {
             id: lot.id,
             contract_id: contract&.id,
@@ -47,7 +41,10 @@ module Api
             project_name: lot.project&.name || 'N/A',
             name: lot.name,
             address: lot.address,
-            reserved_by: reservation_text,
+            contract_created_by: contract&.creator&.full_name,
+            contract_created_user_id: contract&.creator_id,
+            reserved_by: contract&.applicant_user&.full_name,
+            reserved_by_user_id: contract&.applicant_user_id,
             measurement_unit: lot.measurement_unit || lot.project.measurement_unit,
             price: lot.price,
             override_price: lot.override_price,

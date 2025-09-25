@@ -3,25 +3,80 @@
 require 'rails_helper'
 
 RSpec.describe Payment, type: :model do
-  let(:user) { double('User', id: 1, full_name: 'Test User') }
-  let(:contract) { double('Contract', applicant_user: user, update_balance: true, marked_for_destruction?: false) }
+  let(:user) do
+    User.new(
+      full_name: 'Test User',
+      email: 'test@example.com',
+      password: 'password123',
+      phone: '123-456-7890',
+      identity: '12345678901234',
+      rtn: '12345678901234',
+      role: 'user',
+      confirmed_at: Time.current
+    )
+  end
+
+  let(:project) do
+    Project.new(
+      name: 'Test Project',
+      description: 'Test Description',
+      address: 'Test Address',
+      lot_count: 1,
+      price_per_square_unit: 100.0,
+      measurement_unit: 'm2',
+      interest_rate: 5.0
+    )
+  end
+
+  let(:lot) do
+    Lot.new(
+      project:,
+      name: 'Test Lot',
+      length: 10,
+      width: 10,
+      price: 1000.0
+    )
+  end
+
+  let(:contract) do
+    Contract.new(
+      lot:,
+      applicant_user: user,
+      payment_term: 12,
+      financing_type: 'direct',
+      reserve_amount: 100.0,
+      down_payment: 200.0,
+      amount: 1000.0
+    )
+  end
 
   subject do
-    payment = described_class.new(
+    described_class.new(
       amount: 100.0,
       due_date: Date.tomorrow,
       status: 'pending',
-      payment_type: 'installment'
+      payment_type: 'installment',
+      contract:
     )
-    # Stub the contract association to return the double, avoiding the mismatch error.
-    allow(payment).to receive(:contract).and_return(contract)
-    payment
   end
 
   before do
     # This is a general setup to prevent tests from failing if a notification is unexpectedly created.
     # Specific notification tests will have more precise `expect` calls.
     allow(Notification).to receive(:create!)
+
+    # Stub contract methods for non-scope tests
+    allow(contract).to receive(:update_balance)
+  end
+
+  describe 'constants' do
+    it 'defines PAYMENT_TYPES' do
+      expect(described_class::PAYMENT_TYPES).to eq(%w[reservation down_payment installment full advance])
+    end
+
+    it 'defines VALID_STATUSES' do
+      expect(described_class::VALID_STATUSES).to eq(%w[pending submitted paid rejected])
+    end
   end
 
   describe 'validations' do
@@ -32,7 +87,7 @@ RSpec.describe Payment, type: :model do
     end
 
     it 'accepts valid payment types' do
-      Payment::PAYMENT_TYPES.each do |type|
+      described_class::PAYMENT_TYPES.each do |type|
         subject.payment_type = type
         expect(subject).to be_valid, "Expected #{type} to be valid"
       end
@@ -42,6 +97,13 @@ RSpec.describe Payment, type: :model do
       subject.status = 'invalid_status'
       expect(subject).not_to be_valid
       expect(subject.errors[:status]).to include('is not included in the list')
+    end
+
+    it 'accepts valid statuses' do
+      described_class::VALID_STATUSES.each do |status|
+        subject.status = status
+        expect(subject).to be_valid, "Expected #{status} to be valid"
+      end
     end
 
     it 'requires amount to be greater than 0' do
@@ -92,6 +154,18 @@ RSpec.describe Payment, type: :model do
       end
     end
 
+    describe '#notify_approval' do
+      it 'creates approval notification for user and admins' do
+        admin_relation = double('AdminRelation')
+        allow(admin_relation).to receive(:find_each)
+        allow(User).to receive(:where).with(role: 'admin').and_return(admin_relation)
+
+        expect(Notification).to receive(:create!).once
+
+        subject.send(:notify_approval)
+      end
+    end
+
     describe '#notify_rejection' do
       it 'creates rejection notification' do
         expect(Notification).to receive(:create!).with(
@@ -102,6 +176,21 @@ RSpec.describe Payment, type: :model do
         )
 
         subject.send(:notify_rejection)
+      end
+    end
+
+    describe '#notify_overdue_interest' do
+      it 'creates overdue interest notification' do
+        overdue_interest = 25.50
+
+        expect(Notification).to receive(:create!).with(
+          user:,
+          title: 'Pago Atrasado: Test Payment',
+          message: 'Se ha generado un cargo por mora de 25.5.',
+          notification_type: 'payment_overdue'
+        )
+
+        subject.notify_overdue_interest(overdue_interest)
       end
     end
   end
@@ -130,10 +219,127 @@ RSpec.describe Payment, type: :model do
         allow(subject).to receive(:can_be_approved?).and_return(true)
         expect(subject).to receive(:record_approval_timestamp)
         allow(subject).to receive(:update_contract_balance)
-        allow(User).to receive_message_chain(:where, :find_each)
+        allow(User).to receive(:admins).and_return([])
 
         subject.approve
         expect(subject.aasm.current_state).to eq(:paid)
+      end
+    end
+
+    context 'undo' do
+      before do
+        allow(subject).to receive(:document_attached?).and_return(true)
+        subject.submit
+        allow(subject).to receive(:can_be_approved?).and_return(true)
+        allow(subject).to receive(:record_approval_timestamp)
+        allow(subject).to receive(:update_contract_balance)
+        allow(User).to receive(:admins).and_return([])
+        subject.approve
+      end
+
+      it 'transitions from paid back to submitted' do
+        expect(subject).to receive(:handle_undo)
+
+        subject.undo
+        expect(subject.aasm.current_state).to eq(:submitted)
+      end
+    end
+
+    context 'reject' do
+      before do
+        allow(subject).to receive(:document_attached?).and_return(true)
+        subject.submit
+      end
+
+      it 'transitions from submitted to rejected' do
+        expect(subject).to receive(:notify_rejection)
+
+        subject.reject
+        expect(subject.aasm.current_state).to eq(:rejected)
+      end
+    end
+  end
+
+  describe 'scopes' do
+    let!(:user_record) do
+      User.create!(full_name: 'Test User', email: 'test@example.com', password: 'password123',
+                   confirmed_at: Time.current, phone: '1234567890', identity: '123456789', rtn: '123456789', role: 'user')
+    end
+    let!(:project_record) do
+      Project.create!(name: 'Test Project', description: 'Test Description', address: 'Test Address', lot_count: 1,
+                      price_per_square_unit: 100.0, measurement_unit: 'm2', interest_rate: 5.0)
+    end
+    let!(:lot_record) { Lot.create!(project: project_record, name: 'Test Lot', length: 10, width: 10, price: 1000.0) }
+
+    let!(:contract_record) do
+      # Create a real contract for the scope tests
+      c = Contract.create!(
+        lot: lot_record,
+        applicant_user: user_record,
+        payment_term: 12,
+        financing_type: 'direct',
+        reserve_amount: 100.0,
+        down_payment: 200.0,
+        amount: 1000.0
+      )
+      allow(c).to receive(:update_balance) # Stub the update_balance method
+      c
+    end
+
+    let!(:pending_payment) do
+      described_class.create!(
+        amount: 100.0,
+        due_date: Date.tomorrow,
+        status: 'pending',
+        payment_type: 'installment',
+        contract: contract_record
+      )
+    end
+
+    let!(:submitted_payment) do
+      described_class.create!(
+        amount: 200.0,
+        due_date: Date.tomorrow,
+        status: 'submitted',
+        payment_type: 'installment',
+        contract: contract_record
+      )
+    end
+
+    let!(:overdue_payment) do
+      described_class.create!(
+        amount: 150.0,
+        due_date: 1.day.ago,
+        status: 'pending',
+        payment_type: 'installment',
+        contract: contract_record
+      )
+    end
+
+    let!(:future_payment) do
+      described_class.create!(
+        amount: 250.0,
+        due_date: 1.day.from_now,
+        status: 'pending',
+        payment_type: 'installment',
+        contract: contract_record
+      )
+    end
+
+    describe '.pending' do
+      it 'returns payments with pending status' do
+        expect(described_class.pending).to include(pending_payment)
+        expect(described_class.pending).not_to include(submitted_payment)
+      end
+    end
+
+    describe '.overdue' do
+      it 'returns overdue pending payments ordered by due date' do
+        overdue_payments = described_class.overdue
+
+        expect(overdue_payments).to include(overdue_payment)
+        expect(overdue_payments).not_to include(future_payment)
+        expect(overdue_payments).not_to include(submitted_payment)
       end
     end
   end

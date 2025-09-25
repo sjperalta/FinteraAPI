@@ -62,7 +62,7 @@ Rails.application.routes.draw do
           post :approve
           post :upload_receipt
           post :reject
-          post :apply
+          post :undo
           get  :download_receipt
         end
       end
