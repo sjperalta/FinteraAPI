@@ -22,11 +22,6 @@ module Payments
           send_approval_notification
 
           { success: true, message: 'Payment approved successfully', payment: }
-        elsif payment.may_pay?
-          payment.pay!
-          send_approval_notification
-
-          { success: true, message: 'Payment applied successfully', payment: }
         else
           add_error("Cannot approve or apply payment in current state: #{payment.status}")
           { success: false, message: 'Failed to approve or apply payment', errors: }

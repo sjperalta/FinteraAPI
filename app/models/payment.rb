@@ -116,11 +116,8 @@ class Payment < ApplicationRecord
   end
 
   def handle_undo
-    contract.update_balance(-paid_amount) if paid_amount
-    self.paid_amount = nil
-    self.approved_at = nil
-    self.payment_date = nil
-    save!
+    contract.update_balance(-paid_amount) if paid_amount.positive?
+    update!(paid_amount: nil, approved_at: nil, payment_date: nil)
   end
 
   def handle_approval
