@@ -36,6 +36,7 @@ Rails.application.routes.draw do
       resources :statistics, only: [:index] do
         collection do
           get :revenue_flow
+          post :refresh
         end
       end
 

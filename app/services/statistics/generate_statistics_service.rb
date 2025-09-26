@@ -77,12 +77,14 @@ module Statistics
     def notify_admin_async
       users = User.where(role: 'admin')
       users.each do |user|
-        Notification.create(
+        Notification.create!(
           user:,
           title: 'Actualizacion de estadisticas',
           message: 'Se ha ejecutado el servicio de actualizacion de estadisticas.',
           notification_type: 'generate_statistics'
         )
+      rescue StandardError => e
+        Rails.logger.error("Failed to create statistics notification for user #{user.id}: #{e.message}")
       end
     end
   end

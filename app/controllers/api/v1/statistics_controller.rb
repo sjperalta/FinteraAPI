@@ -120,6 +120,26 @@ module Api
           labels: %w[Jan Feb Mar April May Jun July Aug Sep Oct Nov Dec]
         }, status: :ok
       end
+
+      # POST /statistics/refresh
+      # Enqueues the statistics generation service to run asynchronously
+      def refresh
+        selected_date = nil
+        if params[:date].present?
+          begin
+            selected_date = Date.parse(params[:date].to_s)
+          rescue ArgumentError => e
+            render json: { error: "Invalid date format: #{params[:date]}. Expected format: YYYY-MM-DD" }, status: :bad_request
+            return
+          end
+        end
+
+        GenerateStatisticsJob.perform_later(selected_date)
+        render json: { message: 'Servicio de Estadísticas iniciado' }, status: :ok
+      rescue StandardError => e
+        Rails.logger.error("Statistics refresh error: #{e.message}\n#{e.backtrace.join("\n")}")
+        render json: { error: 'An unexpected error occurred while starting statistics generation' }, status: :internal_server_error
+      end
     end
   end
 end
