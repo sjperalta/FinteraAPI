@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 # app/jobs/send_reset_code_job.rb
+# Sends a reset code to the user via email.
 class SendResetCodeJob < ApplicationJob
   queue_as :default
 

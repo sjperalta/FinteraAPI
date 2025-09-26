@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# app/jobs/update_overdue_interest_job.rb
+# Updates overdue interest for pending payments and notifies users and admins.
 class UpdateOverdueInterestJob < ApplicationJob
   include Notifiable
   queue_as :default

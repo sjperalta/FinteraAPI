@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# app/jobs/generate_statistics_job.rb
+# Generates statistics for a given period by calling the Statistics::GenerateStatisticsService.
 class GenerateStatisticsJob < ApplicationJob
   queue_as :default
   retry_on StandardError, wait: 5.minutes, attempts: 3

@@ -11,11 +11,12 @@ module Api
       include Filterable
       load_and_authorize_resource
       before_action :set_project, only: %i[create approve reject cancel]
-      before_action :set_lot, only: %i[create approve reject cancel]
+      before_action :set_lot, only: %i[create approve reject cancel capital_repayment]
       before_action :set_contract, only: %i[show approve reject cancel]
 
       # Define sortable and searchable fields to prevent SQL injection and ensure valid operations
-      SORTABLE_FIELDS = %w[applicant_user_id contracts.created_at lot_id payment_term financing_type status amount].freeze
+      SORTABLE_FIELDS = %w[applicant_user_id contracts.created_at lot_id payment_term financing_type status
+                           amount].freeze
       SEARCHABLE_FIELDS = %w[
         contracts.created_at
         status
@@ -149,6 +150,22 @@ module Api
             errors: result[:errors]
           }, status: :unprocessable_content
         end
+      end
+
+      # Capital repayment, the client pays an extra amount to reduce the principal
+      # POST /api/v1/projects/:project_id/lots/:lot_id/contracts/:id/capital_repayment
+
+      def capital_repayment
+        authorize! :update, @contract
+
+        params.require(:contract).permit(:capital_repayment_amount)
+        amount = params[:contract][:capital_repayment_amount].to_f
+        render json: { message: 'Monto de amortización inválido' }, status: :bad_request if amount <= 0
+
+        @contract.update_balance(amount)
+        @contract.save!
+
+        render json: { message: 'Amortización de capital registrada exitosamente' }, status: :ok
       end
 
       private

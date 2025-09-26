@@ -3,6 +3,7 @@
 # app/services/notifications/overdue_payment_email_service.rb
 
 module Notifications
+  # Service to send overdue payment email notifications to users.
   class OverduePaymentEmailService
     def initialize(user, payments)
       @user = user

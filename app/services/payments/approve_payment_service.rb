@@ -14,8 +14,13 @@ module Payments
     def call
       ActiveRecord::Base.transaction do
         # Assign attributes if provided (for apply case)
-        payment.assign_attributes(@payment_params) if @payment_params
-        payment.payment_date = Time.current if @payment_params
+        unless payment || @payment_params
+          return { success: false, message: 'Payment not found or not provided',
+                   errors: ['Payment not found or not provided'] }
+        end
+
+        payment.assign_attributes(@payment_params)
+        payment.payment_date = Time.current
 
         if payment.may_approve?
           payment.approve!

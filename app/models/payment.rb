@@ -38,7 +38,7 @@ class Payment < ApplicationRecord
     # or when the payment is made directly (e.g., cash payment, bank transfer)
     # it should check the balance is 0 or less, then close the contract
     event :approve do
-      transitions from: :submitted, to: :paid,
+      transitions from: %i[pending submitted], to: :paid,
                   guard: :can_be_approved?,
                   after: :handle_approval
     end

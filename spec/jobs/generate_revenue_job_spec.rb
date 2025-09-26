@@ -14,7 +14,8 @@ RSpec.describe GenerateRevenueJob, type: :job do
 
   it 'calls the Statistics::RevenueService to generate revenue' do
     service = class_double('Statistics::RevenueService').as_stubbed_const
-    expect(service).to receive(:generate_for_current_month)
+    allow(service).to receive(:generate_for_date)
+    expect(service).to receive(:generate_for_date)
 
     perform_enqueued_jobs do
       GenerateRevenueJob.perform_now

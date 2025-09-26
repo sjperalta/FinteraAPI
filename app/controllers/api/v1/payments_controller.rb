@@ -75,7 +75,7 @@ module Api
       def approve
         # Handle both nested and flat parameter structures
         payment_data = params.fetch(:payment, params)
-        payment_params = payment_data.permit(:amount, :interest_amount, :total_amount)
+        payment_params = payment_data.permit(:amount, :interest_amount, :paid_amount)
 
         service = Payments::ApprovePaymentService.new(payment: @payment, payment_params:)
         result = service.call

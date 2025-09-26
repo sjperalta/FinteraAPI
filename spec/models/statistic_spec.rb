@@ -12,7 +12,8 @@ RSpec.describe Statistic, type: :model do
         payment_reserve: 100.0,
         payment_installments: 200.0,
         payment_down_payment: 300.0,
-        new_customers: 5
+        new_customers: 5,
+        new_contracts: 0
       )
 
       expect(statistic).to be_valid
@@ -27,7 +28,8 @@ RSpec.describe Statistic, type: :model do
         payment_reserve: 0,
         payment_installments: 0,
         payment_down_payment: 0,
-        new_customers: 0
+        new_customers: 0,
+        new_contracts: 0
       )
 
       duplicate = described_class.new(
@@ -37,7 +39,8 @@ RSpec.describe Statistic, type: :model do
         payment_reserve: 0,
         payment_installments: 0,
         payment_down_payment: 0,
-        new_customers: 0
+        new_customers: 0,
+        new_contracts: 0
       )
 
       expect(duplicate).not_to be_valid
@@ -52,7 +55,8 @@ RSpec.describe Statistic, type: :model do
         payment_reserve: -1,
         payment_installments: -1,
         payment_down_payment: -1,
-        new_customers: -1
+        new_customers: -1,
+        new_contracts: -1
       )
 
       expect(statistic).not_to be_valid
@@ -74,7 +78,8 @@ RSpec.describe Statistic, type: :model do
         payment_reserve: 1,
         payment_installments: 2,
         payment_down_payment: 3,
-        new_customers: 1
+        new_customers: 1,
+        new_contracts: 0
       )
       _outside = described_class.create!(
         period_date: start_date - 1.day,
@@ -83,7 +88,8 @@ RSpec.describe Statistic, type: :model do
         payment_reserve: 1,
         payment_installments: 2,
         payment_down_payment: 3,
-        new_customers: 1
+        new_customers: 1,
+        new_contracts: 0
       )
 
       result = described_class.for_period(start_date, end_date)
@@ -104,7 +110,8 @@ RSpec.describe Statistic, type: :model do
         payment_reserve: 5,
         payment_installments: 15,
         payment_down_payment: 20,
-        new_customers: 2
+        new_customers: 2,
+        new_contracts: 0
       )
       described_class.create!(
         period_date: start_date + 2.days,
@@ -113,7 +120,8 @@ RSpec.describe Statistic, type: :model do
         payment_reserve: 10,
         payment_installments: 25,
         payment_down_payment: 30,
-        new_customers: 3
+        new_customers: 3,
+        new_contracts: 0
       )
 
       # Expected sum: (5+15+20) + (10+25+30) = 105

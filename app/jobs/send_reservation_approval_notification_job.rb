@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # app/jobs/send_reservation_approval_notification_job.rb
-
+# Sends an email notification to the user when a reservation is approved.
 class SendReservationApprovalNotificationJob < ApplicationJob
   queue_as :default
 

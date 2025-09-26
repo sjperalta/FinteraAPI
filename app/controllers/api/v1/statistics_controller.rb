@@ -7,44 +7,22 @@ module Api
       before_action :authenticate_user!
       load_and_authorize_resource
 
+      # GET /statistics
       def index
-        # Extract month and year from query parameters and normalize to integers (or nil)
-        month = params[:month].present? ? params[:month].to_i : nil
-        year  = params[:year].present? ? params[:year].to_i : nil
-
         # Call the service with the provided parameters (or default values)
-        statistic = Statistics::FetchMonthStatisticsService.call(month:, year:)
+        statistic = Statistics::FetchMonthStatisticsService.call(month: params[:month], year: params[:year])
 
         # if statistic is nil then return dummy response with zeros
         if statistic.blank?
-          render json: {
-            total_income: 0,
-            total_income_growth: 0,
-            total_interest: 0,
-            total_interest_growth: 0,
-            new_customers: 0,
-            new_customers_growth: 0
-          }, status: :ok
+          render json: dummy_statistics_response, status: :ok
           return
         end
 
         # Return a focused JSON payload including the newly computed fields
-        render json: statistic.as_json(only: %i[
-                                         id
-                                         period_date
-                                         total_income
-                                         total_interest
-                                         payment_reserve
-                                         payment_down_payment
-                                         payment_installments
-                                         on_time_payment
-                                         delayed_payment
-                                         new_customers
-                                         created_at
-                                         updated_at
-                                       ]), status: :ok
+        render json: statistic.as_json(only: statistic_json_fields), status: :ok
       end
 
+      # Graph data for revenue flow by payment type
       def revenue_flow
         year = params[:year].present? ? params[:year].to_i : Date.current.year
         current_month = Date.current.month
@@ -124,21 +102,47 @@ module Api
       # POST /statistics/refresh
       # Enqueues the statistics generation service to run asynchronously
       def refresh
-        selected_date = nil
-        if params[:date].present?
-          begin
-            selected_date = Date.parse(params[:date].to_s)
-          rescue ArgumentError => e
-            render json: { error: "Invalid date format: #{params[:date]}. Expected format: YYYY-MM-DD" }, status: :bad_request
-            return
-          end
-        end
-
-        GenerateStatisticsJob.perform_later(selected_date)
+        GenerateStatisticsJob.perform_later(params[:date])
+        GenerateRevenueJob.perform_later(params[:date])
         render json: { message: 'Servicio de Estadísticas iniciado' }, status: :ok
       rescue StandardError => e
         Rails.logger.error("Statistics refresh error: #{e.message}\n#{e.backtrace.join("\n")}")
-        render json: { error: 'An unexpected error occurred while starting statistics generation' }, status: :internal_server_error
+        render json: { error: 'An unexpected error occurred while starting statistics generation' },
+               status: :internal_server_error
+      end
+
+      private
+
+      def statistic_json_fields
+        %i[
+          total_income
+          total_income_growth
+          total_interest
+          total_interest_growth
+          new_customers
+          new_customers_growth
+          new_contracts
+          new_contracts_growth
+          payment_down_payment
+          payment_installments
+          payment_reserve
+        ]
+      end
+
+      def dummy_statistics_response
+        {
+          total_income: 0.0,
+          total_income_growth: 0.0,
+          total_interest: 0.0,
+          total_interest_growth: 0.0,
+          new_customers: 0,
+          new_customers_growth: 0.0,
+          new_contracts: 0,
+          new_contracts_growth: 0.0,
+          payment_down_payment: 0.0,
+          payment_installments: 0.0,
+          payment_reserve: 0.0
+        }
       end
     end
   end
