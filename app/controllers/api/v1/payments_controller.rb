@@ -11,16 +11,24 @@ module Api
       include Filterable
       before_action :authenticate_user!
       load_and_authorize_resource
-      before_action :set_payment, only: %i[show approve reject upload_receipt apply]
+      before_action :set_payment, only: %i[show approve reject upload_receipt undo]
 
       # Define searchable and sortable fields
-      SEARCHABLE_FIELDS = %w[status due_date amount contract_id].freeze
-      SORTABLE_FIELDS = %w[created_at amount due_date status].freeze
+      SEARCHABLE_FIELDS = %w[
+        payment_type
+        description
+        amount
+        status
+        contract.lot.name
+        contract.applicant_user.full_name
+      ].freeze
+
+      SORTABLE_FIELDS = %w[payments.created_at amount due_date status].freeze
 
       # GET /payments
       def index
         # Initialize the scope with necessary associations and select relevant fields
-        payments = Payment.joins(:contract).includes(:contract).select('payments.*, contracts.balance, contracts.status as contract_status, contracts.created_at as contract_created_at')
+        payments = Payment.joins(:contract).includes(contract: %i[applicant_user lot])
 
         # Apply filtering based on searchable fields
         payments = apply_filters(payments, params, SEARCHABLE_FIELDS)
@@ -38,7 +46,15 @@ module Api
                      approved_at payment_date],
             include: {
               contract: {
-                only: %i[id balance status created_at currency]
+                only: %i[id balance status created_at currency],
+                include: {
+                  applicant_user: {
+                    only: %i[id full_name identity phone]
+                  },
+                  lot: {
+                    only: %i[id name address]
+                  }
+                }
               }
             }
           ),
@@ -57,13 +73,25 @@ module Api
 
       # POST /payments/:id/approve
       def approve
-        service = Payments::ApprovePaymentService.new(payment: @payment)
+        # Handle both nested and flat parameter structures
+        payment_data = params.fetch(:payment, params)
+        payment_params = payment_data.permit(:amount, :interest_amount, :total_amount)
+
+        service = Payments::ApprovePaymentService.new(payment: @payment, payment_params:)
         result = service.call
 
         if result[:success]
           render json: {
             message: result[:message],
-            payment: result[:payment]
+            payment: result[:payment].as_json(
+              only: %i[id description amount interest_amount status due_date contract_id created_at
+                       approved_at payment_date],
+              include: {
+                contract: {
+                  only: %i[id balance status created_at currency]
+                }
+              }
+            )
           }, status: :ok
         else
           render json: {
@@ -95,54 +123,14 @@ module Api
         end
       end
 
-      # POST /payments/:id/apply
-      def apply
-        # Handle both nested and flat parameter structures
-        payment_data = params.fetch(:payment, params)
-        payment_params = payment_data.permit(:amount, :interest_amount, :total_amount)
-
-        # Assign attributes from params
-        @payment.assign_attributes(payment_params)
-        @payment.payment_date = Time.current
-
-        # Check if the state transition is possible before attempting
-        unless @payment.may_pay?
-          render json: {
-            error: 'Cannot apply payment.',
-            message: "Payment is in '#{@payment.status}' status and cannot be paid directly."
-          }, status: :unprocessable_content
-          return
-        end
-
-        # Attempt to transition state and save. The `pay!` method will save the record.
-        if @payment.pay!
-          render json: {
-            message: 'Payment applied successfully',
-            payment: @payment.as_json(
-              only: %i[id description amount interest_amount status due_date contract_id created_at
-                       approved_at payment_date],
-              include: {
-                contract: {
-                  only: %i[id balance status created_at currency]
-                }
-              }
-            )
-          }, status: :ok
+      # POST /payments/:id/undo
+      # undo a payment approval
+      def undo
+        if @payment.may_undo? && @payment.undo!
+          render json: { message: 'Se deshizo la aprobación del pago exitosamente' }, status: :ok
         else
-          # This block may not be reached if pay! raises an exception, but is good for safety
-          render json: {
-            error: 'Failed to apply payment',
-            errors: @payment.errors.full_messages
-          }, status: :unprocessable_content
+          render json: { error: 'No se pudo deshacer la aprobación del pago' }, status: :unprocessable_content
         end
-      rescue AASM::InvalidTransition => e
-        render json: { error: 'State transition failed', message: e.message }, status: :unprocessable_content
-      rescue ActiveRecord::RecordInvalid => e
-        render json: { error: 'Validation failed', errors: e.record.errors.full_messages },
-               status: :unprocessable_content
-      rescue StandardError => e
-        Rails.logger.error "Apply Payment Error: #{e.message}\n#{e.backtrace.join("\n")}"
-        render json: { error: 'An unexpected error occurred.' }, status: :internal_server_error
       end
 
       # Add this new action

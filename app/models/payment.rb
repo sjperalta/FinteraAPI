@@ -35,10 +35,12 @@ class Payment < ApplicationRecord
     end
 
     # Transition from submitted to paid when payment is approved
+    # or when the payment is made directly (e.g., cash payment, bank transfer)
+    # it should check the balance is 0 or less, then close the contract
     event :approve do
       transitions from: :submitted, to: :paid,
                   guard: :can_be_approved?,
-                  after: %i[record_approval_timestamp update_contract_balance notify_approval]
+                  after: :handle_approval
     end
 
     # Transition from submitted to rejected when payment is rejected
@@ -47,11 +49,9 @@ class Payment < ApplicationRecord
                   after: :notify_rejection
     end
 
-    # when the payment is made directly (e.g., cash payment, bank transfer)
-    # it should check the balance is 0 or less, then close the contract
-    event :pay do
-      transitions from: %i[pending submitted], to: :paid,
-                  after: %i[record_approval_timestamp update_contract_balance notify_approval]
+    event :undo do
+      transitions from: :paid, to: :submitted,
+                  after: :handle_undo
     end
   end
 
@@ -74,7 +74,7 @@ class Payment < ApplicationRecord
   end
 
   def can_be_approved?
-    document_attached? && contract.present?
+    contract.present?
   end
 
   def record_approval_timestamp
@@ -113,5 +113,16 @@ class Payment < ApplicationRecord
       message: "Pago ##{id} ha sido rechazado.",
       notification_type: 'payment_rejected'
     )
+  end
+
+  def handle_undo
+    contract.update_balance(-paid_amount) if paid_amount.positive?
+    update!(paid_amount: nil, approved_at: nil, payment_date: nil)
+  end
+
+  def handle_approval
+    record_approval_timestamp
+    update_contract_balance
+    notify_approval
   end
 end

@@ -14,7 +14,7 @@ module Api
       before_action :set_project, only: %i[show update destroy]
 
       # Define fields allowed for search & sort
-      SEARCHABLE_FIELDS = %w[name description address].freeze
+      SEARCHABLE_FIELDS = %w[name description address project_type].freeze
       SORTABLE_FIELDS   = %w[name created_at project_type price_per_square_unit].freeze
 
       # GET /api/v1/projects

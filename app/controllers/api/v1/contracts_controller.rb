@@ -15,8 +15,21 @@ module Api
       before_action :set_contract, only: %i[show approve reject cancel]
 
       # Define sortable and searchable fields to prevent SQL injection and ensure valid operations
-      SORTABLE_FIELDS = %w[applicant_user_id created_at lot_id payment_term financing_type status amount].freeze
-      SEARCHABLE_FIELDS = %w[financing_type status].freeze
+      SORTABLE_FIELDS = %w[applicant_user_id contracts.created_at lot_id payment_term financing_type status amount].freeze
+      SEARCHABLE_FIELDS = %w[
+        contracts.created_at
+        status
+        financing_type
+        applicant_user.identity
+        applicant_user.phone
+        applicant_user.full_name
+        applicant_user.email
+        creator.full_name
+        creator.email
+        lot.name
+        lot.address
+        lot.project.name
+      ].freeze
 
       # GET /api/v1/contracts?search_term=xxx&sort=xx-asc
       def index

@@ -31,6 +31,10 @@ class User < ApplicationRecord
 
   validates :role, inclusion: { in: ROLES }
 
+  scope :admins, -> { where(role: 'admin') }
+  scope :sellers, -> { where(role: 'seller') }
+  scope :active_users, -> { where(status: 'active') }
+
   # Callbacks for Normalization (Optional)
   before_validation :normalize_identity_and_rtn
 

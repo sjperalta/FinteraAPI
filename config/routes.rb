@@ -36,6 +36,7 @@ Rails.application.routes.draw do
       resources :statistics, only: [:index] do
         collection do
           get :revenue_flow
+          post :refresh
         end
       end
 
@@ -62,7 +63,7 @@ Rails.application.routes.draw do
           post :approve
           post :upload_receipt
           post :reject
-          post :apply
+          post :undo
           get  :download_receipt
         end
       end
