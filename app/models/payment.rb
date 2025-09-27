@@ -74,7 +74,7 @@ class Payment < ApplicationRecord
   end
 
   def can_be_approved?
-    contract.present?
+    contract.present? && valid_payment_amount? && contract_has_pending_balance? && not_overpayment?
   end
 
   def record_approval_timestamp
@@ -82,10 +82,6 @@ class Payment < ApplicationRecord
     self.payment_date = Date.current
     self.paid_amount = amount
     save!
-  end
-
-  def update_contract_balance
-    contract.update_balance(paid_amount)
   end
 
   def notify_submission
@@ -116,13 +112,54 @@ class Payment < ApplicationRecord
   end
 
   def handle_undo
-    contract.update_balance(-paid_amount) if paid_amount.positive?
+    contract.ledger_entries.create!(amount: paid_amount, description: 'Transacción Reversada', entry_type: 'adjustment',
+                                    payment: self)
     update!(paid_amount: nil, approved_at: nil, payment_date: nil)
   end
 
   def handle_approval
     record_approval_timestamp
-    update_contract_balance
+    append_ledger_entry
+    close_contract_if_needed
     notify_approval
+  end
+
+  def valid_payment_amount?
+    payment_amount = amount.to_d
+    if payment_amount.present? && payment_amount.positive?
+      true
+    else
+      errors.add(:base, 'Monto pagado no especificado.')
+      false
+    end
+  end
+
+  def contract_has_pending_balance?
+    if contract.balance.positive?
+      true
+    else
+      errors.add(:base, 'El contrato no tiene balance pendiente.')
+      false
+    end
+  end
+
+  def not_overpayment?
+    payment_amount = amount.to_d
+    if payment_amount <= contract.balance
+      true
+    else
+      errors.add(:base, "El monto pagado de '#{payment_amount}' excede el balance pendiente del contrato.")
+      false
+    end
+  end
+
+  def append_ledger_entry
+    contract.ledger_entries.create!(amount: -amount.to_d, description: "Pago por #{description}",
+                                    entry_type: 'payment', payment: self)
+  end
+
+  def close_contract_if_needed
+    new_balance = contract.balance - amount.to_d
+    contract.close! if new_balance <= 0 && contract.may_close?
   end
 end

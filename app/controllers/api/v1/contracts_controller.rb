@@ -10,9 +10,9 @@ module Api
       include Sortable
       include Filterable
       load_and_authorize_resource
-      before_action :set_project, only: %i[create approve reject cancel]
-      before_action :set_lot, only: %i[create approve reject cancel capital_repayment]
-      before_action :set_contract, only: %i[show approve reject cancel]
+      before_action :set_project, only: %i[create approve reject cancel capital_repayment ledger]
+      before_action :set_lot, only: %i[create approve reject cancel capital_repayment ledger]
+      before_action :set_contract, only: %i[show approve reject cancel capital_repayment ledger]
 
       # Define sortable and searchable fields to prevent SQL injection and ensure valid operations
       SORTABLE_FIELDS = %w[applicant_user_id contracts.created_at lot_id payment_term financing_type status
@@ -152,9 +152,15 @@ module Api
         end
       end
 
+      # GET /api/v1/projects/:project_id/lots/:lot_id/contracts/:id/ledger
+      def ledger
+        authorize! :read, @contract
+        render json: @contract.ledger_entries.by_date.as_json(only: %i[id amount description entry_type entry_date payment_id]),
+               status: :ok
+      end
+
       # Capital repayment, the client pays an extra amount to reduce the principal
       # POST /api/v1/projects/:project_id/lots/:lot_id/contracts/:id/capital_repayment
-
       def capital_repayment
         authorize! :update, @contract
 

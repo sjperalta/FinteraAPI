@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_26_150000) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_26_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -40,6 +40,20 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_26_150000) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "contract_ledger_entries", force: :cascade do |t|
+    t.bigint "contract_id", null: false
+    t.bigint "payment_id"
+    t.decimal "amount", precision: 15, scale: 2, null: false
+    t.string "description", null: false
+    t.string "entry_type", null: false
+    t.datetime "entry_date", default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contract_id", "entry_date"], name: "index_contract_ledger_entries_on_contract_id_and_entry_date"
+    t.index ["contract_id"], name: "index_contract_ledger_entries_on_contract_id"
+    t.index ["payment_id"], name: "index_contract_ledger_entries_on_payment_id"
   end
 
   create_table "contracts", force: :cascade do |t|
@@ -234,6 +248,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_26_150000) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "contract_ledger_entries", "contracts"
+  add_foreign_key "contract_ledger_entries", "payments"
   add_foreign_key "contracts", "lots"
   add_foreign_key "contracts", "users", column: "applicant_user_id"
   add_foreign_key "contracts", "users", column: "creator_id"

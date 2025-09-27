@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# app/mailers/user_mailer.rb
+# Mailer class to handle user-related email notifications.
 class UserMailer < ApplicationMailer
   default from: ENV.fetch('DEFAULT_EMAIL', nil)
 
@@ -35,6 +37,15 @@ class UserMailer < ApplicationMailer
   def reservation_approved
     @contract = params[:contract]
     mail(to: @user.email, subject: I18n.t('mailers.user_mailer.reservation_approved.subject'))
+  end
+
+  # Email sent when a new account is created by admin/service, possibly with a temporary password
+  def account_created
+    @user = params[:user]
+    @temp_password = params[:temp_password]
+
+    subject = I18n.t('mailers.user_mailer.account_created.subject', default: 'Cuenta creada')
+    mail(to: @user.email, subject:)
   end
 
   def reset_code_email

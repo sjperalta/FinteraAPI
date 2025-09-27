@@ -26,7 +26,7 @@ module Contracts
 
       # Reservation payment: 15 days after contract creation
       reservation_due_date = contract_date + 15.days
-      Payment.create!(
+      reservation_payment = Payment.create!(
         contract: @contract,
         description: "Proyecto #{project_name} - Reserva",
         due_date: reservation_due_date,
@@ -34,10 +34,12 @@ module Contracts
         status: 'pending',
         payment_type: 'reservation'
       )
+      @contract.ledger_entries.create!(amount: reservation_payment.amount,
+                                       description: "Due for #{reservation_payment.description}", entry_type: 'due', payment: reservation_payment)
 
       # Down payment: 1 month after reservation
       down_payment_due_date = reservation_due_date + 1.month
-      Payment.create!(
+      down_payment = Payment.create!(
         contract: @contract,
         description: "Proyecto #{project_name} - Prima",
         due_date: down_payment_due_date,
@@ -45,6 +47,8 @@ module Contracts
         status: 'pending',
         payment_type: 'down_payment'
       )
+      @contract.ledger_entries.create!(amount: down_payment.amount, description: "Due for #{down_payment.description}",
+                                       entry_type: 'due', payment: down_payment)
 
       # Installments: Start after down payment
       remaining_balance = @contract.amount - @contract.reserve_amount - @contract.down_payment
@@ -52,7 +56,7 @@ module Contracts
 
       @contract.payment_term.times do |i|
         installment_due_date = down_payment_due_date + (i + 1).months
-        Payment.create!(
+        installment_payment = Payment.create!(
           contract: @contract,
           due_date: installment_due_date,
           description: "Proyecto #{project_name} - Cuota #{i + 1}",
@@ -60,6 +64,9 @@ module Contracts
           status: 'pending',
           payment_type: 'installment'
         )
+        @contract.ledger_entries.create!(amount: installment_payment.amount,
+                                         description: "Due for #{installment_payment.description}", entry_type: 'due',
+                                         payment: installment_payment)
       end
     end
 
@@ -68,7 +75,7 @@ module Contracts
       remaining_balance = @contract.amount - @contract.reserve_amount
 
       due_date = Date.today + 15.days
-      Payment.create!(
+      reservation_payment = Payment.create!(
         contract: @contract,
         description: "Proyecto #{project_name} - Reserva",
         due_date:,
@@ -76,8 +83,10 @@ module Contracts
         status: 'pending',
         payment_type: 'reservation'
       )
+      @contract.ledger_entries.create!(amount: reservation_payment.amount,
+                                       description: "Due for #{reservation_payment.description}", entry_type: 'due', payment: reservation_payment)
 
-      Payment.create!(
+      full_payment = Payment.create!(
         contract: @contract,
         description: "Proyecto #{project_name} - Contado",
         due_date: due_date.next_month,
@@ -85,6 +94,8 @@ module Contracts
         status: 'pending',
         payment_type: 'installment'
       )
+      @contract.ledger_entries.create!(amount: full_payment.amount, description: "Due for #{full_payment.description}",
+                                       entry_type: 'due', payment: full_payment)
     end
   end
 end

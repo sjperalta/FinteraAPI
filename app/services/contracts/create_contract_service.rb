@@ -2,6 +2,7 @@
 
 # app/services/contracts/create_contract_service.rb
 module Contracts
+  # Service to handle the creation of a contract along with associated user and documents.
   class CreateContractService
     attr_reader :lot, :contract_params, :user_params, :documents, :current_user, :errors
 
@@ -51,19 +52,29 @@ module Contracts
     end
 
     def create_new_user
-      user = User.new(user_params.merge(role: 'user'))
+      # Build user and ensure a temporary password exists so validations pass.
+      user = User.new(permitted_user_params.merge(role: 'user'))
       user.creator = current_user
+
+      # If no password was provided, generate a temporary one and set confirmation.
+      temp_password = nil
+      if user.password.blank?
+        temp_password = SecureRandom.hex(8)
+        user.password = temp_password
+        user.password_confirmation = temp_password
+      end
 
       raise ActiveRecord::RecordInvalid, user unless user.save
 
-      notify_new_user_creation(user)
+      # Notify the user and admins; include temporary password when generated so the user can log in
+      notify_new_user_creation(user, temp_password)
       user
     end
 
     def update_existing_user
       user = User.find(contract_params[:applicant_user_id])
 
-      raise ActiveRecord::RecordInvalid, user unless user.update(user_params)
+      raise ActiveRecord::RecordInvalid, user unless user.update(permitted_user_params)
 
       user
     end
@@ -124,7 +135,8 @@ module Contracts
       SendReservationApprovalNotificationJob.perform_later(contract)
     end
 
-    def notify_new_user_creation(user)
+    def notify_new_user_creation(user, temp_password = nil)
+      # Keep the in-app notification message original (no temp password included)
       Notification.create!(
         user:,
         title: 'Bienvenido a Fintera',
@@ -133,13 +145,20 @@ module Contracts
       )
 
       # Notify admins
-      User.where(role: 'admin').each do |admin|
+      User.admins.each do |admin|
         Notification.create!(
           user: admin,
           title: 'Nuevo Usuario',
           message: "Se ha creado un nuevo usuario: #{user.full_name}",
           notification_type: 'create_new_user'
         )
+      end
+
+      # Send an email to the user including the temporary password (if any)
+      begin
+        UserMailer.with(user:, temp_password:).account_created.deliver_later
+      rescue StandardError => e
+        Rails.logger.error "Failed to enqueue account_created email for User##{user.id}: #{e.message}"
       end
     end
 
@@ -152,13 +171,15 @@ module Contracts
       NotifyContractSubmissionJob.perform_now(contract)
     end
 
-    def user_params
+    def permitted_user_params
       @user_params.slice(
         :full_name,
         :phone,
         :identity,
         :rtn,
-        :email
+        :email,
+        :password,
+        :password_confirmation
       )
     end
   end

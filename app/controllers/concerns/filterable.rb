@@ -116,14 +116,8 @@ module Filterable
       column_type = get_column_type(field, model)
 
       case column_type
-      when :datetime, :timestamp, :date, :time
-        # For date/time fields, convert to string first
-        "LOWER(#{column_reference}::text) LIKE :search"
-      when :integer, :decimal, :float, :numeric
-        # For numeric fields, convert to string first
-        "LOWER(#{column_reference}::text) LIKE :search"
-      when :boolean
-        # For boolean fields, convert to string first
+      when :datetime, :timestamp, :date, :time, :integer, :decimal, :float, :numeric, :boolean
+        # For non-text fields, convert to string first
         "LOWER(#{column_reference}::text) LIKE :search"
       else
         # For text fields, use LOWER directly

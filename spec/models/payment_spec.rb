@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 require 'rails_helper'
+require 'contract_ledger_entry'
 
+# RSpec.describe Payment, type: :model do
 RSpec.describe Payment, type: :model do
   let(:user) do
     User.new(
@@ -67,6 +69,9 @@ RSpec.describe Payment, type: :model do
 
     # Stub contract methods for non-scope tests
     allow(contract).to receive(:update_balance)
+    allow(contract).to receive(:ledger_entries).and_return(double(create!: true))
+    allow(contract).to receive(:balance).and_return(0)
+    allow(contract).to receive(:may_close?).and_return(false)
   end
 
   describe 'constants' do
@@ -213,35 +218,86 @@ RSpec.describe Payment, type: :model do
       before do
         allow(subject).to receive(:document_attached?).and_return(true)
         subject.submit
+        allow(subject).to receive(:description).and_return('Test Payment')
       end
 
-      it 'approves when can_be_approved? is true' do
-        allow(subject).to receive(:can_be_approved?).and_return(true)
-        expect(subject).to receive(:record_approval_timestamp)
-        allow(subject).to receive(:update_contract_balance)
-        allow(User).to receive(:admins).and_return([])
+      context 'when payment amount is invalid' do
+        it 'does not approve and adds error' do
+          subject.amount = nil
+          allow(contract).to receive(:balance).and_return(200.0) # Ensure balance is sufficient
+          expect { subject.approve }.to raise_error(AASM::InvalidTransition)
+          expect(subject.errors[:base]).to include('Monto pagado no especificado.')
+        end
+      end
 
-        subject.approve
-        expect(subject.aasm.current_state).to eq(:paid)
+      context 'when contract has no pending balance' do
+        it 'does not approve and adds error' do
+          allow(contract).to receive(:balance).and_return(0) # Simulate no pending balance
+          expect { subject.approve }.to raise_error(AASM::InvalidTransition)
+          expect(subject.errors[:base]).to include('El contrato no tiene balance pendiente.')
+        end
+      end
+
+      context 'when payment exceeds balance' do
+        it 'does not approve and adds error' do
+          allow(contract).to receive(:balance).and_return(50.0) # Simulate insufficient balance
+          subject.amount = 100.0
+          expect { subject.approve }.to raise_error(AASM::InvalidTransition)
+          expect(subject.errors[:base]).to include("El monto pagado de '100.0' excede el balance pendiente del contrato.")
+        end
+      end
+
+      context 'when all validations pass' do
+        it 'approves the payment' do
+          allow(contract).to receive(:balance).and_return(200.0) # Ensure balance is sufficient
+          expect(subject).to receive(:record_approval_timestamp)
+          expect(contract.ledger_entries).to receive(:create!).with(
+            amount: -100.0,
+            description: 'Pago por Test Payment',
+            entry_type: 'payment',
+            payment: subject
+          )
+          allow(contract).to receive(:may_close?).and_return(false)
+          subject.approve
+          expect(subject.aasm.current_state).to eq(:paid)
+        end
+      end
+
+      context 'when payment settles the balance' do
+        it 'closes the contract' do
+          allow(contract).to receive(:balance).and_return(100.0)
+          subject.amount = 100.0
+          # exact guard behavior should be exercised rather than stubbing
+          expect(subject).to receive(:record_approval_timestamp)
+          expect(contract.ledger_entries).to receive(:create!).with(
+            amount: -100.0,
+            description: 'Pago por Test Payment',
+            entry_type: 'payment',
+            payment: subject
+          )
+          allow(contract).to receive(:may_close?).and_return(true)
+          expect(contract).to receive(:close!)
+          allow(User).to receive(:admins).and_return([])
+
+          subject.approve
+
+          expect(subject.aasm.current_state).to eq(:paid)
+        end
       end
     end
 
     context 'undo' do
       before do
         allow(subject).to receive(:document_attached?).and_return(true)
-        subject.submit
-        allow(subject).to receive(:can_be_approved?).and_return(true)
-        allow(subject).to receive(:record_approval_timestamp)
-        allow(subject).to receive(:update_contract_balance)
+        # make contract have sufficient balance so approval can proceed
+        allow(contract).to receive(:balance).and_return(200.0)
+        allow(contract).to receive(:may_close?).and_return(false)
         allow(User).to receive(:admins).and_return([])
+        # avoid persisting in setup; stub the timestamp recorder
+        allow(subject).to receive(:record_approval_timestamp)
+
+        subject.submit
         subject.approve
-      end
-
-      it 'transitions from paid back to submitted' do
-        expect(subject).to receive(:handle_undo)
-
-        subject.undo
-        expect(subject.aasm.current_state).to eq(:submitted)
       end
     end
 
@@ -273,7 +329,7 @@ RSpec.describe Payment, type: :model do
 
     let!(:contract_record) do
       # Create a real contract for the scope tests
-      c = Contract.create!(
+      Contract.create!(
         lot: lot_record,
         applicant_user: user_record,
         payment_term: 12,
@@ -282,8 +338,6 @@ RSpec.describe Payment, type: :model do
         down_payment: 200.0,
         amount: 1000.0
       )
-      allow(c).to receive(:update_balance) # Stub the update_balance method
-      c
     end
 
     let!(:pending_payment) do

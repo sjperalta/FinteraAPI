@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# db/migrate/20250926160000_create_contract_ledger_entries.rb
+# # Migration to create the contract_ledger_entries table for tracking contract financial entries.
 class CreateContractLedgerEntries < ActiveRecord::Migration[8.0]
   def change
     create_table :contract_ledger_entries do |t|
@@ -11,6 +13,6 @@ class CreateContractLedgerEntries < ActiveRecord::Migration[8.0]
       t.datetime :entry_date, null: false, default: -> { 'CURRENT_TIMESTAMP' }
       t.timestamps
     end
-    add_index :contract_ledger_entries, [:contract_id, :entry_date], if_not_exists: true
+    add_index :contract_ledger_entries, %i[contract_id entry_date], if_not_exists: true
   end
 end
