@@ -25,18 +25,21 @@ module Payments
         if payment.may_approve?
           payment.approve!
           send_approval_notification
+          # Trigger credit score calculation
+          UpdateCreditScoresJob.perform_later(payment.contract.applicant_user.id)
 
-          { success: true, message: 'Payment approved successfully', payment: }
+          { success: true, message: 'Pago Aplicado Correctamente', payment: }
         else
-          add_error("Cannot approve or apply payment in current state: #{payment.status}")
-          { success: false, message: 'Failed to approve or apply payment', errors: }
+          message = "No se puede aprobar o aplicar el pago en el estado actual: #{payment.status}"
+          add_error(message)
+          { success: false, message:, errors: }
         end
       rescue AASM::InvalidTransition => e
         handle_error(e)
-        { success: false, message: 'Invalid state transition', errors: }
+        { success: false, message: 'Transición inválida', errors: }
       rescue StandardError => e
         handle_error(e)
-        { success: false, message: 'Failed to approve or apply payment', errors: }
+        { success: false, message: 'No se puede aplicar pago', errors: }
       end
     end
 

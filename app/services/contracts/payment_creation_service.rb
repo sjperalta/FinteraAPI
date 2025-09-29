@@ -35,7 +35,7 @@ module Contracts
         payment_type: 'reservation'
       )
       @contract.ledger_entries.create!(amount: reservation_payment.amount,
-                                       description: "Due for #{reservation_payment.description}", entry_type: 'due', payment: reservation_payment)
+                                       description: "Pago por #{reservation_payment.description}", entry_type: 'due', payment: reservation_payment)
 
       # Down payment: 1 month after reservation
       down_payment_due_date = reservation_due_date + 1.month
@@ -47,7 +47,7 @@ module Contracts
         status: 'pending',
         payment_type: 'down_payment'
       )
-      @contract.ledger_entries.create!(amount: down_payment.amount, description: "Due for #{down_payment.description}",
+      @contract.ledger_entries.create!(amount: down_payment.amount, description: "Pago por #{down_payment.description}",
                                        entry_type: 'due', payment: down_payment)
 
       # Installments: Start after down payment
@@ -65,7 +65,7 @@ module Contracts
           payment_type: 'installment'
         )
         @contract.ledger_entries.create!(amount: installment_payment.amount,
-                                         description: "Due for #{installment_payment.description}", entry_type: 'due',
+                                         description: "Pago por #{installment_payment.description}", entry_type: 'due',
                                          payment: installment_payment)
       end
     end
@@ -84,7 +84,7 @@ module Contracts
         payment_type: 'reservation'
       )
       @contract.ledger_entries.create!(amount: reservation_payment.amount,
-                                       description: "Due for #{reservation_payment.description}", entry_type: 'due', payment: reservation_payment)
+                                       description: "Pago por #{reservation_payment.description}", entry_type: 'due', payment: reservation_payment)
 
       full_payment = Payment.create!(
         contract: @contract,
@@ -94,7 +94,7 @@ module Contracts
         status: 'pending',
         payment_type: 'installment'
       )
-      @contract.ledger_entries.create!(amount: full_payment.amount, description: "Due for #{full_payment.description}",
+      @contract.ledger_entries.create!(amount: full_payment.amount, description: "Pago por #{full_payment.description}",
                                        entry_type: 'due', payment: full_payment)
     end
   end

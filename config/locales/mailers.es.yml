@@ -60,3 +60,9 @@ es:
         subject: "Código de reseteo"
         title: "Código de reseteo"
         body: "Tu código para reestablecer tu contraseña es %{code}. Este código expira en %{minutes} minutos."
+      account_created:
+        subject: "¡Bienvenido a Fintera!"
+        greeting: "Estimado %{name},"
+        body: "Tu cuenta ha sido creada exitosamente. ¡Estamos emocionados de tenerte con nosotros!"
+        support: "Si tienes alguna pregunta, no dudes en comunicarte con nuestro equipo de soporte."
+        signature: "Saludos cordiales,\nEl equipo de Fintera"

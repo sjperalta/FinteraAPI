@@ -10,6 +10,10 @@ module Projects
     end
 
     def call
+      # exclude lot_count from project attributes
+      @project_params = @project_params.except(:lot_count)
+
+      # Create the project
       project = Project.new(@project_params)
 
       if project.save

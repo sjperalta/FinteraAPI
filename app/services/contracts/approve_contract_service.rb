@@ -29,6 +29,7 @@ module Contracts
 
     def approve_contract
       @contract.update!(status: 'approved', approved_at: Time.current)
+      @contract.applicant_user.update_credit_score # Trigger credit score calculation
     end
 
     # Método para generar los pagos dependiendo del tipo de financiamiento

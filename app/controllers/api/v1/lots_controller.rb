@@ -43,34 +43,12 @@ module Api
         # Paginate using Pagy
         @pagy, @lots = pagy(lots, items: params[:per_page] || 20, page: params[:page])
 
-        # Map lots with calculated fields
-        lots_with_calculated_fields = @lots.map do |lot|
-          contract = lot.current_contract
-          {
-            id: lot.id,
-            contract_id: contract&.id,
-            project_id: lot.project_id,
-            project_name: lot.project&.name || 'N/A',
-            name: lot.name,
-            address: lot.address,
-            contract_created_by: contract&.creator&.full_name,
-            contract_created_user_id: contract&.creator_id,
-            reserved_by: contract&.applicant_user&.full_name,
-            reserved_by_user_id: contract&.applicant_user_id,
-            measurement_unit: lot.measurement_unit || lot.project.measurement_unit,
-            price: lot.price,
-            override_price: lot.override_price,
-            length: lot.length,
-            width: lot.width,
-            dimensions: "#{lot.length} x #{lot.width}",
-            area: lot.area_m2,
-            status: lot.status.titleize, # Capitalize for better readability
-            balance: contract&.balance,
-            registration_number: lot.registration_number,
-            note: lot.note,
-            created_at: lot.created_at,
-            updated_at: lot.updated_at
-          }
+        # Map lots with calculated fields (cached for performance)
+        cache_key = "lots_index_#{@project.id}_#{params[:page]}_#{params[:per_page]}_#{params[:search_term]}_#{params[:sort]}"
+        lots_with_calculated_fields = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
+          @lots.map do |lot|
+            lot_json(lot)
+          end
         end
 
         # Pagy metadata
@@ -138,6 +116,34 @@ module Api
         @lot = @project.lots.find(params[:id])
       rescue ActiveRecord::RecordNotFound
         render json: { error: 'Lot not found' }, status: :not_found
+      end
+
+      def lot_json(lot, contract = nil)
+        {
+          id: lot.id,
+          contract_id: contract&.id,
+          project_id: lot.project_id,
+          project_name: lot.project&.name || 'N/A',
+          name: lot.name,
+          address: lot.address,
+          contract_created_by: contract&.creator&.full_name,
+          contract_created_user_id: contract&.creator_id,
+          reserved_by: contract&.applicant_user&.full_name,
+          reserved_by_user_id: contract&.applicant_user_id,
+          measurement_unit: lot.measurement_unit || lot.project.measurement_unit,
+          price: lot.price,
+          override_price: lot.override_price,
+          length: lot.length,
+          width: lot.width,
+          dimensions: "#{lot.length} x #{lot.width}",
+          area: lot.area_m2,
+          status: lot.status.titleize,
+          balance: contract&.balance,
+          registration_number: lot.registration_number,
+          note: lot.note,
+          created_at: lot.created_at,
+          updated_at: lot.updated_at
+        }
       end
 
       def lot_params

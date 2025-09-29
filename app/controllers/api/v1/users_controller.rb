@@ -16,25 +16,29 @@ module Api
         update_password_with_code
       ]
       load_and_authorize_resource
+      skip_load_and_authorize_resource only: [:index]
       skip_load_resource only: [:restore]
       skip_authorize_resource only: [:restore]
       before_action :set_user, only: %i[show update contracts payments summary upload_receipt restore]
       before_action :set_payment, only: [:upload_receipt]
 
       SEARCHABLE_FIELDS = %w[email full_name phone identity rtn role].freeze
+      SORTABLE_FIELDS = %w[full_name email phone identity rtn role created_at].freeze
 
       # GET /api/v1/users
       def index
-        # Authorization checks (admin or seller only)
-        unless current_user&.admin? || current_user&.seller?
-          return render json: { error: 'Not authorized' }, status: :forbidden
-        end
-
         # Base scope
-        users = User.all
+        users = User.includes(:creator).all
+
+        # Apply role-based filtering for sellers (only show users with role 'user')
+        users = users.where(role: 'user') if current_user.seller?
+        # Admins see all users (no filter applied)
 
         # Apply your standard filtering approach
         users = apply_filters(users, params, SEARCHABLE_FIELDS)
+
+        # Apply sorting if sort parameters are present
+        users = apply_sorting(users, params, SORTABLE_FIELDS)
 
         # Pagy integration
         @pagy, @users = pagy(
@@ -43,8 +47,14 @@ module Api
           page: params[:page]
         )
 
+        # Cache the users JSON for performance
+        cache_key = "users_index_#{current_user.id}_#{current_user.role}_#{params[:page]}_#{params[:per_page]}_#{params[:search_term]}_#{params[:sort]}"
+        users_json = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
+          @users.as_json(only: fields_for_render, include: { creator: { only: %i[id full_name] } })
+        end
+
         render json: {
-          users: @users.as_json(only: fields_for_render),
+          users: users_json,
           pagination: pagy_metadata(@pagy)
         }, status: :ok
       rescue ActiveRecord::RecordNotFound => e
@@ -63,7 +73,7 @@ module Api
       # POST /api/v1/users
       # Example for creating users (admin or seller?).
       def create
-        service = Users::CreateUserService.new(user_params:, creator_id: current_user&.id)
+        service = Users::CreateUserService.new(user_params:, creator_id: current_user)
         result = service.call
         if result[:success]
           render json: { success: true, message: 'User created. Confirmation sent.' }, status: :created
@@ -331,7 +341,8 @@ module Api
           :note,
           :created_at,
           :created_by,
-          :status
+          :status,
+          :credit_score
         )
       end
     end

@@ -81,7 +81,9 @@ class Contract < ApplicationRecord
   end
 
   def update_balance(amount_paid)
-    return errors.add(:base, 'El monto pagado no puede ser nulo.') unless amount_paid.present?
+    return false unless amount_paid.present?
+
+    errors.add(:base, 'El monto pagado no puede ser nulo.') unless amount_paid.present?
 
     amount = amount_paid.to_d
     current_balance = balance
@@ -89,19 +91,21 @@ class Contract < ApplicationRecord
     # Do not apply payments when there's no pending balance
     if current_balance <= 0
       errors.add(:base, 'El contrato no tiene balance pendiente.')
-      return
+      return false
     end
 
     # Prevent overpayment
     if amount > current_balance
       errors.add(:base, 'El monto pagado excede el balance pendiente del contrato.')
-      return
+      return false
     end
 
     # Create ledger entry and close if resulting balance is zero or less
     ledger_entries.create!(amount: -amount, description: 'Abono a Capital', entry_type: 'payment')
     new_balance = current_balance - amount
     close! if new_balance <= 0 && may_close?
+
+    true
   end
 
   # Public: create initial due ledger entries for the contract (reservation, down payment, installments)
@@ -122,6 +126,10 @@ class Contract < ApplicationRecord
       ledger_entries.create!(amount: monthly, entry_type: 'due',
                              description: "Proyecto #{project_name} - Cuota #{i + 1}")
     end
+  end
+
+  def effective_price
+    lot.ovverride_price.present? ? lot.override_price : lot.price
   end
 
   private

@@ -34,24 +34,26 @@ module Api
 
       # GET /api/v1/contracts?search_term=xxx&sort=xx-asc
       def index
-        # Start with a relation and apply access scope, filters and sorting before loading
+        # Start with a relation and apply access scope, filters, and sorting before loading
         contracts = Contract.all
 
         # If user is not admin, narrow scope to contracts created by the current user
         contracts = contracts.where(creator_id: current_user.id) unless current_user.admin?
 
-        # Apply search and sorting on the relation
+        # Apply search and sorting on the relation (ensure these methods use efficient queries)
         contracts = apply_filters(contracts, params, SEARCHABLE_FIELDS)
         contracts = apply_sorting(contracts, params, SORTABLE_FIELDS)
 
-        # load associations to avoid N+1 (lot -> project, applicant_user, creator, payments)
-        contracts = contracts.includes(lot: :project).includes(:applicant_user, :creator, :payments)
+        contracts = contracts.includes(:applicant_user, :creator, :payments, lot: :project)
 
-        # Paginate the contracts using Pagy (loads the records)
+        # Paginate the contracts using Pagy (applied after filtering/sorting/includes for efficiency)
         @pagy, @contracts = pagy(contracts, items: params[:per_page] || 20, page: params[:page])
 
-        # Map contracts into serializable hashes using an extracted helper to keep this action tidy
-        contracts_with_calculated_fields = @contracts.map { |c| contract_json(c) }
+        # Cache the contracts JSON mapping for performance
+        cache_key = "contracts_index_#{current_user.id}_#{params[:page]}_#{params[:per_page]}_#{params[:search_term]}_#{params[:sort]}"
+        contracts_with_calculated_fields = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
+          @contracts.map { |c| contract_json(c) }
+        end
 
         # Render JSON response with contracts and pagination metadata
         render json: {
@@ -114,7 +116,7 @@ module Api
         if @contract.may_reject?
           @contract.reject!
           @contract.rejection_reason = params[:reason] if params[:reason].present?
-          @contract.save
+          @contract.save!
 
           render json: {
             message: params[:reason].present? ? "Contrato rechazado: #{params[:reason]}" : 'Contrato rechazado exitosamente',
@@ -166,12 +168,21 @@ module Api
 
         params.require(:contract).permit(:capital_repayment_amount)
         amount = params[:contract][:capital_repayment_amount].to_f
-        render json: { message: 'Monto de amortización inválido' }, status: :bad_request if amount <= 0
+        if amount <= 0
+          render json: { message: 'Monto de amortización inválido' }, status: :bad_request
+          return
+        end
 
-        @contract.update_balance(amount)
-        @contract.save!
+        if @contract.update_balance(amount)
+          @contract.save!
 
-        render json: { message: 'Amortización de capital registrada exitosamente' }, status: :ok
+          # Trigger credit score calculation
+          UpdateCreditScoresJob.perform_later(@contract.applicant_user.id)
+
+          render json: { message: 'Amortización de capital registrada exitosamente' }, status: :ok
+        else
+          render json: { errors: @contract.errors.full_messages }, status: :unprocessable_content
+        end
       end
 
       private
@@ -206,7 +217,8 @@ module Api
           :reserve_amount,
           :down_payment,
           :currency,
-          :rejection_reason
+          :rejection_reason,
+          :note
         )
       end
 
@@ -248,15 +260,19 @@ module Api
           created_at: contract.created_at,
           updated_at: contract.updated_at,
           approved_at: contract.approved_at,
-          rejection_reason: contract.rejection_reason
+          rejection_reason: contract.rejection_reason,
+          note: contract.note
           # Add more fields or associations as needed
         }
       end
 
       def contract_json(contract)
-        payment_schedule = contract.payments.order(:due_date).map do |p|
-          overdue_days = p.due_date < Date.current && p.status == 'pending' ? (Date.current - p.due_date).to_i : 0
+        # Pre-load payments once per contract (already eager-loaded)
+        payments = contract.payments.order(:due_date)
 
+        # Calculate payment_schedule (in-memory mapping; consider caching if heavy)
+        payment_schedule = payments.map do |p|
+          overdue_days = p.due_date < Date.current && p.status == 'pending' ? (Date.current - p.due_date).to_i : 0
           {
             id: p.id,
             due_date: p.due_date,
@@ -270,9 +286,9 @@ module Api
           }
         end
 
-        # Calculate totals
-        total_interest = contract.payments.sum(:interest_amount) || 0
-        total_paid = contract.payments.where(status: 'paid').sum(:paid_amount) || 0
+        # Calculate totals (fix: explicitly handle nil values to avoid BigDecimal coercion errors)
+        total_interest = payments.sum { |p| p.interest_amount || 0 }
+        total_paid = payments.where(status: 'paid').sum { |p| p.paid_amount || 0 }
 
         {
           id: contract.id,
@@ -282,13 +298,15 @@ module Api
           lot_id: contract.lot_id,
           lot_name: contract&.lot&.name,
           lot_address: contract&.lot&.address,
-          lot_price: contract&.lot&.effective_price,
+          lot_price: contract&.lot&.price,
           lot_override_price: contract&.lot&.override_price,
           applicant_user_id: contract.applicant_user_id,
           applicant_name: contract.applicant_user&.full_name,
           applicant_phone: contract.applicant_user&.phone,
+          applicant_credit_score: contract.applicant_user&.credit_score,
           applicant_identity: mask_identity(contract.applicant_user&.identity),
           created_by: contract&.creator&.full_name,
+          approved_at: contract.approved_at,
           amount: contract.amount,
           payment_term: contract.payment_term,
           financing_type: contract.financing_type,
@@ -303,11 +321,12 @@ module Api
           documents: contract.documents,
           created_at: contract.created_at,
           updated_at: contract.updated_at,
+          note: contract.note,
           payment_schedule:
         }
       end
 
-      # Masks an identity string keeping the first 2 and last 2 chars visible.
+      # Masks an identity string keeping the first 4 and last 3 chars visible.
       # For very short values it returns asterisks of the same length.
       def mask_identity(identity)
         return nil if identity.nil?
@@ -315,7 +334,7 @@ module Api
         s = identity.to_s
         return '*' * s.length if s.length <= 4
 
-        "#{s[0, 2]}#{'*' * (s.length - 4)}#{s[-2, 2]}"
+        "#{s[0, 4]}#{'*' * (s.length - 4)}#{s[-3, 3]}"
       end
     end
   end

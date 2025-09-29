@@ -20,7 +20,7 @@ module Api
       # GET /api/v1/projects
       def index
         # Base scope
-        projects = Project.all
+        projects = Project.includes(:lots).all
 
         # Apply filtering based on query parameters & searchable fields
         projects = apply_filters(projects, params, SEARCHABLE_FIELDS)

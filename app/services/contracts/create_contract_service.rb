@@ -22,6 +22,7 @@ module Contracts
         process_documents(contract)
         update_lot_status
         submit_contract(contract)
+        send_reservation_notification(contract)
         after_submission(contract)
 
         { success: true, contract: }
@@ -136,11 +137,13 @@ module Contracts
     end
 
     def notify_new_user_creation(user, temp_password = nil)
-      # Keep the in-app notification message original (no temp password included)
+      user_message = 'Se ha creado tu cuenta exitosamente'
+      user_message += ". Contraseña temporal: #{temp_password}" if temp_password.present?
+
       Notification.create!(
         user:,
         title: 'Bienvenido a Fintera',
-        message: 'Se ha creado tu cuenta exitosamente',
+        message: user_message,
         notification_type: 'create_new_user'
       )
 
@@ -153,13 +156,23 @@ module Contracts
           notification_type: 'create_new_user'
         )
       end
+    end
 
-      # Send an email to the user including the temporary password (if any)
-      begin
-        UserMailer.with(user:, temp_password:).account_created.deliver_later
-      rescue StandardError => e
-        Rails.logger.error "Failed to enqueue account_created email for User##{user.id}: #{e.message}"
-      end
+    def send_reservation_notification(contract)
+      Notification.create!(
+        user: contract.applicant_user,
+        title: 'Reserva de Lote Exitosa',
+        message: "Has reservado el lote #{contract.lot.name} exitosamente.",
+        notification_type: 'lot_reserved'
+      )
+
+      # Notify seller
+      Notification.create!(
+        user: contract.lot.creator_user,
+        title: 'Lote Reservado',
+        message: "El lote #{contract.lot.name} ha sido reservado por #{contract.applicant_user.full_name}.",
+        notification_type: 'lot_reserved'
+      )
     end
 
     def handle_error(message)
