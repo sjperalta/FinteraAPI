@@ -14,7 +14,7 @@ module Payments
     def call
       ActiveRecord::Base.transaction do
         # Assign attributes if provided (for apply case)
-        unless payment || @payment_params
+        if payment.nil? || payment_params.nil?
           return { success: false, message: 'Payment not found or not provided',
                    errors: ['Payment not found or not provided'] }
         end
