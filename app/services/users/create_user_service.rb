@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
 module Users
+  # Service to create a new user and send notifications
   class CreateUserService
-    def initialize(user_params:, creator_id: nil)
+    def initialize(user_params:, creator: nil)
       @user_params = user_params
-      @creator_id = creator_id
+      @creator = creator
     end
 
     def notify_admin(user)
@@ -30,7 +31,7 @@ module Users
 
     def call
       user = User.new(@user_params)
-      user.created_by = @creator_id if @creator_id.present?
+      user.created_by = @creator if @creator.present?
 
       if user.save
         # Create notifications after successful save

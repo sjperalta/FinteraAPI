@@ -60,3 +60,9 @@ en:
         subject: "Reset Code"
         title: "Reset Code"
         body: "Your password reset code is %{code}. It expires in %{minutes} minutes."
+      account_created:
+        subject: "Welcome to Fintera!"
+        greeting: "Dear %{name},"
+        body: "Your account has been successfully created. We're excited to have you on board!"
+        support: "If you have any questions, feel free to reach out to our support team."
+        signature: "Best regards,\nThe Fintera Team"

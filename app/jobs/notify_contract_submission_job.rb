@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # app/jobs/notify_admin_payment_receipt_job.rb
-
+# Notifies admins when a payment is received by calling the Notifications::AdminPaymentReceiptNotificationService.
 class NotifyContractSubmissionJob < ApplicationJob
   queue_as :default
 

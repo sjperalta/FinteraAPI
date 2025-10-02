@@ -14,24 +14,36 @@ module Payments
     def call
       ActiveRecord::Base.transaction do
         # Assign attributes if provided (for apply case)
-        payment.assign_attributes(@payment_params) if @payment_params
-        payment.payment_date = Time.current if @payment_params
+        if payment.nil? || payment_params.nil?
+          return { success: false, message: 'Payment not found or not provided',
+                   errors: ['Payment not found or not provided'] }
+        end
+
+        payment.assign_attributes(@payment_params)
+        payment.payment_date = Time.current
 
         if payment.may_approve?
           payment.approve!
           send_approval_notification
+          # Trigger credit score calculation
+          UpdateCreditScoresJob.perform_later(payment.contract.applicant_user.id)
 
-          { success: true, message: 'Payment approved successfully', payment: }
+          { success: true, message: 'Pago Aplicado Correctamente', payment: }
         else
-          add_error("Cannot approve or apply payment in current state: #{payment.status}")
-          { success: false, message: 'Failed to approve or apply payment', errors: }
+          message = "No se puede aprobar o aplicar el pago revise cualquier de las siguientes circunstancias:
+          - El pago ya fue aprobado o aplicado
+          - El pago no está en estado pendiente
+          - El contrato asociado no está activo o esta cerrado
+          * Estado actual del pago: #{payment.status}, Estado actual del contrato asociado: #{payment.contract.status}"
+          add_error(message)
+          { success: false, message:, errors: }
         end
       rescue AASM::InvalidTransition => e
         handle_error(e)
-        { success: false, message: 'Invalid state transition', errors: }
+        { success: false, message: 'Transición inválida', errors: }
       rescue StandardError => e
         handle_error(e)
-        { success: false, message: 'Failed to approve or apply payment', errors: }
+        { success: false, message: 'No se puede aplicar pago', errors: }
       end
     end
 
@@ -42,7 +54,7 @@ module Payments
     end
 
     def handle_error(error)
-      error_message = "Error approving/applying payment: #{error.message}"
+      error_message = "Error aprobando el pago: #{error.message}"
       Rails.logger.error(error_message)
       Rails.logger.error(error.backtrace.join("\n"))
       add_error(error_message)

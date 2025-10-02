@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# app/jobs/update_overdue_interest_job.rb
+# Updates overdue interest for pending payments and notifies users and admins.
 class UpdateOverdueInterestJob < ApplicationJob
   include Notifiable
   queue_as :default
@@ -36,6 +38,8 @@ class UpdateOverdueInterestJob < ApplicationJob
       next if overdue_interest == payment.interest_amount
 
       payment.update!(interest_amount: overdue_interest)
+      payment.contract.ledger_entries.create!(amount: overdue_interest, description: 'Overdue interest',
+                                              entry_type: 'interest', payment:)
       send_notification(payment, overdue_interest)
       Rails.logger.info "[UpdateOverdueInterestJob] updated payment_id=#{payment.id} interest=#{overdue_interest}"
       processed_count += 1

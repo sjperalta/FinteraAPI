@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # app/jobs/send_contract_approval_notification_job.rb
-
+# Sends an email notification to the applicant user when a contract is approved.
 class SendContractApprovalNotificationJob < ApplicationJob
   queue_as :default
 

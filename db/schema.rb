@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_21_191544) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_01_215912) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -42,6 +42,20 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_21_191544) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "contract_ledger_entries", force: :cascade do |t|
+    t.bigint "contract_id", null: false
+    t.bigint "payment_id"
+    t.decimal "amount", precision: 15, scale: 2, null: false
+    t.string "description", null: false
+    t.string "entry_type", null: false
+    t.datetime "entry_date", default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contract_id", "entry_date"], name: "index_contract_ledger_entries_on_contract_id_and_entry_date"
+    t.index ["contract_id"], name: "index_contract_ledger_entries_on_contract_id"
+    t.index ["payment_id"], name: "index_contract_ledger_entries_on_payment_id"
+  end
+
   create_table "contracts", force: :cascade do |t|
     t.bigint "lot_id", null: false
     t.bigint "creator_id"
@@ -63,8 +77,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_21_191544) do
     t.datetime "closed_at"
     t.index ["active"], name: "index_contracts_on_active"
     t.index ["applicant_user_id"], name: "index_contracts_on_applicant_user_id"
+    t.index ["approved_at"], name: "index_contracts_on_approved_at"
     t.index ["creator_id"], name: "index_contracts_on_creator_id"
     t.index ["lot_id"], name: "index_contracts_on_lot_id"
+    t.index ["status", "active"], name: "index_contracts_on_status_and_active"
     t.index ["status"], name: "index_contracts_on_status"
   end
 
@@ -99,6 +115,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_21_191544) do
     t.index ["created_at"], name: "index_notifications_on_created_at"
     t.index ["notification_type"], name: "index_notifications_on_notification_type"
     t.index ["read_at"], name: "index_notifications_on_read_at"
+    t.index ["user_id", "read_at"], name: "index_notifications_on_user_id_and_read_at"
     t.index ["user_id"], name: "index_notifications_on_user_id"
   end
 
@@ -115,7 +132,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_21_191544) do
     t.datetime "approved_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["approved_at"], name: "index_payments_on_approved_at"
     t.index ["contract_id"], name: "index_payments_on_contract_id"
+    t.index ["created_at"], name: "index_payments_on_created_at"
+    t.index ["due_date"], name: "index_payments_on_due_date"
+    t.index ["payment_type"], name: "index_payments_on_payment_type"
+    t.index ["status", "due_date"], name: "index_payments_on_status_and_due_date"
+    t.index ["status"], name: "index_payments_on_status"
   end
 
   create_table "projects", force: :cascade do |t|
@@ -166,6 +189,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_21_191544) do
     t.decimal "delayed_payment", precision: 15, scale: 2, default: "0.0", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "new_contracts"
+    t.decimal "total_income_growth", precision: 10, scale: 2, default: "0.0"
+    t.decimal "total_interest_growth", precision: 10, scale: 2, default: "0.0"
+    t.decimal "new_customers_growth", precision: 10, scale: 2, default: "0.0"
+    t.decimal "new_contracts_growth", precision: 10, scale: 2, default: "0.0"
+    t.decimal "payment_capital_repayment"
+    t.index ["created_at"], name: "index_statistics_on_created_at"
     t.index ["period_date"], name: "index_statistics_on_period_date", unique: true
   end
 
@@ -194,6 +224,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_21_191544) do
     t.string "address"
     t.bigint "created_by"
     t.text "note"
+    t.integer "credit_score", default: 0, null: false
     t.index ["created_by"], name: "index_users_on_created_by"
     t.index ["discarded_at"], name: "index_users_on_discarded_at"
     t.index ["email"], name: "index_users_on_email", unique: true
@@ -219,6 +250,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_21_191544) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "contract_ledger_entries", "contracts"
+  add_foreign_key "contract_ledger_entries", "payments"
   add_foreign_key "contracts", "lots"
   add_foreign_key "contracts", "users", column: "applicant_user_id"
   add_foreign_key "contracts", "users", column: "creator_id"

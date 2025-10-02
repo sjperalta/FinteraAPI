@@ -28,7 +28,6 @@ class Lot < ApplicationRecord
     MeasurementUnits.convert_area(area_m2, measurement_unit || project&.measurement_unit)
   end
 
-  # Method to get the effective price (override if present, otherwise calculated)
   def effective_price
     override_price.present? ? override_price : price
   end

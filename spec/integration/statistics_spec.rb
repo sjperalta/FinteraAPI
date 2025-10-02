@@ -23,6 +23,96 @@ RSpec.describe 'Api::V1::Statistics', type: :request do
     allow_any_instance_of(Api::V1::StatisticsController).to receive(:current_user).and_return(user)
   end
 
+  path '/api/v1/statistics' do
+    get 'Get monthly statistics' do
+      tags 'Statistics'
+      consumes 'application/json'
+      produces 'application/json'
+
+      parameter name: :month, in: :query, type: :integer, required: false, description: 'Month (1-12)'
+      parameter name: :year, in: :query, type: :integer, required: false, description: 'Year'
+
+      response '200', 'Statistics retrieved successfully' do
+        let(:month) { Date.current.month }
+        let(:year) { Date.current.year }
+
+        # Create a statistic record for testing
+        let!(:statistic) do
+          Statistic.new(
+            period_date: Date.new(year, month, 1),
+            total_income: 5000.0,
+            total_income_growth: 10.5,
+            total_interest: 250.0,
+            total_interest_growth: 5.2,
+            new_customers: 3,
+            new_customers_growth: 50.0,
+            new_contracts: 2,
+            new_contracts_growth: 25.0,
+            payment_down_payment: 1000.0,
+            payment_installments: 3000.0,
+            payment_reserve: 500.0,
+            payment_capital_repayment: 500.0
+          ).tap(&:save!)
+        end
+
+        run_test! do |response|
+          data = JSON.parse(response.body)
+
+          expect(data).to include(
+            'total_income',
+            'total_income_growth',
+            'total_interest',
+            'total_interest_growth',
+            'new_customers',
+            'new_customers_growth',
+            'new_contracts',
+            'new_contracts_growth',
+            'payment_down_payment',
+            'payment_installments',
+            'payment_reserve',
+            'payment_capital_repayment'
+          )
+
+          expect(data['total_income']).to eq('5000.0')
+          expect(data['payment_capital_repayment']).to eq('500.0')
+          expect(data['new_customers']).to eq(3)
+        end
+      end
+
+      response '200', 'Returns dummy data when no statistics exist' do
+        let(:month) { 1 }
+        let(:year) { 2020 } # Year with no data
+
+        run_test! do |response|
+          data = JSON.parse(response.body)
+
+          expect(data['total_income']).to eq(0.0)
+          expect(data['payment_capital_repayment']).to eq(0.0)
+          expect(data['new_customers']).to eq(0)
+        end
+      end
+    end
+  end
+
+  path '/api/v1/statistics/refresh' do
+    post 'Refresh statistics data' do
+      tags 'Statistics'
+      consumes 'application/json'
+      produces 'application/json'
+
+      parameter name: :date, in: :query, type: :string, required: false, description: 'Date to refresh statistics for'
+
+      response '200', 'Statistics refresh initiated' do
+        let(:date) { Date.current.to_s }
+
+        run_test! do |response|
+          data = JSON.parse(response.body)
+          expect(data['message']).to eq('Servicio de Estadísticas iniciado')
+        end
+      end
+    end
+  end
+
   path '/api/v1/statistics/revenue_flow' do
     get 'Revenue flow datasets' do
       tags 'Statistics'

@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 require 'rails_helper'
-
+# spec/jobs/update_overdue_interest_job_spec.rb
+# RSpec tests for UpdateOverdueInterestJob to ensure it skips installment payments.
 RSpec.describe UpdateOverdueInterestJob, type: :job do
   describe '#perform' do
     it 'skips installment payments when updating overdue interest' do
@@ -9,6 +10,10 @@ RSpec.describe UpdateOverdueInterestJob, type: :job do
       lot = double('Lot', project:)
       contract_for_installment = double('Contract', applicant_user: double('User'), lot:)
       contract_for_other = double('Contract', applicant_user: double('User'), lot:)
+
+      # Stub ledger_entries for contracts
+      allow(contract_for_installment).to receive(:ledger_entries).and_return(double(create!: true))
+      allow(contract_for_other).to receive(:ledger_entries).and_return(double(create!: true))
 
       installment = double('Payment',
                            id: 1,

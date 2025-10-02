@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Statistics
+  # Service to generate and store revenue statistics.
   class RevenueService
     # Generate and store revenue data for the given year and month
     def self.generate_and_store_revenue(year, month)
@@ -20,9 +21,8 @@ module Statistics
     end
 
     # Generate revenue data for the current month and store it
-    def self.generate_for_current_month
-      today = Date.today
-      generate_and_store_revenue(today.year, today.month)
+    def self.generate_for_date(period_date = Date.today)
+      generate_and_store_revenue(period_date.year, period_date.month)
     end
 
     # Helper method to calculate monthly revenue for a specific payment type

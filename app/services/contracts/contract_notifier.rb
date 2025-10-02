@@ -30,6 +30,14 @@ module Contracts
         notification_type: 'contract_approved'
       )
 
+      # Seller Notification
+      create_notification(
+        user: @contract.creator,
+        title: 'Contrato Aprobado',
+        message: "Tu contrato para #{@contract.lot.name} ha sido aprobado",
+        notification_type: 'contract_approved'
+      )
+
       notify_admins(
         title: 'Contrato Aprobado',
         message: "Contrato ##{@contract.id} para #{@contract.lot.name} ha sido aprobado.",

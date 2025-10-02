@@ -116,14 +116,8 @@ module Filterable
       column_type = get_column_type(field, model)
 
       case column_type
-      when :datetime, :timestamp, :date, :time
-        # For date/time fields, convert to string first
-        "LOWER(#{column_reference}::text) LIKE :search"
-      when :integer, :decimal, :float, :numeric
-        # For numeric fields, convert to string first
-        "LOWER(#{column_reference}::text) LIKE :search"
-      when :boolean
-        # For boolean fields, convert to string first
+      when :datetime, :timestamp, :date, :time, :integer, :decimal, :float, :numeric, :boolean
+        # For non-text fields, convert to string first
         "LOWER(#{column_reference}::text) LIKE :search"
       else
         # For text fields, use LOWER directly
@@ -141,7 +135,6 @@ module Filterable
           # Direct field with table qualification
           column_name = parts[1]
           column = model.columns.find { |col| col.name == column_name }
-          return column&.type || :string
         else
           # Association field - navigate through the association chain
           current_model = model
@@ -161,13 +154,12 @@ module Filterable
 
           # Get column type from the final model
           column = current_model.columns.find { |col| col.name == column_name }
-          return column&.type || :string
         end
       else
         # Direct field without qualification
         column = model.columns.find { |col| col.name == field }
-        return column&.type || :string
       end
+      return column&.type || :string
 
       :string # Default fallback
     end
@@ -196,9 +188,7 @@ module Filterable
         parts = field.split('.')
 
         # Skip if it's a qualified table.column format (e.g., "contracts.created_at")
-        if parts.length == 2 && parts[0] == model.table_name
-          next
-        end
+        next if parts.length == 2 && parts[0] == model.table_name
 
         association_path = parts[0..-2] # Remove the last part (column name)
         next if association_path.empty?
@@ -215,14 +205,13 @@ module Filterable
     def build_nested_association(association_path, model)
       return nil if association_path.empty?
 
-      if association_path.length == 1
-        # Simple association like 'contract'
-        association_name = association_path.first.to_sym
-        return association_name if model.reflect_on_association(association_name)
-      else
-        # Nested associations like 'contract.lot' or 'contract.applicant_user'
-        return build_nested_hash(association_path, model)
-      end
+      return build_nested_hash(association_path, model) unless association_path.length == 1
+
+      # Simple association like 'contract'
+      association_name = association_path.first.to_sym
+      return association_name if model.reflect_on_association(association_name)
+
+      # Nested associations like 'contract.lot' or 'contract.applicant_user'
 
       nil
     end
@@ -238,7 +227,7 @@ module Filterable
         first_association
       else
         associated_model = model.reflect_on_association(first_association).klass
-        nested = build_nested_hash(path[1..-1], associated_model)
+        nested = build_nested_hash(path[1..], associated_model)
         nested ? { first_association => nested } : first_association
       end
     end
@@ -251,7 +240,7 @@ module Filterable
         # Check if it's already a qualified table.column format (e.g., "contracts.created_at")
         if parts.length == 2 && parts[0] == model.table_name
           # Already qualified with correct table name, return as-is
-          return field
+          field
         elsif parts.length == 2
           # Simple association like 'contract.balance'
           association_name = parts[0]
@@ -259,16 +248,16 @@ module Filterable
 
           # Check if it's an association
           association = model.reflect_on_association(association_name.to_sym)
-          if association
-            associated_table = association.klass.table_name
-            return "#{associated_table}.#{column_name}"
-          else
-            # Assume it's a qualified table.column format
-            return field
-          end
+          return field unless association
+
+          associated_table = association.klass.table_name
+          "#{associated_table}.#{column_name}"
+
+        # Assume it's a qualified table.column format
+
         else
           # Multi-part association like 'contract.lot.name' or 'contract.applicant_user.full_name'
-          return resolve_nested_association_field(parts, model)
+          resolve_nested_association_field(parts, model)
         end
       else
         # Direct field on the main model

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'rails_helper'
-
+# spec/jobs/check_payments_overdue_job_spec.rb
 RSpec.describe CheckPaymentsOverdueJob, type: :job do
   describe '#perform' do
     let(:user) { instance_double('User', present?: true) }
@@ -105,7 +105,8 @@ RSpec.describe GenerateRevenueJob, type: :job do
     end
 
     it 'invokes the revenue generation' do
-      expect(Statistics::RevenueService).to receive(:generate_for_current_month)
+      allow(Statistics::RevenueService).to receive(:generate_for_date)
+      expect(Statistics::RevenueService).to receive(:generate_for_date).with(Date.today)
       described_class.new.perform
     end
   end

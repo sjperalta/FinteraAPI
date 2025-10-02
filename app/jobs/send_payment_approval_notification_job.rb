@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # app/jobs/send_payment_approval_notification_job.rb
-
+# Sends an email notification to the user when a payment is approved.
 class SendPaymentApprovalNotificationJob < ApplicationJob
   queue_as :default
 

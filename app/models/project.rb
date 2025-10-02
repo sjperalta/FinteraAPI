@@ -24,6 +24,12 @@ class Project < ApplicationRecord
   before_create :initialize_lot_count
   after_save_commit :total_lot_value
 
+  def self.reset_lot_counts
+    find_each do |project|
+      Project.reset_counters(project.id, :lots)
+    end
+  end
+
   def price_for(area_in_m2)
     # Normalize area to the unit configured
     normalized_area = MeasurementUnits.convert_area(area_in_m2, measurement_unit)

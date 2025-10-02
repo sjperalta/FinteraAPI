@@ -2,6 +2,7 @@
 
 # app/services/contracts/create_contract_service.rb
 module Contracts
+  # Service to handle the creation of a contract along with associated user and documents.
   class CreateContractService
     attr_reader :lot, :contract_params, :user_params, :documents, :current_user, :errors
 
@@ -21,6 +22,7 @@ module Contracts
         process_documents(contract)
         update_lot_status
         submit_contract(contract)
+        send_reservation_notification(contract)
         after_submission(contract)
 
         { success: true, contract: }
@@ -51,19 +53,29 @@ module Contracts
     end
 
     def create_new_user
-      user = User.new(user_params.merge(role: 'user'))
+      # Build user and ensure a temporary password exists so validations pass.
+      user = User.new(permitted_user_params.merge(role: 'user'))
       user.creator = current_user
+
+      # If no password was provided, generate a temporary one and set confirmation.
+      temp_password = nil
+      if user.password.blank?
+        temp_password = SecureRandom.hex(8)
+        user.password = temp_password
+        user.password_confirmation = temp_password
+      end
 
       raise ActiveRecord::RecordInvalid, user unless user.save
 
-      notify_new_user_creation(user)
+      # Notify the user and admins; include temporary password when generated so the user can log in
+      notify_new_user_creation(user, temp_password)
       user
     end
 
     def update_existing_user
       user = User.find(contract_params[:applicant_user_id])
 
-      raise ActiveRecord::RecordInvalid, user unless user.update(user_params)
+      raise ActiveRecord::RecordInvalid, user unless user.update(permitted_user_params)
 
       user
     end
@@ -124,21 +136,43 @@ module Contracts
       SendReservationApprovalNotificationJob.perform_later(contract)
     end
 
-    def notify_new_user_creation(user)
+    def notify_new_user_creation(user, temp_password = nil)
+      user_message = 'Se ha creado tu cuenta exitosamente'
+      user_message += ". Contraseña temporal: #{temp_password}" if temp_password.present?
+
       Notification.create!(
         user:,
         title: 'Bienvenido a Fintera',
-        message: 'Se ha creado tu cuenta exitosamente',
+        message: user_message,
         notification_type: 'create_new_user'
       )
 
       # Notify admins
-      User.where(role: 'admin').each do |admin|
+      User.admins.each do |admin|
         Notification.create!(
           user: admin,
           title: 'Nuevo Usuario',
           message: "Se ha creado un nuevo usuario: #{user.full_name}",
           notification_type: 'create_new_user'
+        )
+      end
+    end
+
+    def send_reservation_notification(contract)
+      Notification.create!(
+        user: contract.applicant_user,
+        title: 'Reserva de Lote Exitosa',
+        message: "Has reservado el lote #{contract.lot.name} exitosamente.",
+        notification_type: 'lot_reserved'
+      )
+
+      # Notify seller
+      User.admins.each do |admin|
+        Notification.create!(
+          user: admin,
+          title: 'Lote Reservado',
+          message: "El lote #{contract.lot.name} ha sido reservado por #{contract.applicant_user.full_name}.",
+          notification_type: 'lot_reserved'
         )
       end
     end
@@ -152,13 +186,15 @@ module Contracts
       NotifyContractSubmissionJob.perform_now(contract)
     end
 
-    def user_params
+    def permitted_user_params
       @user_params.slice(
         :full_name,
         :phone,
         :identity,
         :rtn,
-        :email
+        :email,
+        :password,
+        :password_confirmation
       )
     end
   end

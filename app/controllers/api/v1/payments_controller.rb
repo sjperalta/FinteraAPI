@@ -37,11 +37,12 @@ module Api
         payments = apply_sorting(payments, params, SORTABLE_FIELDS)
 
         # Paginate the results using Pagy
-        pagy, payments = pagy(payments, items: params[:per_page] || Pagy::DEFAULT[:items], page: params[:page])
+        @pagy, @payments = pagy(payments, items: params[:per_page] || Pagy::DEFAULT[:items], page: params[:page])
 
-        # Prepare the JSON response with payments and pagination metadata
-        render json: {
-          payments: payments.as_json(
+        # Cache the payments JSON for performance
+        cache_key = "payments_index_#{params[:page]}_#{params[:per_page]}_#{params[:search_term]}_#{params[:sort]}"
+        payments_json = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
+          @payments.as_json(
             only: %i[id description amount interest_amount status due_date contract_id created_at
                      approved_at payment_date],
             include: {
@@ -57,8 +58,13 @@ module Api
                 }
               }
             }
-          ),
-          pagination: pagy_metadata(pagy)
+          )
+        end
+
+        # Prepare the JSON response with payments and pagination metadata
+        render json: {
+          payments: payments_json,
+          pagination: pagy_metadata(@pagy)
         }, status: :ok
       rescue ActiveRecord::RecordNotFound => e
         render json: { error: e.message }, status: :not_found
@@ -73,9 +79,10 @@ module Api
 
       # POST /payments/:id/approve
       def approve
+        authorize! :approve, @payment
         # Handle both nested and flat parameter structures
         payment_data = params.fetch(:payment, params)
-        payment_params = payment_data.permit(:amount, :interest_amount, :total_amount)
+        payment_params = payment_data.permit(:amount, :interest_amount, :paid_amount)
 
         service = Payments::ApprovePaymentService.new(payment: @payment, payment_params:)
         result = service.call

@@ -23,6 +23,9 @@ class User < ApplicationRecord
   validates :identity, presence: true, uniqueness: true
   validates :rtn, presence: true, uniqueness: true
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
+  validates :credit_score,
+            numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 850 },
+            allow_nil: true
 
   enum :status, { active: 'active', inactive: 'inactive', suspended: 'suspended' }
 
@@ -33,6 +36,7 @@ class User < ApplicationRecord
 
   scope :admins, -> { where(role: 'admin') }
   scope :sellers, -> { where(role: 'seller') }
+  scope :regular_users, -> { where(role: 'user') }
   scope :active_users, -> { where(status: 'active') }
 
   # Callbacks for Normalization (Optional)
@@ -77,6 +81,15 @@ class User < ApplicationRecord
 
   def restore
     undiscard! # Restores soft-deleted user
+  end
+
+  def update_credit_score
+    return if contracts.empty? # Skip if the user has no contracts
+
+    score = CreditScore::CreditScoreCalculator.new(self).calculate
+    update(credit_score: score)
+  rescue StandardError => e
+    Rails.logger.error "Failed to update credit score for user ##{id}: #{e.message}"
   end
 
   private

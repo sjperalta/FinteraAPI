@@ -60,6 +60,12 @@ RSpec.describe Contract, type: :model do
     allow(subject).to receive(:release_lot)
     allow(subject).to receive(:delete_payments)
     # Don't stub notify_cancellation to allow the actual ContractNotifier to be called
+
+    # Mock ledger_entries association to return a mock that can sum amounts
+    ledger_entries_mock = double('ledger_entries')
+    allow(ledger_entries_mock).to receive(:total_balance).and_return(0) # Default balance
+    allow(ledger_entries_mock).to receive(:create!).and_return(true)
+    allow(subject).to receive(:ledger_entries).and_return(ledger_entries_mock)
   end
 
   describe 'AASM minimal transitions' do
@@ -128,10 +134,21 @@ RSpec.describe Contract, type: :model do
 
   describe '#notify_approval' do
     it 'creates a notification for applicant and admins' do
-      user = User.new(id: 1, email: 'user@example.com')
-      admin = User.new(id: 2, email: 'admin@example.com')
+      user = User.new(id: 1, email: 'user@example.com', password: 'password123', full_name: 'Test User',
+                      phone: '1234567890', identity: '1234567890', rtn: '1234567890', role: 'user')
+      seller = User.new(id: 1, email: 'seller@example.com', password: 'password123', full_name: 'Seller User',
+                        phone: '1234567899', identity: '1234567899', rtn: '1234567899', role: 'seller')
+      admin = User.new(id: 2, email: 'admin@example.com', password: 'password123', full_name: 'Admin User',
+                       phone: '0987654321', identity: '0987654321', rtn: '0987654321', role: 'admin')
+
+      # Stub password_digest to avoid Devise serialization issues
+      allow(user).to receive(:password_digest).and_return('stubbed_digest')
+      allow(admin).to receive(:password_digest).and_return('stubbed_digest')
+      allow(seller).to receive(:password_digest).and_return('stubbed_digest')
+
       contract = described_class.new
       allow(contract).to receive(:applicant_user).and_return(user)
+      allow(contract).to receive(:creator).and_return(seller)
       allow(contract).to receive_message_chain(:lot, :name).and_return('Lote 1')
       allow(contract).to receive(:id).and_return(42)
 
@@ -139,6 +156,13 @@ RSpec.describe Contract, type: :model do
 
       expect(Notification).to receive(:create!).with(
         user:,
+        title: 'Contrato Aprobado',
+        message: 'Tu contrato para Lote 1 ha sido aprobado',
+        notification_type: 'contract_approved'
+      )
+
+      expect(Notification).to receive(:create!).with(
+        user: seller,
         title: 'Contrato Aprobado',
         message: 'Tu contrato para Lote 1 ha sido aprobado',
         notification_type: 'contract_approved'
@@ -240,7 +264,7 @@ RSpec.describe Contract, type: :model do
           status: 'pending',
           payment_type: 'reservation'
         )
-      ).ordered
+      ).ordered.and_return(double(amount: subject.reserve_amount, description: 'Proyecto TestProject - Reserva'))
 
       # Expect down payment (1 month after reservation due date)
       reservation_due_date = contract_date + 15.days
@@ -254,7 +278,7 @@ RSpec.describe Contract, type: :model do
           status: 'pending',
           payment_type: 'down_payment'
         )
-      ).ordered
+      ).ordered.and_return(double(amount: subject.down_payment, description: 'Proyecto TestProject - Prima'))
 
       # Expect installment payments (monthly after down payment)
       subject.payment_term.times do |i|
@@ -268,7 +292,7 @@ RSpec.describe Contract, type: :model do
             status: 'pending',
             payment_type: 'installment'
           )
-        ).ordered
+        ).ordered.and_return(double(amount: monthly_payment, description: "Proyecto TestProject - Cuota #{i + 1}"))
       end
 
       Contracts::PaymentCreationService.new(subject).call
@@ -292,14 +316,14 @@ RSpec.describe Contract, type: :model do
       ).ordered
 
       # Allow other payments to be created
-      allow(Payment).to receive(:create!).and_return(true)
+      allow(Payment).to receive(:create!).and_return(double(amount: 1000, description: 'test'))
 
       Contracts::PaymentCreationService.new(subject).send(:create_direct_payments)
     end
 
     it 'schedules down payment 1 month after contract creation' do
       # Allow reservation payment
-      allow(Payment).to receive(:create!).and_return(true)
+      allow(Payment).to receive(:create!).and_return(double(amount: 1000, description: 'test'))
 
       # reservation is Jan 30, 2024 -> down payment is reservation + 1 month => Feb 29, 2024
       expect(Payment).to receive(:create!).with(
@@ -314,7 +338,7 @@ RSpec.describe Contract, type: :model do
 
     it 'schedules first installment 1 month after down payment' do
       # Allow reservation and down payments
-      allow(Payment).to receive(:create!).and_return(true)
+      allow(Payment).to receive(:create!).and_return(double(amount: 1000, description: 'test'))
 
       # down payment is Feb 29, 2024 -> first installment is down_payment + 1 month => Mar 29, 2024
       expect(Payment).to receive(:create!).with(
@@ -329,36 +353,76 @@ RSpec.describe Contract, type: :model do
     end
   end
 
+  describe '#balance' do
+    it 'returns the total balance from ledger entries' do
+      expect(subject.ledger_entries).to receive(:total_balance).and_return(5000)
+      expect(subject.balance).to eq(5000)
+    end
+  end
+
   describe '#update_balance' do
+    let(:lot) { Lot.new(name: 'Test Lot', price: 1000.0) }
+    let(:user) { User.new(full_name: 'Test User', email: 'test@example.com') }
+    let(:contract) do
+      Contract.new(
+        lot:,
+        applicant_user: user,
+        payment_term: 12,
+        financing_type: 'direct',
+        reserve_amount: 100.0,
+        down_payment: 200.0,
+        amount: 1000.0,
+        status: 'pending'
+      )
+    end
+
     before do
-      # ensure starting balance corresponds to amount set in subject
-      allow(subject).to receive(:balance).and_return(subject.amount)
-      allow(subject).to receive(:may_close?).and_return(true)
-      allow(subject).to receive(:close!).and_return(true)
+      allow(contract).to receive(:may_close?).and_return(false)
+      allow(contract).to receive(:balance).and_return(200.0)
     end
 
-    it 'closes contract when balance reaches zero' do
-      expect(subject).to receive(:update!).with(hash_including(balance: 0)).and_return(true)
-      expect(subject).to receive(:may_close?).and_return(true)
-      expect(subject).to receive(:close!).and_return(true)
-
-      subject.update_balance(subject.amount)
+    context 'when amount_paid is nil' do
+      it 'does not update balance and adds error' do
+        contract.update_balance(nil)
+        expect(contract.errors[:base]).to include('El monto pagado no puede ser nulo.')
+      end
     end
 
-    it 'closes contract when balance goes below zero' do
-      expect(subject).to receive(:update!).with(hash_including(balance: a_value < 0)).and_return(true)
-      expect(subject).to receive(:may_close?).and_return(true)
-      expect(subject).to receive(:close!).and_return(true)
-
-      subject.update_balance(subject.amount + 100)
+    context 'when there is no pending balance' do
+      it 'does not update balance and adds error' do
+        allow(contract).to receive(:balance).and_return(0)
+        contract.update_balance(100.0)
+        expect(contract.errors[:base]).to include('El contrato no tiene balance pendiente.')
+      end
     end
 
-    it 'does not close contract when balance remains positive' do
-      partial = subject.amount / 2
-      expect(subject).to receive(:update!).with(hash_including(balance: subject.amount - partial)).and_return(true)
-      expect(subject).not_to receive(:close!)
+    context 'when amount_paid exceeds the balance' do
+      it 'does not update balance and adds error' do
+        allow(contract).to receive(:balance).and_return(50.0)
+        contract.update_balance(100.0)
+        expect(contract.errors[:base]).to include('El monto pagado excede el balance pendiente del contrato.')
+      end
+    end
 
-      subject.update_balance(partial)
+    context 'when amount_paid is valid and does not settle the balance' do
+      it 'creates a ledger entry and does not close the contract' do
+        allow(contract).to receive(:close!) # Stub the close! method to make it a spy
+        expect(contract.ledger_entries).to receive(:create!).with(amount: -100.0, description: 'Abono a Capital',
+                                                                  entry_type: 'payment')
+        contract.update_balance(100.0)
+        expect(contract).not_to have_received(:close!)
+      end
+    end
+
+    context 'when amount_paid settles the balance' do
+      it 'creates a ledger entry and closes the contract' do
+        allow(contract).to receive(:balance).and_return(100.0)
+        allow(contract).to receive(:may_close?).and_return(true)
+        expect(contract.ledger_entries).to receive(:create!).with(amount: -100.0, description: 'Abono a Capital',
+                                                                  entry_type: 'payment')
+        expect(contract).to receive(:close!)
+        contract.update_balance(100.0)
+      end
     end
   end
 end
