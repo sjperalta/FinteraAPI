@@ -37,6 +37,9 @@ module Api
         # Apply your standard filtering approach
         users = apply_filters(users, params, SEARCHABLE_FIELDS)
 
+        # Apply role-based filtering by query parameter params[:role]
+        users = users.where(role: params[:role]) if params[:role].present?
+
         # Apply sorting if sort parameters are present
         users = apply_sorting(users, params, SORTABLE_FIELDS)
 

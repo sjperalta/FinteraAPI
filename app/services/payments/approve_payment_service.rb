@@ -30,7 +30,11 @@ module Payments
 
           { success: true, message: 'Pago Aplicado Correctamente', payment: }
         else
-          message = "No se puede aprobar o aplicar el pago en el estado actual: #{payment.status}"
+          message = "No se puede aprobar o aplicar el pago revise cualquier de las siguientes circunstancias:
+          - El pago ya fue aprobado o aplicado
+          - El pago no está en estado pendiente
+          - El contrato asociado no está activo o esta cerrado
+          * Estado actual del pago: #{payment.status}, Estado actual del contrato asociado: #{payment.contract.status}"
           add_error(message)
           { success: false, message:, errors: }
         end
@@ -50,7 +54,7 @@ module Payments
     end
 
     def handle_error(error)
-      error_message = "Error approving/applying payment: #{error.message}"
+      error_message = "Error aprobando el pago: #{error.message}"
       Rails.logger.error(error_message)
       Rails.logger.error(error.backtrace.join("\n"))
       add_error(error_message)

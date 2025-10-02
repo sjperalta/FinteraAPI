@@ -69,6 +69,8 @@ module Api
 
       # POST /api/v1/projects/:project_id/lots/:lot_id/contracts
       def create
+        authorize! :create, Contract
+
         service = Contracts::CreateContractService.new(
           lot: @lot,
           contract_params:,
