@@ -27,7 +27,7 @@ module Api
         year = params[:year].present? ? params[:year].to_i : Date.current.year
         current_month = Date.current.month
 
-        if year < 2000 || year > Date.today.year
+        if year < 2020 || year > Date.today.year
           render json: { error: 'Invalid year' }, status: :bad_request
           return
         end
@@ -126,6 +126,7 @@ module Api
           payment_down_payment
           payment_installments
           payment_reserve
+          payment_capital_repayment
         ]
       end
 
@@ -141,7 +142,8 @@ module Api
           new_contracts_growth: 0.0,
           payment_down_payment: 0.0,
           payment_installments: 0.0,
-          payment_reserve: 0.0
+          payment_reserve: 0.0,
+          payment_capital_repayment: 0.0
         }
       end
     end

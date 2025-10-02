@@ -22,6 +22,7 @@ module Statistics
           payment_reserve: data[:payment_reserve],
           payment_installments: data[:payment_installments],
           payment_down_payment: data[:payment_down_payment],
+          payment_capital_repayment: data[:payment_capital_repayment],
           on_time_payment: data[:on_time_payment],
           delayed_payment: data[:delayed_payment],
           new_contracts: data[:new_contracts],
@@ -63,24 +64,38 @@ module Statistics
       end_date = period_range.end.to_time.end_of_day.strftime('%Y-%m-%d %H:%M:%S')
 
       sql = <<~SQL
-        WITH payment_totals AS (
+        WITH ledger_totals AS (
           SELECT
-            COALESCE(SUM(amount), 0) AS total_income,
-            COALESCE(SUM(interest_amount), 0) AS total_interest,
-            COALESCE(SUM(CASE WHEN payment_type = 'reservation' THEN amount ELSE 0 END), 0) AS payment_reserve,
-            COALESCE(SUM(CASE WHEN payment_type = 'down_payment' THEN amount ELSE 0 END), 0) AS payment_down_payment,
-            COALESCE(SUM(CASE WHEN payment_type = 'installment' THEN amount ELSE 0 END), 0) AS payment_installments,
-            COALESCE(SUM(CASE WHEN approved_at <= due_date THEN amount ELSE 0 END), 0) AS on_time_payment,
-            COALESCE(SUM(CASE WHEN approved_at > due_date THEN amount ELSE 0 END), 0) AS delayed_payment
-          FROM payments
-          WHERE approved_at BETWEEN '#{start_date}' AND '#{end_date}'
+            -- Total income: sum of all payment entries (negative amounts, so we take absolute value)
+            COALESCE(ABS(SUM(CASE WHEN entry_type = 'payment' THEN amount ELSE 0 END)), 0) AS total_income,
+            -- Total interest: sum of interest entries (positive amounts)
+            COALESCE(SUM(CASE WHEN entry_type = 'interest' THEN amount ELSE 0 END), 0) AS total_interest,
+            -- Payment reserve: payments for reservation entries
+            COALESCE(ABS(SUM(CASE WHEN entry_type = 'payment' AND description LIKE '%Reserva%' THEN amount ELSE 0 END)), 0) AS payment_reserve,
+            -- Payment down payment: payments for prima/down payment entries
+            COALESCE(ABS(SUM(CASE WHEN entry_type = 'payment' AND description LIKE '%Prima%' THEN amount ELSE 0 END)), 0) AS payment_down_payment,
+            -- Payment installments: payments for cuota/installment entries
+            COALESCE(ABS(SUM(CASE WHEN entry_type = 'payment' AND description LIKE '%Cuota%' THEN amount ELSE 0 END)), 0) AS payment_installments,
+            -- Payment capital repayment: payments for capital repayment entries
+            COALESCE(ABS(SUM(CASE WHEN entry_type = 'payment' AND description LIKE '%Abono a Capital%' THEN amount ELSE 0 END)), 0) AS payment_capital_repayment
+          FROM contract_ledger_entries
+          WHERE entry_date BETWEEN '#{start_date}' AND '#{end_date}'
+        ),
+        payment_timeliness AS (
+          SELECT
+            COALESCE(SUM(CASE WHEN p.approved_at <= p.due_date THEN ABS(cle.amount) ELSE 0 END), 0) AS on_time_payment,
+            COALESCE(SUM(CASE WHEN p.approved_at > p.due_date THEN ABS(cle.amount) ELSE 0 END), 0) AS delayed_payment
+          FROM contract_ledger_entries cle
+          JOIN payments p ON cle.payment_id = p.id
+          WHERE cle.entry_type = 'payment'
+            AND cle.entry_date BETWEEN '#{start_date}' AND '#{end_date}'
         ),
         counts AS (
           SELECT
             (SELECT COUNT(*) FROM users WHERE created_at BETWEEN '#{start_date}' AND '#{end_date}' AND role = 'user') AS new_customers,
             (SELECT COUNT(*) FROM contracts WHERE created_at BETWEEN '#{start_date}' AND '#{end_date}') AS new_contracts
         )
-        SELECT * FROM payment_totals, counts
+        SELECT * FROM ledger_totals, payment_timeliness, counts
       SQL
 
       result = ActiveRecord::Base.connection.select_one(sql) || {}
@@ -91,6 +106,7 @@ module Statistics
         payment_reserve: result['payment_reserve'].to_f,
         payment_down_payment: result['payment_down_payment'].to_f,
         payment_installments: result['payment_installments'].to_f,
+        payment_capital_repayment: result['payment_capital_repayment'].to_f,
         on_time_payment: result['on_time_payment'].to_f,
         delayed_payment: result['delayed_payment'].to_f,
         new_customers: result['new_customers'].to_i,

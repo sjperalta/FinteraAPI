@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_27_183148) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_01_215912) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -194,6 +194,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_27_183148) do
     t.decimal "total_interest_growth", precision: 10, scale: 2, default: "0.0"
     t.decimal "new_customers_growth", precision: 10, scale: 2, default: "0.0"
     t.decimal "new_contracts_growth", precision: 10, scale: 2, default: "0.0"
+    t.decimal "payment_capital_repayment"
     t.index ["created_at"], name: "index_statistics_on_created_at"
     t.index ["period_date"], name: "index_statistics_on_period_date", unique: true
   end

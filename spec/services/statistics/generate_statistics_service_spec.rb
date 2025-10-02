@@ -48,6 +48,17 @@ RSpec.describe Statistics::GenerateStatisticsService, type: :service do
       ).tap(&:save!)
     end
 
+    let!(:ledger_entry1) do
+      ContractLedgerEntry.new(
+        contract:,
+        payment: payment1,
+        amount: -1000.0, # Negative for payment
+        description: "Proyecto #{project.name} - Reserva",
+        entry_type: 'payment',
+        entry_date: period_date + 5.days
+      ).tap(&:save!)
+    end
+
     let!(:payment2) do
       Payment.new(
         amount: 2000.0,
@@ -57,6 +68,50 @@ RSpec.describe Statistics::GenerateStatisticsService, type: :service do
         due_date: period_date + 20.days,
         status: 'paid',
         contract:
+      ).tap(&:save!)
+    end
+
+    let!(:ledger_entry2) do
+      ContractLedgerEntry.new(
+        contract:,
+        payment: payment2,
+        amount: -2000.0, # Negative for payment
+        description: "Proyecto #{project.name} - Cuota 1",
+        entry_type: 'payment',
+        entry_date: period_date + 25.days
+      ).tap(&:save!)
+    end
+
+    let!(:capital_repayment_payment) do
+      Payment.new(
+        amount: 500.0,
+        interest_amount: 0.0,
+        payment_type: 'advance', # Changed from 'capital_repayment' to valid type
+        approved_at: period_date + 15.days,
+        due_date: period_date + 15.days,
+        status: 'paid',
+        contract:
+      ).tap(&:save!)
+    end
+
+    let!(:capital_repayment_ledger) do
+      ContractLedgerEntry.new(
+        contract:,
+        payment: capital_repayment_payment,
+        amount: -500.0, # Negative for payment
+        description: 'Abono a Capital',
+        entry_type: 'payment',
+        entry_date: period_date + 15.days
+      ).tap(&:save!)
+    end
+
+    let!(:interest_ledger) do
+      ContractLedgerEntry.new(
+        contract:,
+        amount: 150.0, # Positive for interest charged
+        description: 'Intereses del mes',
+        entry_type: 'interest',
+        entry_date: period_date + 10.days
       ).tap(&:save!)
     end
 
@@ -115,12 +170,13 @@ RSpec.describe Statistics::GenerateStatisticsService, type: :service do
 
       statistic = Statistic.find_by(period_date: period_date.beginning_of_month)
       expect(statistic).to be_present
-      expect(statistic.total_income).to eq(3000.0)
-      expect(statistic.total_interest).to eq(150.0)
+      expect(statistic.total_income).to eq(3500.0) # 1000 + 2000 + 500 (payments only, interest separate)
+      expect(statistic.total_interest).to eq(150.0) # Interest ledger entry
       expect(statistic.payment_reserve).to eq(1000.0)
       expect(statistic.payment_installments).to eq(2000.0)
       expect(statistic.payment_down_payment).to eq(0.0)
-      expect(statistic.on_time_payment).to eq(1000.0) # payment1 was on time
+      expect(statistic.payment_capital_repayment).to eq(500.0) # New field
+      expect(statistic.on_time_payment).to eq(1500.0) # payment1 (1000) + capital_repayment (500) were on time
       expect(statistic.delayed_payment).to eq(2000.0) # payment2 was delayed
       expect(statistic.new_customers).to eq(1)
       expect(statistic.new_contracts).to eq(1)
@@ -134,6 +190,7 @@ RSpec.describe Statistics::GenerateStatisticsService, type: :service do
         payment_reserve: 0,
         payment_installments: 0,
         payment_down_payment: 0,
+        payment_capital_repayment: 0,
         on_time_payment: 0,
         delayed_payment: 0,
         new_customers: 0,
@@ -147,7 +204,7 @@ RSpec.describe Statistics::GenerateStatisticsService, type: :service do
       expect { service.call }.not_to change(Statistic, :count)
 
       existing_statistic.reload
-      expect(existing_statistic.total_income).to eq(3000.0)
+      expect(existing_statistic.total_income).to eq(3500.0)
     end
 
     it 'calculates growth when previous month exists' do
@@ -159,6 +216,7 @@ RSpec.describe Statistics::GenerateStatisticsService, type: :service do
         payment_reserve: 500.0,
         payment_installments: 1000.0,
         payment_down_payment: 500.0,
+        payment_capital_repayment: 0.0,
         on_time_payment: 1500.0,
         delayed_payment: 500.0,
         new_customers: 2,
@@ -172,7 +230,7 @@ RSpec.describe Statistics::GenerateStatisticsService, type: :service do
       service.call
       statistic = Statistic.find_by(period_date: period_date.beginning_of_month)
 
-      expect(statistic.total_income_growth).to eq(50.0) # (3000-2000)/2000 * 100
+      expect(statistic.total_income_growth).to eq(75.0) # (3500-2000)/2000 * 100
       expect(statistic.total_interest_growth).to eq(50.0) # (150-100)/100 * 100
       expect(statistic.new_customers_growth).to eq(-50.0) # (1-2)/2 * 100
       expect(statistic.new_contracts_growth).to eq(-50.0) # (1-2)/2 * 100
