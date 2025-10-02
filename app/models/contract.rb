@@ -81,9 +81,10 @@ class Contract < ApplicationRecord
   end
 
   def update_balance(amount_paid)
-    return false unless amount_paid.present?
-
-    errors.add(:base, 'El monto pagado no puede ser nulo.') unless amount_paid.present?
+    unless amount_paid.present?
+      errors.add(:base, 'El monto pagado no puede ser nulo.')
+      return false
+    end
 
     amount = amount_paid.to_d
     current_balance = balance

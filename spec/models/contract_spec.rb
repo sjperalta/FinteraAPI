@@ -134,10 +134,21 @@ RSpec.describe Contract, type: :model do
 
   describe '#notify_approval' do
     it 'creates a notification for applicant and admins' do
-      user = User.new(id: 1, email: 'user@example.com')
-      admin = User.new(id: 2, email: 'admin@example.com')
+      user = User.new(id: 1, email: 'user@example.com', password: 'password123', full_name: 'Test User',
+                      phone: '1234567890', identity: '1234567890', rtn: '1234567890', role: 'user')
+      seller = User.new(id: 1, email: 'seller@example.com', password: 'password123', full_name: 'Seller User',
+                        phone: '1234567899', identity: '1234567899', rtn: '1234567899', role: 'seller')
+      admin = User.new(id: 2, email: 'admin@example.com', password: 'password123', full_name: 'Admin User',
+                       phone: '0987654321', identity: '0987654321', rtn: '0987654321', role: 'admin')
+
+      # Stub password_digest to avoid Devise serialization issues
+      allow(user).to receive(:password_digest).and_return('stubbed_digest')
+      allow(admin).to receive(:password_digest).and_return('stubbed_digest')
+      allow(seller).to receive(:password_digest).and_return('stubbed_digest')
+
       contract = described_class.new
       allow(contract).to receive(:applicant_user).and_return(user)
+      allow(contract).to receive(:creator).and_return(seller)
       allow(contract).to receive_message_chain(:lot, :name).and_return('Lote 1')
       allow(contract).to receive(:id).and_return(42)
 
@@ -145,6 +156,13 @@ RSpec.describe Contract, type: :model do
 
       expect(Notification).to receive(:create!).with(
         user:,
+        title: 'Contrato Aprobado',
+        message: 'Tu contrato para Lote 1 ha sido aprobado',
+        notification_type: 'contract_approved'
+      )
+
+      expect(Notification).to receive(:create!).with(
+        user: seller,
         title: 'Contrato Aprobado',
         message: 'Tu contrato para Lote 1 ha sido aprobado',
         notification_type: 'contract_approved'

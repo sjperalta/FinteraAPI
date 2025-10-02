@@ -124,6 +124,7 @@ RSpec.describe Statistics::GenerateStatisticsService, type: :service do
         identity: '2234567890',
         rtn: '2234567890',
         role: 'user',
+        created_at: period_date + 1.day,
         confirmed_at: period_date + 1.day
       ).tap(&:save!)
     end

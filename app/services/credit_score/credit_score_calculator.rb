@@ -11,6 +11,11 @@ module CreditScore
       payment_history = calculate_payment_history
       credit_utilization = calculate_credit_utilization
       credit_age = calculate_credit_age
+      # Reduce the penalty for brand-new users: if the user's average contract
+      # age is less than 1 year, scale it up slightly so they aren't overly
+      # penalized for being new to the system. This increases fairness for new
+      # customers while keeping the contribution stable for experienced users.
+      credit_age = adjust_credit_age_for_new_user(credit_age)
       total_accounts = calculate_total_accounts
 
       # Combine the factors to calculate the credit score
@@ -19,7 +24,8 @@ module CreditScore
 
       # Store the calculated credit score in the user's record
       @user.update(credit_score:)
-      Rails.logger.info("Calculated credit score for User ID \\#{@user.id}: \\#{credit_score}")
+      user_id = @user.is_a?(User) ? @user.id : 'N/A'
+      Rails.logger.info("Calculated credit score for User ID #{user_id}: #{credit_score}")
 
       credit_score
     end
@@ -66,6 +72,14 @@ module CreditScore
 
     def calculate_total_accounts
       @user.contracts.count
+    end
+
+    def adjust_credit_age_for_new_user(age_in_years)
+      return age_in_years if age_in_years >= 1.0 || age_in_years.zero?
+
+      # Boost small ages by 50% (e.g., 0.5 years -> 0.75 years) so new users
+      # receive less penalty from a low credit age. Leave larger ages unchanged.
+      (age_in_years * 1.5).round(2)
     end
   end
 end

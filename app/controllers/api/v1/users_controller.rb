@@ -73,7 +73,7 @@ module Api
       # POST /api/v1/users
       # Example for creating users (admin or seller?).
       def create
-        service = Users::CreateUserService.new(user_params:, creator_id: current_user)
+        service = Users::CreateUserService.new(user_params:, creator: current_user)
         result = service.call
         if result[:success]
           render json: { success: true, message: 'User created. Confirmation sent.' }, status: :created

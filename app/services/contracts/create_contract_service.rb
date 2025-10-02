@@ -167,12 +167,14 @@ module Contracts
       )
 
       # Notify seller
-      Notification.create!(
-        user: contract.lot.creator_user,
-        title: 'Lote Reservado',
-        message: "El lote #{contract.lot.name} ha sido reservado por #{contract.applicant_user.full_name}.",
-        notification_type: 'lot_reserved'
-      )
+      User.admins.each do |admin|
+        Notification.create!(
+          user: admin,
+          title: 'Lote Reservado',
+          message: "El lote #{contract.lot.name} ha sido reservado por #{contract.applicant_user.full_name}.",
+          notification_type: 'lot_reserved'
+        )
+      end
     end
 
     def handle_error(message)

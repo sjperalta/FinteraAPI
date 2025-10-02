@@ -42,7 +42,8 @@ RSpec.describe 'Api::V1::ContractsController', type: :request do
   let!(:contract) do
     Contract.create!(
       lot:,
-      applicant_user_id: 1,
+      applicant_user_id: user.id,
+      creator_id: user.id,
       payment_term: 12,
       financing_type: 'direct',
       reserve_amount: 2000.0,
@@ -72,40 +73,6 @@ RSpec.describe 'Api::V1::ContractsController', type: :request do
       end
     end
   end
-
-  # path '/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{id}' do
-
-  #   get 'Retrieve contract details' do
-  #     tags 'Contracts'
-  #     consumes 'application/json'
-  #     produces 'application/json'
-  #     security [bearerAuth: []]
-
-  #     parameter name: :project_id, in: :path, type: :integer, required: true, description: 'Project ID'
-  #     parameter name: :lot_id, in: :path, type: :integer, required: true, description: 'Lot ID'
-  #     parameter name: :id, in: :path, type: :integer, required: true, description: 'Contract ID'
-
-  #     response '200', 'Contract retrieved successfully' do
-  #       let(:Authorization) { "Bearer #{user.reload.generate_jwt}" }
-  #       let(:project_id) { project.id }
-  #       let(:lot_id) { lot.id }
-  #       let(:id) { contract.id }
-
-  #       run_test! do |response|
-  #         data = JSON.parse(response.body)
-  #         expect(data['id']).to eq(contract.id)
-  #       end
-  #     end
-
-  #     response '404', 'Contract not found' do
-  #       let(:project_id) { project.id }
-  #       let(:lot_id) { lot.id }
-  #       let(:id) { -1 }
-
-  #       run_test!
-  #     end
-  #   end
-  # end
 
   path '/api/v1/projects/{project_id}/lots/{lot_id}/contracts' do
     post 'Create a contract' do
@@ -238,7 +205,8 @@ RSpec.describe 'Api::V1::ContractsController', type: :request do
       Contract.create!(
         lot:,
         status: 'rejected',
-        applicant_user_id: 1,
+        applicant_user_id: user.id,
+        creator_id: user.id,
         payment_term: 12,
         financing_type: 'direct',
         reserve_amount: 2000.0,
