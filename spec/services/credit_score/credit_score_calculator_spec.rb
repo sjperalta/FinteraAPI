@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 
 # simple proxy to mimic ActiveRecord association methods used by the service

@@ -67,8 +67,8 @@ RSpec.describe ContractLedgerEntry, type: :model do
       e3 = ContractLedgerEntry.new(contract:, amount: 200, entry_date: 3.days.ago)
 
       all = [e1, e2, e3]
-      debits = all.select { |e| e.amount && e.amount.positive? }
-      credits = all.select { |e| e.amount && e.amount.negative? }
+      debits = all.select { |e| e.amount&.positive? }
+      credits = all.select { |e| e.amount&.negative? }
 
       expect(debits).to include(e1, e3)
       expect(debits).not_to include(e2)
