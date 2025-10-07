@@ -67,17 +67,17 @@ module Statistics
         WITH ledger_totals AS (
           SELECT
             -- Total income: sum of all payment entries (negative amounts, so we take absolute value)
-            COALESCE(ABS(SUM(CASE WHEN entry_type = 'payment' THEN amount ELSE 0 END)), 0) AS total_income,
+            COALESCE(ABS(SUM(CASE WHEN entry_type IN ('reservation', 'down_payment', 'installment', 'full', 'advance', 'prepayment') THEN amount ELSE 0 END)), 0) AS total_income,
             -- Total interest: sum of interest entries (positive amounts)
             COALESCE(SUM(CASE WHEN entry_type = 'interest' THEN amount ELSE 0 END), 0) AS total_interest,
             -- Payment reserve: payments for reservation entries
-            COALESCE(ABS(SUM(CASE WHEN entry_type = 'payment' AND description LIKE '%Reserva%' THEN amount ELSE 0 END)), 0) AS payment_reserve,
+            COALESCE(ABS(SUM(CASE WHEN entry_type = 'reservation' THEN amount ELSE 0 END)), 0) AS payment_reserve,
             -- Payment down payment: payments for prima/down payment entries
-            COALESCE(ABS(SUM(CASE WHEN entry_type = 'payment' AND description LIKE '%Prima%' THEN amount ELSE 0 END)), 0) AS payment_down_payment,
+            COALESCE(ABS(SUM(CASE WHEN entry_type = 'down_payment' THEN amount ELSE 0 END)), 0) AS payment_down_payment,
             -- Payment installments: payments for cuota/installment entries
-            COALESCE(ABS(SUM(CASE WHEN entry_type = 'payment' AND description LIKE '%Cuota%' THEN amount ELSE 0 END)), 0) AS payment_installments,
+            COALESCE(ABS(SUM(CASE WHEN entry_type = 'installment' THEN amount ELSE 0 END)), 0) AS payment_installments,
             -- Payment capital repayment: payments for capital repayment entries
-            COALESCE(ABS(SUM(CASE WHEN entry_type = 'payment' AND description LIKE '%Abono a Capital%' THEN amount ELSE 0 END)), 0) AS payment_capital_repayment
+            COALESCE(ABS(SUM(CASE WHEN entry_type = 'prepayment' THEN amount ELSE 0 END)), 0) AS payment_capital_repayment
           FROM contract_ledger_entries
           WHERE entry_date BETWEEN '#{start_date}' AND '#{end_date}'
         ),
@@ -87,7 +87,7 @@ module Statistics
             COALESCE(SUM(CASE WHEN p.approved_at > p.due_date THEN ABS(cle.amount) ELSE 0 END), 0) AS delayed_payment
           FROM contract_ledger_entries cle
           JOIN payments p ON cle.payment_id = p.id
-          WHERE cle.entry_type = 'payment'
+          WHERE cle.entry_type IN ('reservation', 'down_payment', 'installment', 'full', 'advance', 'prepayment')
             AND cle.entry_date BETWEEN '#{start_date}' AND '#{end_date}'
         ),
         counts AS (
@@ -142,11 +142,9 @@ module Statistics
       current = current_value.to_f
 
       if previous.zero?
-        if current.zero?
-          0.0
-        else
-          current.positive? ? 100.0 : -100.0
-        end
+        return 0.0 if current.zero?
+
+        current.positive? ? 100.0 : -100.0
       else
         ((current - previous) / previous * 100).round(2)
       end

@@ -175,7 +175,7 @@ module Api
           return
         end
 
-        if @contract.update_balance(amount)
+        if @contract.apply_prepayment(amount)
           @contract.save!
 
           # Trigger credit score calculation

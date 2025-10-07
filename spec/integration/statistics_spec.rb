@@ -150,14 +150,19 @@ RSpec.describe 'Api::V1::Statistics', type: :request do
           expect(data['datasets_light']).to be_an(Array)
           expect(data['datasets_dark']).to be_an(Array)
 
-          # There should be 3 datasets
-          expect(data['datasets_light'].length).to eq(3)
+          # There should be 4 datasets (reservation, down_payment, installment, prepayment)
+          expect(data['datasets_light'].length).to eq(4)
 
           reservation_dataset = data['datasets_light'].detect { |d| d['label'] == 'Reserva' }
           expect(reservation_dataset['data'][0].to_f).to eq(1000.0)
 
           installment_dataset = data['datasets_light'].detect { |d| d['label'] == 'Cuotas' }
           expect(installment_dataset['data'][Date.current.month - 1].to_f).to eq(2500.0)
+
+          # Prepayment dataset should exist and be zero-filled (no prepayment revenues seeded)
+          prepayment_dataset = data['datasets_light'].detect { |d| d['label'] == 'Abonos a Capital' }
+          expect(prepayment_dataset).to be_present
+          expect(prepayment_dataset['data'].all? { |v| v.to_f.zero? }).to be true
         end
       end
     end

@@ -22,7 +22,7 @@ module Authentication
         success: true,
         token: access_token,
         refresh_token:,
-        user: @user.as_json(only: %i[id full_name email phone role confirmed_at])
+        user: @user.as_json(only: %i[id full_name email phone role confirmed_at locale])
       }
     end
 

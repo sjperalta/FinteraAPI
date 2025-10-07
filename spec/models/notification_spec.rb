@@ -7,13 +7,13 @@ RSpec.describe Notification, type: :model do
     it 'requires a message' do
       n = Notification.new(user_id: 1)
       expect(n).not_to be_valid
-      expect(n.errors[:message]).to include("can't be blank")
+      expect(n.errors[:message]).to include('no puede estar en blanco')
     end
 
     it 'requires a user_id' do
       n = Notification.new(message: 'Hello')
       expect(n).not_to be_valid
-      expect(n.errors[:user_id]).to include("can't be blank")
+      expect(n.errors[:user_id]).to include('no puede estar en blanco')
     end
   end
 

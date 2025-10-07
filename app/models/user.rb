@@ -31,8 +31,10 @@ class User < ApplicationRecord
 
   # Definir los roles permitidos
   ROLES = %w[user admin seller].freeze
+  LOCALES = %w[es en].freeze
 
   validates :role, inclusion: { in: ROLES }
+  validates :locale, inclusion: { in: LOCALES }
 
   scope :admins, -> { where(role: 'admin') }
   scope :sellers, -> { where(role: 'seller') }

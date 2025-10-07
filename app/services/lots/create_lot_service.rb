@@ -3,6 +3,7 @@
 # app/services/lots/create_lot_service.rb
 
 module Lots
+  # Service to create a lot within a project
   class CreateLotService
     def initialize(project:, lot_params:)
       @project = project

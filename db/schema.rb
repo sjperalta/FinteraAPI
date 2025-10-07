@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_01_215912) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_07_184012) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -225,11 +225,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_01_215912) do
     t.bigint "created_by"
     t.text "note"
     t.integer "credit_score", default: 0, null: false
+    t.string "locale", default: "es", null: false
     t.index ["created_by"], name: "index_users_on_created_by"
     t.index ["discarded_at"], name: "index_users_on_discarded_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["full_name"], name: "index_users_on_full_name"
     t.index ["identity"], name: "index_users_on_identity", unique: true
+    t.index ["locale"], name: "index_users_on_locale"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["rtn"], name: "index_users_on_rtn", unique: true
   end

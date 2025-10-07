@@ -54,7 +54,7 @@ RSpec.describe Statistics::GenerateStatisticsService, type: :service do
         payment: payment1,
         amount: -1000.0, # Negative for payment
         description: "Proyecto #{project.name} - Reserva",
-        entry_type: 'payment',
+        entry_type: 'reservation',
         entry_date: period_date + 5.days
       ).tap(&:save!)
     end
@@ -77,31 +77,8 @@ RSpec.describe Statistics::GenerateStatisticsService, type: :service do
         payment: payment2,
         amount: -2000.0, # Negative for payment
         description: "Proyecto #{project.name} - Cuota 1",
-        entry_type: 'payment',
+        entry_type: 'installment',
         entry_date: period_date + 25.days
-      ).tap(&:save!)
-    end
-
-    let!(:capital_repayment_payment) do
-      Payment.new(
-        amount: 500.0,
-        interest_amount: 0.0,
-        payment_type: 'advance', # Changed from 'capital_repayment' to valid type
-        approved_at: period_date + 15.days,
-        due_date: period_date + 15.days,
-        status: 'paid',
-        contract:
-      ).tap(&:save!)
-    end
-
-    let!(:capital_repayment_ledger) do
-      ContractLedgerEntry.new(
-        contract:,
-        payment: capital_repayment_payment,
-        amount: -500.0, # Negative for payment
-        description: 'Abono a Capital',
-        entry_type: 'payment',
-        entry_date: period_date + 15.days
       ).tap(&:save!)
     end
 
@@ -112,6 +89,16 @@ RSpec.describe Statistics::GenerateStatisticsService, type: :service do
         description: 'Intereses del mes',
         entry_type: 'interest',
         entry_date: period_date + 10.days
+      ).tap(&:save!)
+    end
+
+    let!(:capital_repayment_ledger) do
+      ContractLedgerEntry.new(
+        contract:,
+        amount: -500.0, # Negative for payment
+        description: 'Abono a Capital',
+        entry_type: 'prepayment',
+        entry_date: period_date + 15.days
       ).tap(&:save!)
     end
 
@@ -177,7 +164,7 @@ RSpec.describe Statistics::GenerateStatisticsService, type: :service do
       expect(statistic.payment_installments).to eq(2000.0)
       expect(statistic.payment_down_payment).to eq(0.0)
       expect(statistic.payment_capital_repayment).to eq(500.0) # New field
-      expect(statistic.on_time_payment).to eq(1500.0) # payment1 (1000) + capital_repayment (500) were on time
+      expect(statistic.on_time_payment).to eq(1000.0) # payment1 was on time
       expect(statistic.delayed_payment).to eq(2000.0) # payment2 was delayed
       expect(statistic.new_customers).to eq(1)
       expect(statistic.new_contracts).to eq(1)

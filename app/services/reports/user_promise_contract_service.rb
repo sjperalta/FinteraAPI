@@ -2,6 +2,7 @@
 
 # app/services/reports/user_promise_contract_service.rb
 module Reports
+  # Service to gather comprehensive data about a user's promise contract
   class UserPromiseContractService
     def initialize(contract_id)
       @contract_id = contract_id

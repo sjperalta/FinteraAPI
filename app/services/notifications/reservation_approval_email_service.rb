@@ -2,6 +2,7 @@
 
 # app/services/notifications/reservation_approval_email_service.rb
 module Notifications
+  # Service to send reservation approval email to the user
   class ReservationApprovalEmailService
     def initialize(contract)
       @contract = contract

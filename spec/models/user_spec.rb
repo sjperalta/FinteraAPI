@@ -26,31 +26,31 @@ RSpec.describe User, type: :model do
     it 'is invalid without full_name' do
       subject.full_name = nil
       expect(subject).to be_invalid
-      expect(subject.errors[:full_name]).to include("can't be blank")
+      expect(subject.errors[:full_name]).to include('no puede estar en blanco')
     end
 
     it 'is invalid without phone' do
       subject.phone = nil
       expect(subject).to be_invalid
-      expect(subject.errors[:phone]).to include("can't be blank")
+      expect(subject.errors[:phone]).to include('no puede estar en blanco')
     end
 
     it 'is invalid without identity' do
       subject.identity = nil
       expect(subject).to be_invalid
-      expect(subject.errors[:identity]).to include("can't be blank")
+      expect(subject.errors[:identity]).to include('no puede estar en blanco')
     end
 
     it 'is invalid without rtn' do
       subject.rtn = nil
       expect(subject).to be_invalid
-      expect(subject.errors[:rtn]).to include("can't be blank")
+      expect(subject.errors[:rtn]).to include('no puede estar en blanco')
     end
 
     it 'is invalid without email' do
       subject.email = nil
       expect(subject).to be_invalid
-      expect(subject.errors[:email]).to include("can't be blank")
+      expect(subject.errors[:email]).to include('no puede estar en blanco')
     end
 
     it 'is invalid with duplicate identity' do
@@ -58,7 +58,7 @@ RSpec.describe User, type: :model do
       existing_user.skip_confirmation!
       existing_user.save!
       expect(subject).to be_invalid
-      expect(subject.errors[:identity]).to include('has already been taken')
+      expect(subject.errors[:identity]).to include('ya está en uso')
     end
 
     it 'is invalid with duplicate rtn' do
@@ -66,7 +66,7 @@ RSpec.describe User, type: :model do
       existing_user.skip_confirmation!
       existing_user.save!
       expect(subject).to be_invalid
-      expect(subject.errors[:rtn]).to include('has already been taken')
+      expect(subject.errors[:rtn]).to include('ya está en uso')
     end
 
     it 'is invalid with duplicate email' do
@@ -74,31 +74,31 @@ RSpec.describe User, type: :model do
       existing_user.skip_confirmation!
       existing_user.save!
       expect(subject).to be_invalid
-      expect(subject.errors[:email]).to include('has already been taken')
+      expect(subject.errors[:email]).to include('ya está en uso')
     end
 
     it 'is invalid with invalid email format' do
       subject.email = 'invalid-email'
       expect(subject).to be_invalid
-      expect(subject.errors[:email]).to include('is invalid')
+      expect(subject.errors[:email]).to include('no es válido')
     end
 
     it 'is invalid with invalid role' do
       subject.role = 'invalid_role'
       expect(subject).to be_invalid
-      expect(subject.errors[:role]).to include('is not included in the list')
+      expect(subject.errors[:role]).to include('no está incluido en la lista')
     end
 
     it 'is invalid with credit_score below 0' do
       subject.credit_score = -1
       expect(subject).to be_invalid
-      expect(subject.errors[:credit_score]).to include('must be greater than or equal to 0')
+      expect(subject.errors[:credit_score]).to include('debe ser mayor o igual que 0')
     end
 
     it 'is invalid with credit_score above 850' do
       subject.credit_score = 851
       expect(subject).to be_invalid
-      expect(subject.errors[:credit_score]).to include('must be less than or equal to 850')
+      expect(subject.errors[:credit_score]).to include('debe ser menor o igual que 850')
     end
 
     it 'is valid with credit_score nil' do

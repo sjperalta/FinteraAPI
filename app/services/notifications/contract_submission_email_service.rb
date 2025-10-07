@@ -3,6 +3,7 @@
 # app/services/notifications/contract_submission_email_service.rb
 
 module Notifications
+  # Service to send contract submission email to the user
   class ContractSubmissionEmailService
     def initialize(contract)
       @contract = contract

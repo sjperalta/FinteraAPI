@@ -3,6 +3,7 @@
 # app/services/projects/create_project_service.rb
 
 module Projects
+  # Service to create a project along with its associated lots
   class CreateProjectService
     def initialize(project_params)
       @project_params = project_params

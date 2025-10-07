@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Reports
+  # Service to gather comprehensive data about a user's balance and notify admin
   class UserBalanceService
     def initialize(user_id)
       @user = User.find_by(id: user_id)

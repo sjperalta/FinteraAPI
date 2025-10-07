@@ -47,7 +47,7 @@ module Api
           user = User.find(decoded_token[:user_id])
           new_access_token = generate_token(exp: 24.hours.from_now.to_i, user_id: user.id)
 
-          render json: { token: new_access_token, user: user.as_json(only: %i[id full_name identity rtn email phone role status]) },
+          render json: { token: new_access_token, user: user.as_json(only: %i[id full_name identity rtn email phone role status locale]) },
                  status: :ok
         else
           render json: { errors: ['Invalid or expired refresh token'] }, status: 401

@@ -360,7 +360,7 @@ RSpec.describe Contract, type: :model do
     end
   end
 
-  describe '#update_balance' do
+  describe '#apply_prepayment' do
     let(:lot) { Lot.new(name: 'Test Lot', price: 1000.0) }
     let(:user) { User.new(full_name: 'Test User', email: 'test@example.com') }
     let(:contract) do
@@ -383,15 +383,22 @@ RSpec.describe Contract, type: :model do
 
     context 'when amount_paid is nil' do
       it 'does not update balance and adds error' do
-        contract.update_balance(nil)
-        expect(contract.errors[:base]).to include('El monto pagado no puede ser nulo.')
+        contract.apply_prepayment(nil)
+        expect(contract.errors[:base]).to include('El monto del prepago debe ser un número positivo.')
+      end
+    end
+
+    context 'when amount_paid is zero' do
+      it 'does not update balance and adds error' do
+        contract.apply_prepayment(0)
+        expect(contract.errors[:base]).to include('El monto del prepago debe ser un número positivo.')
       end
     end
 
     context 'when there is no pending balance' do
       it 'does not update balance and adds error' do
         allow(contract).to receive(:balance).and_return(0)
-        contract.update_balance(100.0)
+        contract.apply_prepayment(100.0)
         expect(contract.errors[:base]).to include('El contrato no tiene balance pendiente.')
       end
     end
@@ -399,8 +406,8 @@ RSpec.describe Contract, type: :model do
     context 'when amount_paid exceeds the balance' do
       it 'does not update balance and adds error' do
         allow(contract).to receive(:balance).and_return(50.0)
-        contract.update_balance(100.0)
-        expect(contract.errors[:base]).to include('El monto pagado excede el balance pendiente del contrato.')
+        contract.apply_prepayment(100.0)
+        expect(contract.errors[:base]).to include('El monto del prepago excede el balance pendiente del contrato.')
       end
     end
 
@@ -408,8 +415,8 @@ RSpec.describe Contract, type: :model do
       it 'creates a ledger entry and does not close the contract' do
         allow(contract).to receive(:close!) # Stub the close! method to make it a spy
         expect(contract.ledger_entries).to receive(:create!).with(amount: -100.0, description: 'Abono a Capital',
-                                                                  entry_type: 'payment')
-        contract.update_balance(100.0)
+                                                                  entry_type: 'prepayment')
+        contract.apply_prepayment(100.0)
         expect(contract).not_to have_received(:close!)
       end
     end
@@ -419,9 +426,9 @@ RSpec.describe Contract, type: :model do
         allow(contract).to receive(:balance).and_return(100.0)
         allow(contract).to receive(:may_close?).and_return(true)
         expect(contract.ledger_entries).to receive(:create!).with(amount: -100.0, description: 'Abono a Capital',
-                                                                  entry_type: 'payment')
+                                                                  entry_type: 'prepayment')
         expect(contract).to receive(:close!)
-        contract.update_balance(100.0)
+        contract.apply_prepayment(100.0)
       end
     end
   end

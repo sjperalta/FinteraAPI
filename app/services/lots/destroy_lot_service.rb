@@ -3,6 +3,7 @@
 # app/services/lots/destroy_lot_service.rb
 
 module Lots
+  # Service to destroy a lot
   class DestroyLotService
     def initialize(lot:)
       @lot = lot

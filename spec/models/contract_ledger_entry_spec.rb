@@ -2,6 +2,7 @@
 
 require 'rails_helper'
 
+# Model tests for ContractLedgerEntry, ensuring validations, associations, enums, and scopes work as expected.
 RSpec.describe ContractLedgerEntry, type: :model do
   # Use plain in-memory objects to avoid DB dependence in unit tests
   let(:project) do
@@ -34,21 +35,21 @@ RSpec.describe ContractLedgerEntry, type: :model do
     it 'validates presence of amount, description and entry_type' do
       entry = ContractLedgerEntry.new
       expect(entry).not_to be_valid
-      expect(entry.errors[:amount]).to include("can't be blank")
-      expect(entry.errors[:description]).to include("can't be blank")
-      expect(entry.errors[:entry_type]).to include("can't be blank")
+      expect(entry.errors[:amount]).to include('no puede estar en blanco')
+      expect(entry.errors[:description]).to include('no puede estar en blanco')
+      expect(entry.errors[:entry_type]).to include('no puede estar en blanco')
     end
 
     it 'validates numericality and non-zero amount' do
-      entry = ContractLedgerEntry.new(amount: 0, description: 'x', entry_type: 'due')
+      entry = ContractLedgerEntry.new(amount: 0, description: 'x', entry_type: 'reservation')
       expect(entry).not_to be_valid
-      expect(entry.errors[:amount]).to include('must be other than 0')
+      expect(entry.errors[:amount]).to include('debe ser diferente de 0')
     end
   end
 
   describe 'enum' do
     it 'defines expected entry_type values' do
-      expect(ContractLedgerEntry.entry_types).to include('due' => 'due', 'payment' => 'payment',
+      expect(ContractLedgerEntry.entry_types).to include('reservation' => 'reservation', 'payment' => 'payment',
                                                          'interest' => 'interest', 'adjustment' => 'adjustment')
     end
   end
@@ -87,7 +88,7 @@ RSpec.describe ContractLedgerEntry, type: :model do
   describe 'constructor' do
     it 'builds a valid instance with required attributes' do
       entry = ContractLedgerEntry.new(contract:, payment:, amount: 100, description: 'test',
-                                      entry_type: 'due')
+                                      entry_type: 'installment')
       expect(entry).to be_valid
     end
   end

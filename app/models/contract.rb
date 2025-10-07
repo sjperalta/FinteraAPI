@@ -80,16 +80,16 @@ class Contract < ApplicationRecord
     ledger_entries.total_balance || 0
   end
 
-  def update_balance(amount_paid)
-    unless amount_paid.present?
-      errors.add(:base, 'El monto pagado no puede ser nulo.')
+  def apply_prepayment(amount_paid)
+    unless amount_paid.present? && amount_paid.to_d.positive?
+      errors.add(:base, 'El monto del prepago debe ser un número positivo.')
       return false
     end
 
     amount = amount_paid.to_d
     current_balance = balance
 
-    # Do not apply payments when there's no pending balance
+    # Do not apply prepayments when there's no pending balance
     if current_balance <= 0
       errors.add(:base, 'El contrato no tiene balance pendiente.')
       return false
@@ -97,40 +97,16 @@ class Contract < ApplicationRecord
 
     # Prevent overpayment
     if amount > current_balance
-      errors.add(:base, 'El monto pagado excede el balance pendiente del contrato.')
+      errors.add(:base, 'El monto del prepago excede el balance pendiente del contrato.')
       return false
     end
 
-    # Create ledger entry and close if resulting balance is zero or less
-    ledger_entries.create!(amount: -amount, description: 'Abono a Capital', entry_type: 'payment')
+    # Create ledger entry for prepayment and close if resulting balance is zero or less
+    ledger_entries.create!(amount: -amount, description: 'Abono a Capital', entry_type: 'prepayment')
     new_balance = current_balance - amount
     close! if new_balance <= 0 && may_close?
 
     true
-  end
-
-  # Public: create initial due ledger entries for the contract (reservation, down payment, installments)
-  # This is used by the payment creation flow and in specs that operate on ledger entries directly.
-  def create_initial_due_entries
-    project_name = lot&.project&.name || 'Proyecto'
-
-    # Reservation
-    ledger_entries.create!(amount: reserve_amount, entry_type: 'due', description: "Proyecto #{project_name} - Reserva")
-
-    # Down payment (prima)
-    ledger_entries.create!(amount: down_payment, entry_type: 'due', description: "Proyecto #{project_name} - Prima")
-
-    # Installments
-    remaining = amount - reserve_amount - down_payment
-    monthly = remaining / payment_term
-    payment_term.times do |i|
-      ledger_entries.create!(amount: monthly, entry_type: 'due',
-                             description: "Proyecto #{project_name} - Cuota #{i + 1}")
-    end
-  end
-
-  def effective_price
-    lot.ovverride_price.present? ? lot.override_price : lot.price
   end
 
   private
@@ -139,7 +115,6 @@ class Contract < ApplicationRecord
 
   def set_amounts
     self.amount = lot.effective_price
-    # ledger_entries.build(amount:, description: 'Initial contract amount', entry_type: 'due')
   end
 
   # State Machine Handlers

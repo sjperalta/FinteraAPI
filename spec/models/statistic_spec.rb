@@ -2,6 +2,7 @@
 
 require 'rails_helper'
 
+# Model tests for Statistic, ensuring validations and scopes work as expected.
 RSpec.describe Statistic, type: :model do
   describe 'validations' do
     it 'is valid with required numeric and date attributes' do
@@ -47,7 +48,7 @@ RSpec.describe Statistic, type: :model do
       )
 
       expect(duplicate).not_to be_valid
-      expect(duplicate.errors[:period_date]).to include('has already been taken')
+      expect(duplicate.errors[:period_date]).to include('ya está en uso')
     end
 
     it 'enforces non-negative numeric values' do
@@ -66,9 +67,9 @@ RSpec.describe Statistic, type: :model do
       expect(statistic).not_to be_valid
       %i[total_income total_interest payment_reserve payment_installments payment_down_payment
          payment_capital_repayment].each do |attr|
-        expect(statistic.errors[attr]).to include('must be greater than or equal to 0')
+        expect(statistic.errors[attr]).to include('debe ser mayor o igual que 0')
       end
-      expect(statistic.errors[:new_customers]).to include('must be greater than or equal to 0')
+      expect(statistic.errors[:new_customers]).to include('debe ser mayor o igual que 0')
     end
   end
 

@@ -2,6 +2,8 @@
 
 require 'sidekiq/web'
 
+# config/routes.rb
+# Routing configuration for the FinteraAPI application
 Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
@@ -24,6 +26,7 @@ Rails.application.routes.draw do
           get   :payments          # GET /api/v1/users/:id/payments
           get   :summary
           post  :restore
+          patch :update_locale     # Route for updating user locale
         end
 
         collection do
