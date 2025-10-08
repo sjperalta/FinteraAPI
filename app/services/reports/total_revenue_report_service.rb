@@ -3,6 +3,7 @@
 require 'csv'
 
 module Reports
+  # Service to generate a CSV report of total revenue within a specified date range
   class TotalRevenueReportService
     def initialize(start_date, end_date)
       @start_date = start_date

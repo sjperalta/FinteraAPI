@@ -2,6 +2,7 @@
 
 # app/services/payments/approve_payment_service.rb
 module Payments
+  # Service to approve or apply a payment
   class ApprovePaymentService
     attr_reader :payment, :errors
 
@@ -14,27 +15,27 @@ module Payments
     def call
       ActiveRecord::Base.transaction do
         # Assign attributes if provided (for apply case)
-        if payment.nil? || payment_params.nil?
+        if @payment.nil? || @payment_params.nil?
           return { success: false, message: 'Payment not found or not provided',
                    errors: ['Payment not found or not provided'] }
         end
 
-        payment.assign_attributes(@payment_params)
-        payment.payment_date = Time.current
+        @payment.assign_attributes(@payment_params)
+        @payment.payment_date = Time.current
 
-        if payment.may_approve?
-          payment.approve!
+        if @payment.may_approve?
+          @payment.approve!
           send_approval_notification
           # Trigger credit score calculation
-          UpdateCreditScoresJob.perform_later(payment.contract.applicant_user.id)
+          UpdateCreditScoresJob.perform_later(@payment.contract.applicant_user.id)
 
-          { success: true, message: 'Pago Aplicado Correctamente', payment: }
+          { success: true, message: 'Pago Aplicado Correctamente', payment: @payment }
         else
           message = "No se puede aprobar o aplicar el pago revise cualquier de las siguientes circunstancias:
           - El pago ya fue aprobado o aplicado
           - El pago no está en estado pendiente
-          - El contrato asociado no está activo o esta cerrado
-          * Estado actual del pago: #{payment.status}, Estado actual del contrato asociado: #{payment.contract.status}"
+          - El contrato asosciado no está activo o esta cerrado
+          * Estado actual del pago: #{@payment.status}, Estado actual del contrato asociado: #{@payment.contract.status}"
           add_error(message)
           { success: false, message:, errors: }
         end
@@ -50,7 +51,7 @@ module Payments
     private
 
     def send_approval_notification
-      SendPaymentApprovalNotificationJob.perform_now(payment.id)
+      SendPaymentApprovalNotificationJob.perform_now(@payment.id)
     end
 
     def handle_error(error)

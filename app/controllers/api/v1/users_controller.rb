@@ -19,7 +19,7 @@ module Api
       skip_load_and_authorize_resource only: [:index]
       skip_load_resource only: [:restore]
       skip_authorize_resource only: [:restore]
-      before_action :set_user, only: %i[show update contracts payments summary upload_receipt restore]
+      before_action :set_user, only: %i[show update contracts payments summary upload_receipt restore update_locale]
       before_action :set_payment, only: [:upload_receipt]
 
       SEARCHABLE_FIELDS = %w[email full_name phone identity rtn role].freeze
@@ -277,6 +277,24 @@ module Api
         render json: { error: e.message }, status: :internal_server_error
       end
 
+      # PATCH /api/v1/users/:id/update_locale
+      def update_locale
+        if @user.update(locale: params[:locale])
+          # Update the current locale for this request
+          I18n.locale = @user.locale
+          render json: {
+            success: true,
+            message: I18n.t('messages.success.updated', resource: I18n.t('activerecord.attributes.user.locale')),
+            user: @user.as_json(only: fields_for_render)
+          }, status: :ok
+        else
+          render json: {
+            success: false,
+            errors: @user.errors.full_messages
+          }, status: :unprocessable_content
+        end
+      end
+
       private
 
       def set_user
@@ -327,7 +345,7 @@ module Api
       end
 
       def fields_for_render
-        %i[id full_name identity rtn email address phone role status created_by created_at note]
+        %i[id full_name identity rtn email address phone role status created_by created_at note locale]
       end
 
       def user_params
@@ -345,7 +363,8 @@ module Api
           :created_at,
           :created_by,
           :status,
-          :credit_score
+          :credit_score,
+          :locale
         )
       end
     end

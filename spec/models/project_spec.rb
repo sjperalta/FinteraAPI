@@ -7,9 +7,9 @@ RSpec.describe Project, type: :model do
     it 'validates presence of name, description, and address' do
       project = described_class.new
       expect(project).not_to be_valid
-      expect(project.errors[:name]).to include("can't be blank")
-      expect(project.errors[:description]).to include("can't be blank")
-      expect(project.errors[:address]).to include("can't be blank")
+      expect(project.errors[:name]).to include('no puede estar en blanco')
+      expect(project.errors[:description]).to include('no puede estar en blanco')
+      expect(project.errors[:address]).to include('no puede estar en blanco')
     end
 
     it 'validates numericality of price_per_square_unit and interest_rate greater than 0' do
@@ -23,8 +23,8 @@ RSpec.describe Project, type: :model do
         measurement_unit: 'm2'
       )
       expect(project).not_to be_valid
-      expect(project.errors[:price_per_square_unit]).to include('must be greater than 0')
-      expect(project.errors[:interest_rate]).to include('must be greater than 0')
+      expect(project.errors[:price_per_square_unit]).to include('debe ser mayor que 0')
+      expect(project.errors[:interest_rate]).to include('debe ser mayor que 0')
     end
 
     it 'validates commission_rate between 0 and 100' do
@@ -38,11 +38,11 @@ RSpec.describe Project, type: :model do
         measurement_unit: 'm2'
       )
       expect(project).not_to be_valid
-      expect(project.errors[:commission_rate]).to include('must be less than or equal to 100')
+      expect(project.errors[:commission_rate]).to include('debe ser menor o igual que 100')
 
       project.commission_rate = -1
       expect(project).not_to be_valid
-      expect(project.errors[:commission_rate]).to include('must be greater than or equal to 0')
+      expect(project.errors[:commission_rate]).to include('debe ser mayor o igual que 0')
     end
 
     it 'validates interest_rate between 0 and 100' do
@@ -56,11 +56,11 @@ RSpec.describe Project, type: :model do
         measurement_unit: 'm2'
       )
       expect(project).not_to be_valid
-      expect(project.errors[:interest_rate]).to include('must be less than or equal to 100')
+      expect(project.errors[:interest_rate]).to include('debe ser menor o igual que 100')
 
       project.interest_rate = -1
       expect(project).not_to be_valid
-      expect(project.errors[:interest_rate]).to include('must be greater than or equal to 0')
+      expect(project.errors[:interest_rate]).to include('debe ser mayor o igual que 0')
     end
 
     it 'validates measurement_unit inclusion' do
@@ -74,7 +74,7 @@ RSpec.describe Project, type: :model do
         measurement_unit: 'invalid_unit'
       )
       expect(project).not_to be_valid
-      expect(project.errors[:measurement_unit]).to include('is not included in the list')
+      expect(project.errors[:measurement_unit]).to include('no está incluido en la lista')
     end
   end
 

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Reports
+  # Service to gather comprehensive data about a user's rescission contract
   class UserRescissionContractService
     PENALTY_PERCENTAGE = 0.10
 

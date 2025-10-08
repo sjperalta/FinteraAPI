@@ -24,79 +24,12 @@ module Api
 
       # Graph data for revenue flow by payment type
       def revenue_flow
-        year = params[:year].present? ? params[:year].to_i : Date.current.year
-        current_month = Date.current.month
-
-        if year < 2020 || year > Date.today.year
-          render json: { error: 'Invalid year' }, status: :bad_request
-          return
-        end
-
-        # Base colors for light and dark themes
-        light_base_color = 'rgba(237, 242, 247, 1)'
-        dark_base_color = 'rgba(42, 49, 60, 1)'
-
-        # Accent colors for each payment type
-        colors = {
-          'reservation' => 'rgba(250, 204, 21, 1)',  # yellow/warning
-          'down_payment' => 'rgba(74, 222, 128, 1)', # green/success
-          'installment' => 'rgba(255, 120, 75, 1)'   # orange
-        }
-
-        # Build datasets for light and dark themes
-        datasets_light = []
-        datasets_dark = []
-
-        %w[reservation down_payment installment].each_with_index do |payment_type, _index|
-          # Get monthly data for this payment type
-          monthly_data = (1..12).map do |m|
-            rec = Revenue.find_by(payment_type:, year:, month: m)
-            # Ensure we serialize numbers (not strings) by converting to float
-            (rec&.amount || 0.0).to_f
-          end
-
-          # Create background colors array - highlight current month
-          light_backgrounds = (1..12).map do |month|
-            month == current_month ? colors[payment_type] : light_base_color
-          end
-
-          dark_backgrounds = (1..12).map do |month|
-            month == current_month ? colors[payment_type] : dark_base_color
-          end
-
-          # Dataset labels
-          label_map = {
-            'reservation' => 'Reserva',
-            'down_payment' => 'Prima',
-            'installment' => 'Cuotas'
-          }
-
-          # Light theme dataset
-          datasets_light << {
-            label: label_map[payment_type],
-            data: monthly_data,
-            backgroundColor: light_backgrounds,
-            borderWidth: 0,
-            borderRadius: 5
-          }
-
-          # Dark theme dataset
-          datasets_dark << {
-            label: label_map[payment_type],
-            data: monthly_data,
-            backgroundColor: dark_backgrounds,
-            borderWidth: 0,
-            borderRadius: 5
-          }
-        end
-
-        render json: {
-          year:,
-          current_month:,
-          datasets_light:,
-          datasets_dark:,
-          labels: %w[Jan Feb Mar April May Jun July Aug Sep Oct Nov Dec]
-        }, status: :ok
+        current_month = params[:current_month].present? ? params[:current_month].to_i : Date.current.month
+        service = Statistics::RevenueFlowService.new(year: params[:year]&.to_i, current_month:)
+        payload = service.call
+        render json: payload, status: :ok
+      rescue ArgumentError
+        render json: { error: 'Invalid year' }, status: :bad_request
       end
 
       # POST /statistics/refresh
@@ -104,6 +37,8 @@ module Api
       def refresh
         GenerateStatisticsJob.perform_later(params[:date])
         GenerateRevenueJob.perform_later(params[:date])
+        UpdateCreditScoresForAllUsersJob.perform_later
+        UpdateOverdueInterestJob.perform_later
         render json: { message: 'Servicio de Estadísticas iniciado' }, status: :ok
       rescue StandardError => e
         Rails.logger.error("Statistics refresh error: #{e.message}\n#{e.backtrace.join("\n")}")
@@ -127,6 +62,7 @@ module Api
           payment_installments
           payment_reserve
           payment_capital_repayment
+          on_time_payment
         ]
       end
 
@@ -143,7 +79,8 @@ module Api
           payment_down_payment: 0.0,
           payment_installments: 0.0,
           payment_reserve: 0.0,
-          payment_capital_repayment: 0.0
+          payment_capital_repayment: 0.0,
+          on_time_payment: 0.0
         }
       end
     end

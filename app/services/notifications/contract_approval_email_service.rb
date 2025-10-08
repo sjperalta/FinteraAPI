@@ -3,6 +3,7 @@
 # app/services/notifications/contract_approval_email_service.rb
 
 module Notifications
+  # Service to send contract approval email to the user
   class ContractApprovalEmailService
     def initialize(contract)
       @contract = contract

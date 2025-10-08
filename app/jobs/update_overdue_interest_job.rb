@@ -26,23 +26,30 @@ class UpdateOverdueInterestJob < ApplicationJob
 
   def perform
     Rails.logger.info '[UpdateOverdueInterestJob] starting overdue interest update'
-    # Exclude installment payments from overdue interest calculation
+    # Only include payment types that accrue overdue interest: installment, full, advance.
     overdue_payments = Payment.joins(contract: { lot: :project })
                               .where('payments.due_date < ? AND payments.status = ?', Date.current, 'pending')
-                              .where.not(payment_type: 'installment')
+                              .where(payment_type: %w[installment full advance])
 
     processed_count = 0
     overdue_payments.each do |payment|
-      project_interest_rate = payment.contract.lot.project.interest_rate
-      overdue_interest = calculate_overdue_interest(payment, project_interest_rate)
-      next if overdue_interest == payment.interest_amount
+      payment.with_lock do
+        project_interest_rate = payment.contract.lot.project.interest_rate
+        overdue_interest = calculate_overdue_interest(payment, project_interest_rate)
+        next if overdue_interest == payment.interest_amount
 
-      payment.update!(interest_amount: overdue_interest)
-      payment.contract.ledger_entries.create!(amount: overdue_interest, description: 'Overdue interest',
-                                              entry_type: 'interest', payment:)
-      send_notification(payment, overdue_interest)
-      Rails.logger.info "[UpdateOverdueInterestJob] updated payment_id=#{payment.id} interest=#{overdue_interest}"
-      processed_count += 1
+        payment.update!(interest_amount: overdue_interest)
+
+        # Upsert a single interest ledger entry for this payment
+        ledger_entry = payment.contract.ledger_entries.find_or_initialize_by(payment:, entry_type: 'interest')
+        ledger_entry.update!(
+          amount: overdue_interest,
+          description: 'Interés por Mora',
+          entry_date: Date.current
+        )
+
+        send_notification(payment, overdue_interest)
+      end
     rescue StandardError => e
       # per-payment error handling — keep processing others
       Rails.logger.error "[UpdateOverdueInterestJob] error processing payment_id=#{payment&.id}: #{e.message}"

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Reports
+  # Service to gather comprehensive data about a user's information based on a contract
   class UserInformationService
     def initialize(contract_id)
       @contract_id = contract_id

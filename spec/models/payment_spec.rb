@@ -68,7 +68,7 @@ RSpec.describe Payment, type: :model do
     allow(Notification).to receive(:create!)
 
     # Stub contract methods for non-scope tests
-    allow(contract).to receive(:update_balance)
+    allow(contract).to receive(:apply_prepayment)
     allow(contract).to receive(:ledger_entries).and_return(double(create!: true))
     allow(contract).to receive(:balance).and_return(0)
     allow(contract).to receive(:may_close?).and_return(false)
@@ -88,7 +88,7 @@ RSpec.describe Payment, type: :model do
     it 'requires payment_type to be valid' do
       subject.payment_type = 'invalid_type'
       expect(subject).not_to be_valid
-      expect(subject.errors[:payment_type]).to include('is not included in the list')
+      expect(subject.errors[:payment_type]).to include('no está incluido en la lista')
     end
 
     it 'accepts valid payment types' do
@@ -101,7 +101,7 @@ RSpec.describe Payment, type: :model do
     it 'requires status to be valid' do
       subject.status = 'invalid_status'
       expect(subject).not_to be_valid
-      expect(subject.errors[:status]).to include('is not included in the list')
+      expect(subject.errors[:status]).to include('no está incluido en la lista')
     end
 
     it 'accepts valid statuses' do
@@ -114,11 +114,11 @@ RSpec.describe Payment, type: :model do
     it 'requires amount to be greater than 0' do
       subject.amount = 0
       expect(subject).not_to be_valid
-      expect(subject.errors[:amount]).to include('must be greater than 0')
+      expect(subject.errors[:amount]).to include('debe ser mayor que 0')
 
       subject.amount = -10
       expect(subject).not_to be_valid
-      expect(subject.errors[:amount]).to include('must be greater than 0')
+      expect(subject.errors[:amount]).to include('debe ser mayor que 0')
     end
 
     it 'allows nil interest_amount' do
@@ -129,7 +129,7 @@ RSpec.describe Payment, type: :model do
     it 'requires interest_amount to be non-negative when present' do
       subject.interest_amount = -5
       expect(subject).not_to be_valid
-      expect(subject.errors[:interest_amount]).to include('must be greater than or equal to 0')
+      expect(subject.errors[:interest_amount]).to include('debe ser mayor o igual que 0')
 
       subject.interest_amount = 0
       expect(subject).to be_valid
@@ -254,9 +254,36 @@ RSpec.describe Payment, type: :model do
           expect(contract.ledger_entries).to receive(:create!).with(
             amount: -100.0,
             description: 'Pago por Test Payment',
-            entry_type: 'payment',
+            entry_type: 'installment',
             payment: subject
           )
+          allow(contract).to receive(:may_close?).and_return(false)
+          subject.approve
+          expect(subject.aasm.current_state).to eq(:paid)
+        end
+      end
+
+      context 'when payment has interest' do
+        it 'creates payment and interest ledger entries' do
+          allow(contract).to receive(:balance).and_return(200.0)
+          subject.interest_amount = 5.0
+
+          expect(subject).to receive(:record_approval_timestamp)
+
+          expect(contract.ledger_entries).to receive(:create!).with(
+            amount: -100.0,
+            description: 'Pago por Test Payment',
+            entry_type: 'installment',
+            payment: subject
+          )
+
+          expect(contract.ledger_entries).to receive(:create!).with(
+            amount: 5.0,
+            description: 'Interés por Test Payment',
+            entry_type: 'interest',
+            payment: subject
+          )
+
           allow(contract).to receive(:may_close?).and_return(false)
           subject.approve
           expect(subject.aasm.current_state).to eq(:paid)
@@ -272,7 +299,7 @@ RSpec.describe Payment, type: :model do
           expect(contract.ledger_entries).to receive(:create!).with(
             amount: -100.0,
             description: 'Pago por Test Payment',
-            entry_type: 'payment',
+            entry_type: 'installment',
             payment: subject
           )
           allow(contract).to receive(:may_close?).and_return(true)

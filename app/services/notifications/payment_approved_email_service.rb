@@ -3,6 +3,7 @@
 # app/services/notifications/payment_approved_email_service.rb
 
 module Notifications
+  # Service to send payment approval email to the user
   class PaymentApprovedEmailService
     def initialize(payment)
       @payment = payment

@@ -9,7 +9,17 @@ class ContractLedgerEntry < ApplicationRecord
   validates :amount, presence: true, numericality: { other_than: 0 }
   validates :description, :entry_type, presence: true
 
-  enum :entry_type, { due: 'due', payment: 'payment', interest: 'interest', adjustment: 'adjustment' }
+  enum :entry_type, {
+    payment: 'payment',
+    interest: 'interest',
+    adjustment: 'adjustment',
+    reservation: 'reservation',
+    down_payment: 'down_payment',
+    installment: 'installment',
+    full: 'full',
+    advance: 'advance',
+    prepayment: 'prepayment'
+  }
 
   scope :by_date, -> { order(entry_date: :asc) }
   scope :debits, -> { where('amount > 0') }

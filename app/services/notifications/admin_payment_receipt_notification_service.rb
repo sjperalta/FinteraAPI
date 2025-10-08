@@ -3,6 +3,7 @@
 # app/services/notifications/admin_payment_receipt_notification_service.rb
 
 module Notifications
+  # Service to notify admin when a payment receipt is uploaded
   class AdminPaymentReceiptNotificationService
     def initialize(payment)
       @payment = payment

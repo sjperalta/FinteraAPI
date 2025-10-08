@@ -9,6 +9,7 @@ require 'rails/all'
 Bundler.require(*Rails.groups)
 
 module FinteraAPI
+  # Application configuration class
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 7.0
@@ -32,5 +33,9 @@ module FinteraAPI
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
+
+    # Set default locale to Spanish
+    config.i18n.default_locale = :es
+    config.i18n.available_locales = %i[es en]
   end
 end

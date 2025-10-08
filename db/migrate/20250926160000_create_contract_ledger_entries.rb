@@ -9,7 +9,7 @@ class CreateContractLedgerEntries < ActiveRecord::Migration[8.0]
       t.references :payment, null: true, foreign_key: true
       t.decimal :amount, precision: 15, scale: 2, null: false
       t.string :description, null: false
-      t.string :entry_type, null: false # e.g., 'due', 'payment', 'interest', 'adjustment'
+      t.string :entry_type, null: false # e.g., 'reservation', 'down_payment', 'installment', 'interest', 'adjustment'
       t.datetime :entry_date, null: false, default: -> { 'CURRENT_TIMESTAMP' }
       t.timestamps
     end

@@ -3,6 +3,7 @@
 require 'csv'
 
 module Reports
+  # Service to generate a CSV report of overdue payments within a specified date range
   class OverduePaymentsReportService
     def initialize(start_date, end_date)
       @start_date = start_date

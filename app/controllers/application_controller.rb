@@ -2,6 +2,7 @@
 
 # app/controllers/application_controller.rb
 
+# Base controller for the application
 class ApplicationController < ActionController::API
   include Pagy::Backend
   include Authenticable
@@ -10,6 +11,7 @@ class ApplicationController < ActionController::API
   before_action :set_paper_trail_whodunnit
   before_action :set_paper_trail_custom_attributes
   before_action :set_sentry_user
+  before_action :set_locale
 
   rescue_from CanCan::AccessDenied do |_exception|
     render json: { error: 'No tienes acceso a esta sección' }, status: :forbidden
@@ -46,5 +48,14 @@ class ApplicationController < ActionController::API
       ip: request.remote_ip,
       params: request.filtered_parameters.except('controller', 'action')
     )
+  end
+
+  # Set the locale based on user preference or default
+  def set_locale
+    I18n.locale = if current_user
+                    current_user.locale || I18n.default_locale
+                  else
+                    I18n.default_locale
+                  end
   end
 end

@@ -120,6 +120,7 @@ class Payment < ApplicationRecord
   def handle_approval
     record_approval_timestamp
     append_ledger_entry
+    append_interest_ledger_entry
     close_contract_if_needed
     notify_approval
   end
@@ -155,7 +156,18 @@ class Payment < ApplicationRecord
 
   def append_ledger_entry
     contract.ledger_entries.create!(amount: -amount.to_d, description: "Pago por #{description}",
-                                    entry_type: 'payment', payment: self)
+                                    entry_type: payment_type, payment: self)
+  end
+
+  def append_interest_ledger_entry
+    return unless interest_amount.present? && interest_amount.to_d.positive?
+
+    contract.ledger_entries.create!(
+      amount: interest_amount.to_d,
+      description: "Interés por #{description}",
+      entry_type: 'interest',
+      payment: self
+    )
   end
 
   def close_contract_if_needed
