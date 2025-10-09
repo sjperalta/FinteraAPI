@@ -19,7 +19,9 @@ module Api
       skip_load_and_authorize_resource only: [:index]
       skip_load_resource only: [:restore]
       skip_authorize_resource only: [:restore]
-      before_action :set_user, only: %i[show update contracts payments summary upload_receipt restore update_locale]
+      before_action :set_user,
+                    only: %i[show update contracts payments summary upload_receipt restore update_locale
+                             toggle_status]
       before_action :set_payment, only: [:upload_receipt]
 
       SEARCHABLE_FIELDS = %w[email full_name phone identity rtn role].freeze
@@ -31,14 +33,14 @@ module Api
         users = User.includes(:creator).all
 
         # Apply role-based filtering for sellers (only show users with role 'user')
-        users = users.where(role: 'user') if current_user.seller?
+        # users = users.where(role: 'user') if current_user.seller?
         # Admins see all users (no filter applied)
+
+        # Apply role-based filtering by query parameter params[:role]
+        users = users.where(role: params[:role].to_s.downcase) if params[:role].present?
 
         # Apply your standard filtering approach
         users = apply_filters(users, params, SEARCHABLE_FIELDS)
-
-        # Apply role-based filtering by query parameter params[:role]
-        users = users.where(role: params[:role]) if params[:role].present?
 
         # Apply sorting if sort parameters are present
         users = apply_sorting(users, params, SORTABLE_FIELDS)
@@ -76,6 +78,7 @@ module Api
       # POST /api/v1/users
       # Example for creating users (admin or seller?).
       def create
+        authorize! :create, User
         service = Users::CreateUserService.new(user_params:, creator: current_user)
         result = service.call
         if result[:success]
@@ -87,9 +90,12 @@ module Api
 
       # PUT /api/v1/users/:id
       def update
+        authorize! :update, User
         # Possibly verify admin or self?
         if @user.update(user_params.except(:id))
-          render json: { success: true, message: 'User updated successfully' }, status: :ok
+          render json: { success: true, message: 'User updated successfully',
+                         user: @user.as_json(only: fields_for_render) },
+                 status: :ok
         else
           render json: { success: false, errors: @user.errors.full_messages }, status: :unprocessable_content
         end
@@ -97,6 +103,7 @@ module Api
 
       # DELETE /api/v1/users/:id
       def destroy
+        authorize! :destroy, User
         if current_user.admin? # Ensure only admin can delete users
           if @user.soft_delete
             render json: { message: 'User soft deleted successfully' }, status: :ok
@@ -110,6 +117,7 @@ module Api
 
       # POST /api/v1/users/:id/restore
       def restore
+        authorize! :restore, User
         if current_user.admin? # Ensure only admin can restore users
           if @user.restore
             render json: { message: 'User restored successfully' }, status: :ok
@@ -123,17 +131,21 @@ module Api
 
       # PUT /api/v1/users/:id/toggle_status
       def toggle_status
-        if current_user&.admin?
-          @user = User.find(params[:id])
-          new_status = @user.active? ? 'inactive' : 'active'
-          if @user.update(status: new_status)
-            message = new_status == 'active' ? 'User activated' : 'User deactivated'
-            render json: { success: true, message: }, status: :ok
-          else
-            render json: { success: false, errors: @user.errors.full_messages }, status: :unprocessable_content
-          end
+        authorize! :update, User
+        return render json: { error: 'Not authorized' }, status: :forbidden unless current_user&.admin?
+
+        # Prevent an admin from accidentally deactivating their own account
+        if current_user == @user && @user.active?
+          return render json: { error: 'Cannot deactivate your own account' }, status: :forbidden
+        end
+
+        new_status = @user.active? ? 'inactive' : 'active'
+
+        if @user.update(status: new_status)
+          message = new_status == 'active' ? 'User activated' : 'User deactivated'
+          render json: { success: true, message:, user: @user.as_json(only: fields_for_render) }, status: :ok
         else
-          render json: { error: 'Not authorized' }, status: :forbidden
+          render json: { success: false, errors: @user.errors.full_messages }, status: :unprocessable_entity
         end
       end
 
@@ -312,8 +324,7 @@ module Api
           render json: { success: false, errors: ['No password_change params provided'] }, status: :bad_request
           return nil
         end
-        userId = params[:password_change][:userId]
-        User.find(userId)
+        User.find(params[:password_change][:userId])
       rescue ActiveRecord::RecordNotFound
         render json: { success: false, errors: ['User not found'] }, status: :not_found
         nil

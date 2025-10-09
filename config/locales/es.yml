@@ -302,6 +302,8 @@ es:
     forgot_password: "¿Olvidó su contraseña?"
     remember_me: "Recordarme"
     sign_in_with: "Iniciar sesión con %{provider}"
+    invalid_credentials: "Correo o contraseña inválidos"
+    account_inactive: "La cuenta está inactiva. Por favor contacte al soporte."
     unauthorized: "No autorizado"
     access_denied: "Acceso denegado"
     session_expired: "Su sesión ha expirado. Por favor, inicie sesión nuevamente."
