@@ -8,8 +8,8 @@ module Authentication
     REFRESH_TOKEN_EXPIRY = 30.days.from_now.to_i
 
     def initialize(email:, password:)
-      # normalize email: strip whitespace and downcase for case-insensitive lookup
-      normalized_email = email.to_s.strip.downcase
+      # normalize email: strip whitespace for case-insensitive lookup (SQL handles case)
+      normalized_email = email.to_s.strip
       # Use a SQL lower(...) comparison to ensure case-insensitive lookup regardless of DB collation
       @user = User.where('LOWER(email) = ?', normalized_email).first
       @password = password
