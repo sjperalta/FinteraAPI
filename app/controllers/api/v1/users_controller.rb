@@ -132,7 +132,6 @@ module Api
       # PUT /api/v1/users/:id/toggle_status
       def toggle_status
         authorize! :update, User
-        return render json: { error: 'Not authorized' }, status: :forbidden unless current_user&.admin?
 
         # Prevent an admin from accidentally deactivating their own account
         if current_user == @user && @user.active?
