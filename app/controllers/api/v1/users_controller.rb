@@ -144,7 +144,7 @@ module Api
           message = new_status == 'active' ? 'User activated' : 'User deactivated'
           render json: { success: true, message:, user: @user.as_json(only: fields_for_render) }, status: :ok
         else
-          render json: { success: false, errors: @user.errors.full_messages }, status: :unprocessable_entity
+          render json: { success: false, errors: @user.errors.full_messages }, status: :unprocessable_content
         end
       end
 
