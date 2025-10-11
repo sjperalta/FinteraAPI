@@ -53,7 +53,10 @@ module Api
         )
 
         # Cache the users JSON for performance
-        cache_key = "users_index_#{current_user.id}_#{current_user.role}_#{params[:page]}_#{params[:per_page]}_#{params[:search_term]}_#{params[:sort]}"
+        # Include max updated_at to invalidate cache when any user changes
+        max_updated_at = @users.maximum(:updated_at).to_i
+        cache_key = ['users', 'index', current_user.id, params[:page], params[:per_page],
+                     params[:search_term], params[:sort], max_updated_at].join('/')
         users_json = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
           @users.as_json(only: fields_for_render, include: { creator: { only: %i[id full_name] } })
         end

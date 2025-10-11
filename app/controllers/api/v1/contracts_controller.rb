@@ -50,7 +50,10 @@ module Api
         @pagy, @contracts = pagy(contracts, items: params[:per_page] || 20, page: params[:page])
 
         # Cache the contracts JSON mapping for performance
-        cache_key = "contracts_index_#{current_user.id}_#{params[:page]}_#{params[:per_page]}_#{params[:search_term]}_#{params[:sort]}"
+        # Include max updated_at to invalidate cache when any contract changes
+        max_updated_at = @contracts.maximum(:updated_at).to_i
+        cache_key = ['contracts', 'index', current_user.id, params[:page], params[:per_page],
+                     params[:search_term], params[:sort], max_updated_at].join('/')
         contracts_with_calculated_fields = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
           @contracts.map { |c| contract_json(c) }
         end

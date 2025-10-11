@@ -1,3 +1,5 @@
+# config/locales/es.yml
+# This file contains Spanish translations for the Fintera application.
 es:
   # General application translations
   app:
@@ -307,6 +309,9 @@ es:
     unauthorized: "No autorizado"
     access_denied: "Acceso denegado"
     session_expired: "Su sesión ha expirado. Por favor, inicie sesión nuevamente."
+    invalid_refresh_token: "Token de refresco inválido"
+    refresh_token_expired: "Token de refresco expirado"
+    refresh_rotation_failed: "Error al rotar el token de refresco"
 
   # Dashboard and statistics
   dashboard:

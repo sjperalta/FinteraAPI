@@ -1,33 +1,387 @@
-# Files in the config/locales directory are used for internationalization
-# and are automatically loaded by Rails. If you want to use locales other
-# than English, add the necessary files in this directory.
-#
-# To use the locales, use `I18n.t`:
-#
-#     I18n.t "hello"
-#
-# In views, this is aliased to just `t`:
-#
-#     <%= t("hello") %>
-#
-# To use a different locale, set it with `I18n.locale`:
-#
-#     I18n.locale = :es
-#
-# This would use the information in config/locales/es.yml.
-#
-# The following keys must be escaped otherwise they will not be retrieved by
-# the default I18n backend:
-#
-# true, false, on, off, yes, no
-#
-# Instead, surround them with single quotes.
-#
-# en:
-#   "true": "foo"
-#
-# To learn more, please read the Rails Internationalization guide
-# available at https://guides.rubyonrails.org/i18n.html.
-
+# config/locales/en.yml
+# This file contains English translations for the Fintera application.
 en:
-  hello: "Hello world"
+  # General application translations
+  app:
+    name: "Fintera"
+    description: "Contract and payment management system"
+    copyright: "© %{year} Fintera. All rights reserved."
+  
+  # Common actions and buttons
+  actions:
+    save: "Save"
+    cancel: "Cancel"
+    edit: "Edit"
+    delete: "Delete"
+    create: "Create"
+    update: "Update"
+    show: "Show"
+    back: "Back"
+    next: "Next"
+    previous: "Previous"
+    confirm: "Confirm"
+    submit: "Submit"
+    search: "Search"
+    filter: "Filter"
+    download: "Download"
+    upload: "Upload"
+    login: "Login"
+    logout: "Logout"
+    register: "Register"
+    reset: "Reset"
+    send: "Send"
+    view_all: "View All"
+    view_details: "View Details"
+    mark_as_paid: "Mark as Paid"
+    approve: "Approve"
+    reject: "Reject"
+    close: "Close"
+
+  # Common messages
+  messages:
+    success:
+      created: "%{resource} created successfully."
+      updated: "%{resource} updated successfully."
+      deleted: "%{resource} deleted successfully."
+      saved: "Changes saved successfully."
+      approved: "%{resource} approved successfully."
+      rejected: "%{resource} rejected successfully."
+      paid: "Payment marked as paid successfully."
+    errors:
+      not_found: "%{resource} not found."
+      unauthorized: "Unauthorized to perform this action."
+      forbidden: "Access denied."
+      invalid: "%{resource} is invalid."
+      required: "%{field} is required."
+      invalid_format: "Invalid format for %{field}."
+      already_exists: "%{resource} already exists."
+      cannot_delete: "Cannot delete %{resource}."
+      system_error: "System error. Please try again later."
+    info:
+      no_records: "No records to display."
+      loading: "Loading..."
+      processing: "Processing..."
+      saved: "Saved."
+      changes_saved: "Changes saved."
+    warnings:
+      confirm_delete: "Are you sure you want to delete %{resource}? This action cannot be undone."
+      unsaved_changes: "You have unsaved changes. Are you sure you want to leave?"
+      overdue_payment: "You have overdue payments. Please catch up to avoid additional charges."
+
+  # Navigation and sections
+  navigation:
+    dashboard: "Dashboard"
+    contracts: "Contracts"
+    payments: "Payments"
+    users: "Users"
+    projects: "Projects"
+    lots: "Lots"
+    reports: "Reports"
+    settings: "Settings"
+    profile: "Profile"
+    notifications: "Notifications"
+    help: "Help"
+    language: "Language"
+    spanish: "Spanish"
+    english: "English"
+
+  # User roles and statuses
+  roles:
+    admin: "Administrator"
+    user: "User"
+    seller: "Seller"
+  statuses:
+    active: "Active"
+    inactive: "Inactive"
+    suspended: "Suspended"
+    pending: "Pending"
+    approved: "Approved"
+    rejected: "Rejected"
+    paid: "Paid"
+    overdue: "Overdue"
+    completed: "Completed"
+    cancelled: "Cancelled"
+
+  # Form labels and placeholders
+  forms:
+    labels:
+      email: "Email"
+      password: "Password"
+      password_confirmation: "Confirm Password"
+      current_password: "Current Password"
+      full_name: "Full Name"
+      phone: "Phone"
+      identity: "Identity"
+      rtn: "RTN"
+      address: "Address"
+      note: "Note"
+      role: "Role"
+      status: "Status"
+      locale: "Language"
+      project: "Project"
+      lot: "Lot"
+      contract: "Contract"
+      payment: "Payment"
+      amount: "Amount"
+      description: "Description"
+      due_date: "Due Date"
+      payment_date: "Payment Date"
+      interest_amount: "Interest Amount"
+      commission_rate: "Commission Rate"
+      credit_score: "Credit Score"
+      search: "Search..."
+      filter_by: "Filter by"
+      start_date: "Start Date"
+      end_date: "End Date"
+    placeholders:
+      enter_email: "Enter your email"
+      enter_password: "Enter your password"
+      enter_full_name: "Enter your full name"
+      enter_phone: "Enter your phone number"
+      enter_identity: "Enter your identity number"
+      enter_rtn: "Enter your RTN"
+      enter_address: "Enter your address"
+      enter_note: "Enter a note (optional)"
+      select_role: "Select a role"
+      select_status: "Select a status"
+      select_language: "Select a language"
+      select_project: "Select a project"
+      select_lot: "Select a lot"
+      enter_amount: "Enter the amount"
+      enter_description: "Enter a description"
+      search_records: "Search records..."
+
+  # Date and time
+  date:
+    formats:
+      default: "%m/%d/%Y"
+      long: "%B %d, %Y"
+      short: "%m/%d"
+      month_year: "%B %Y"
+    day_names: [Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday]
+    abbr_day_names: [Sun, Mon, Tue, Wed, Thu, Fri, Sat]
+    month_names: [~, January, February, March, April, May, June, July, August, September, October, November, December]
+    abbr_month_names: [~, Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]
+    time:
+      formats:
+        default: "%H:%M"
+        long: "%H:%M:%S"
+        short: "%H:%M"
+
+  # Numbers and currency
+  number:
+    currency:
+      format:
+        unit: "L"
+        format: "%u %n"
+        separator: "."
+        delimiter: ","
+        precision: 2
+    percentage:
+      format:
+        separator: "."
+        delimiter: ","
+        precision: 2
+    human:
+      storage_units:
+        units:
+          byte:
+            one: "Byte"
+            other: "Bytes"
+          kb: "KB"
+          mb: "MB"
+          gb: "GB"
+          tb: "TB"
+
+  # Pagination
+  pagination:
+    first: "First"
+    last: "Last"
+    previous: "Previous"
+    next: "Next"
+    truncate: "..."
+
+  # Validation errors
+  errors:
+    format: "%{attribute} %{message}"
+    messages:
+      accepted: "must be accepted"
+      blank: "can't be blank"
+      confirmation: "doesn't match confirmation"
+      empty: "can't be empty"
+      equal_to: "must be equal to %{count}"
+      even: "must be even"
+      exclusion: "is reserved"
+      greater_than: "must be greater than %{count}"
+      greater_than_or_equal_to: "must be greater than or equal to %{count}"
+      inclusion: "is not included in the list"
+      invalid: "is invalid"
+      less_than: "must be less than %{count}"
+      less_than_or_equal_to: "must be less than or equal to %{count}"
+      not_a_number: "is not a number"
+      not_an_integer: "must be an integer"
+      odd: "must be odd"
+      required: "must exist"
+      taken: "has already been taken"
+      too_long:
+        one: "is too long (maximum is 1 character)"
+        other: "is too long (maximum is %{count} characters)"
+      too_short:
+        one: "is too short (minimum is 1 character)"
+        other: "is too short (minimum is %{count} characters)"
+      wrong_length:
+        one: "is the wrong length (should be 1 character)"
+        other: "is the wrong length (should be %{count} characters)"
+      other_than: "must be other than %{count}"
+
+  # Active Record models
+  activerecord:
+    models:
+      user: "User"
+      contract: "Contract"
+      payment: "Payment"
+      project: "Project"
+      lot: "Lot"
+      notification: "Notification"
+      revenue: "Revenue"
+      statistic: "Statistic"
+    attributes:
+      user:
+        email: "Email"
+        password: "Password"
+        password_confirmation: "Confirm Password"
+        current_password: "Current Password"
+        full_name: "Full Name"
+        phone: "Phone"
+        identity: "Identity"
+        rtn: "RTN"
+        address: "Address"
+        note: "Note"
+        role: "Role"
+        status: "Status"
+        locale: "Language"
+        credit_score: "Credit Score"
+        created_by: "Created By"
+      contract:
+        applicant_user_id: "Applicant User ID"
+        project_id: "Project ID"
+        lot_id: "Lot ID"
+        status: "Status"
+        note: "Note"
+        rejection_reason: "Rejection Reason"
+        closed_at: "Closed At"
+      payment:
+        contract_id: "Contract ID"
+        amount: "Amount"
+        description: "Description"
+        due_date: "Due Date"
+        payment_date: "Payment Date"
+        interest_amount: "Interest Amount"
+        status: "Status"
+      project:
+        name: "Name"
+        description: "Description"
+        commission_rate: "Commission Rate"
+        delivery_date: "Delivery Date"
+        measurement_unit: "Measurement Unit"
+      lot:
+        project_id: "Project ID"
+        number: "Number"
+        length: "Length"
+        width: "Width"
+        price_per_square_vara: "Price per Square Vara"
+        override_price: "Override Price"
+        address: "Address"
+        registration_number: "Registration Number"
+        note: "Note"
+        status: "Status"
+
+  # Authentication and authorization
+  auth:
+    login: "Login"
+    logout: "Logout"
+    register: "Register"
+    forgot_password: "Forgot your password?"
+    remember_me: "Remember me"
+    sign_in_with: "Sign in with %{provider}"
+    invalid_credentials: "Invalid email or password"
+    account_inactive: "Account is inactive. Please contact support."
+    unauthorized: "Unauthorized"
+    access_denied: "Access denied"
+    session_expired: "Your session has expired. Please log in again."
+    invalid_refresh_token: "Invalid refresh token"
+    refresh_token_expired: "Refresh token expired"
+    refresh_rotation_failed: "Failed to rotate refresh token"
+
+  # Dashboard and statistics
+  dashboard:
+    title: "Dashboard"
+    welcome: "Welcome, %{name}"
+    overview: "General Overview"
+    recent_activity: "Recent Activity"
+    quick_actions: "Quick Actions"
+    statistics: "Statistics"
+    contracts_overview: "Contracts Overview"
+    payments_overview: "Payments Overview"
+    users_overview: "Users Overview"
+    total_contracts: "Total Contracts"
+    total_payments: "Total Payments"
+    total_users: "Total Users"
+    total_revenue: "Total Revenue"
+    overdue_payments: "Overdue Payments"
+    pending_approvals: "Pending Approvals"
+
+  # Reports
+  reports:
+    generate: "Generate Report"
+    export: "Export"
+    date_range: "Date Range"
+    filter_by: "Filter by"
+    no_data: "No data to display"
+    generated_at: "Generated at %{datetime}"
+    period: "Period: %{start_date} - %{end_date}"
+    summary: "Summary"
+    details: "Details"
+    charts: "Charts"
+    tables: "Tables"
+
+  # Notifications
+  notifications:
+    title: "Notifications"
+    mark_all_read: "Mark All as Read"
+    no_notifications: "No notifications"
+    new: "New"
+    read: "Read"
+    unread: "Unread"
+    types:
+      contract_submitted: "Contract Created"
+      contract_approved: "Contract Approved"
+      payment_approved: "Payment Approved"
+      overdue_payment: "Overdue Payment"
+      reservation_approved: "Reservation Approved"
+      system_alert: "System Alert"
+
+  # Settings
+  settings:
+    title: "Settings"
+    profile: "Profile"
+    account: "Account"
+    security: "Security"
+    preferences: "Preferences"
+    notifications: "Notifications"
+    language: "Language"
+    timezone: "Timezone"
+    date_format: "Date Format"
+    currency: "Currency"
+    save_changes: "Save Changes"
+    changes_saved: "Changes saved successfully"
+
+  # Help and support
+  help:
+    title: "Help and Support"
+    documentation: "Documentation"
+    contact_support: "Contact Support"
+    faq: "Frequently Asked Questions"
+    feedback: "Send Feedback"
+    about: "About"
+    version: "Version %{version}"

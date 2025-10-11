@@ -4,12 +4,14 @@
 module Authentication
   # Service to authenticate a user and generate JWT tokens
   class AuthenticateUserService
-    ACCESS_TOKEN_EXPIRY = 24.hours.from_now.to_i # Adjust based on your requirement
-    REFRESH_TOKEN_EXPIRY = 30.days.from_now.to_i
+    # Use durations and compute concrete expiry timestamps at runtime so tests
+    # and long-running processes don't observe stale timestamps.
+    ACCESS_TOKEN_EXPIRATION_SECONDS = 24.hours.to_i
+    REFRESH_TOKEN_EXPIRATION_SECONDS = 30.days.to_i
 
     def initialize(email:, password:)
       # normalize email: strip whitespace for case-insensitive lookup (SQL handles case)
-      normalized_email = email.to_s.strip
+      normalized_email = email.to_s.strip.downcase
       # Use a SQL lower(...) comparison to ensure case-insensitive lookup regardless of DB collation
       @user = User.where('LOWER(email) = ?', normalized_email).first
       @password = password
@@ -24,14 +26,28 @@ module Authentication
         return { success: false, errors: [I18n.t('auth.account_inactive')] }
       end
 
-      access_token = generate_token(exp: ACCESS_TOKEN_EXPIRY, user_id: @user.id)
-      refresh_token = generate_token(exp: REFRESH_TOKEN_EXPIRY, user_id: @user.id)
+      # Compute fresh expiry timestamps
+      access_exp = Time.now.to_i + ACCESS_TOKEN_EXPIRATION_SECONDS
+      refresh_expires_at = Time.current + REFRESH_TOKEN_EXPIRATION_SECONDS.seconds
 
-      # Optionally store the refresh token securely, e.g., in a database
+      access_token = generate_token(exp: access_exp, user_id: @user.id)
+
+      # Create a DB-backed refresh token (rotate-friendly). Use a random value rather than a JWT so we can revoke/rotate easily.
+      refresh_token_value = SecureRandom.hex(64)
+
+      begin
+        RefreshToken.transaction do
+          RefreshToken.create!(user: @user, token: refresh_token_value, expires_at: refresh_expires_at)
+        end
+      rescue ActiveRecord::RecordInvalid => e
+        Rails.logger.error "Failed to create refresh token for user=#{@user.id}: #{e.message}"
+        return { success: false, errors: [I18n.t('auth.invalid_credentials')] }
+      end
+
       {
         success: true,
         token: access_token,
-        refresh_token:,
+        refresh_token: refresh_token_value,
         user: @user.as_json(only: %i[id full_name identity rtn email phone role address confirmed_at locale])
       }
     end

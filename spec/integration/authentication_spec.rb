@@ -106,31 +106,38 @@ RSpec.describe 'Api::V1::AuthController', type: :request do
       }
 
       response(200, 'Token refreshed successfully') do
-        let(:refresh_request) { { refresh_token: 'valid_refresh_token' } }
-
-        before do
-          allow_any_instance_of(Api::V1::AuthController).to receive(:decode_token).and_return({ user_id: user.id,
-                                                                                                exp: (Time.now + 1.hour).to_i })
-          allow_any_instance_of(Api::V1::AuthController).to receive(:generate_token).and_return('new_access_token')
+        let(:valid_refresh_token) do
+          RefreshToken.create!(user:, token: SecureRandom.hex(64), expires_at: 30.days.from_now)
         end
+        let(:refresh_request) { { refresh_token: valid_refresh_token.token } }
 
         run_test! do |response|
           data = JSON.parse(response.body)
-          expect(data['token']).to eq('new_access_token')
+          expect(data['token']).to be_present
+          expect(data['refresh_token']).to be_present
+          expect(data['refresh_token']).not_to eq(valid_refresh_token.token)
           expect(data['user']['email']).to eq(user.email)
         end
       end
 
-      response(401, 'Invalid or expired refresh token') do
-        let(:refresh_request) { { refresh_token: 'expired_token' } }
-
-        before do
-          allow_any_instance_of(Api::V1::AuthController).to receive(:decode_token).and_return(nil)
-        end
+      response(401, 'Invalid refresh token') do
+        let(:refresh_request) { { refresh_token: 'invalid_token' } }
 
         run_test! do |response|
           data = JSON.parse(response.body)
-          expect(data['errors']).to eq(['Invalid or expired refresh token'])
+          expect(data['errors']).to be_present
+        end
+      end
+
+      response(401, 'Expired refresh token') do
+        let(:expired_refresh_token) do
+          RefreshToken.create!(user:, token: SecureRandom.hex(64), expires_at: 1.day.ago)
+        end
+        let(:refresh_request) { { refresh_token: expired_refresh_token.token } }
+
+        run_test! do |response|
+          data = JSON.parse(response.body)
+          expect(data['errors']).to be_present
         end
       end
     end

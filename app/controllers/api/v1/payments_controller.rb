@@ -40,7 +40,10 @@ module Api
         @pagy, @payments = pagy(payments, items: params[:per_page] || Pagy::DEFAULT[:items], page: params[:page])
 
         # Cache the payments JSON for performance
-        cache_key = "payments_index_#{params[:page]}_#{params[:per_page]}_#{params[:search_term]}_#{params[:sort]}"
+        # Include max updated_at to invalidate cache when any payment changes
+        max_updated_at = @payments.maximum(:updated_at).to_i
+        cache_key = ['payments', 'index', params[:page], params[:per_page],
+                     params[:search_term], params[:sort], max_updated_at].join('/')
         payments_json = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
           @payments.as_json(
             only: %i[id description amount interest_amount status due_date contract_id created_at
