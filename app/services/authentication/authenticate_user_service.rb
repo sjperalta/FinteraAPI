@@ -11,7 +11,7 @@ module Authentication
 
     def initialize(email:, password:)
       # normalize email: strip whitespace for case-insensitive lookup (SQL handles case)
-      normalized_email = email.to_s.strip
+      normalized_email = email.to_s.strip.downcase
       # Use a SQL lower(...) comparison to ensure case-insensitive lookup regardless of DB collation
       @user = User.where('LOWER(email) = ?', normalized_email).first
       @password = password
