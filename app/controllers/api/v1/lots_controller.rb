@@ -44,7 +44,10 @@ module Api
         @pagy, @lots = pagy(lots, items: params[:per_page] || 20, page: params[:page])
 
         # Map lots with calculated fields (cached for performance)
-        cache_key = "lots_index_#{@project.id}_#{params[:page]}_#{params[:per_page]}_#{params[:search_term]}_#{params[:sort]}"
+        # Include max updated_at to invalidate cache when any lot changes
+        max_updated_at = @lots.maximum(:updated_at).to_i
+        cache_key = ['lots', 'index', @project.id, params[:page], params[:per_page],
+                     params[:search_term], params[:sort], max_updated_at].join('/')
         lots_with_calculated_fields = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
           @lots.map do |lot|
             lot_json(lot)
