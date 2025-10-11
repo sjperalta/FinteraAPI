@@ -40,20 +40,14 @@ module Api
 
       # POST /api/v1/auth/refresh
       def refresh
-        refresh_token = params[:refresh_token]
-        decoded_token = decode_token(refresh_token)
+        service = Authentication::RefreshTokenService.new(refresh_token: params[:refresh_token])
+        result = service.call
 
-        if decoded_token && decoded_token[:exp] > Time.now.to_i
-          user = User.find(decoded_token[:user_id])
-          new_access_token = generate_token(exp: 24.hours.from_now.to_i, user_id: user.id)
-
-          render json: { token: new_access_token, user: user.as_json(only: %i[id full_name identity rtn email phone role status locale]) },
-                 status: :ok
+        if result[:success]
+          render json: result.except(:success), status: :ok
         else
-          render json: { errors: ['Invalid or expired refresh token'] }, status: 401
+          render json: { errors: result[:errors] }, status: :unauthorized
         end
-      rescue JWT::DecodeError
-        render json: { errors: ['Invalid token'] }, status: 401
       end
     end
   end
