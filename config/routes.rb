@@ -23,7 +23,8 @@ Rails.application.routes.draw do
           patch :change_password
           post  :resend_confirmation
           get   :contracts         # GET /api/v1/users/:id/contracts
-          get   :payments          # GET /api/v1/users/:id/payments
+          get   :payments          # GET /api/v1/users/:id/payments (pending/submitted only)
+          get   :payment_history   # GET /api/v1/users/:id/payment_history (all payments with full details)
           get   :summary
           post  :restore
           patch :update_locale     # Route for updating user locale

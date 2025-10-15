@@ -360,6 +360,16 @@ en:
       overdue_payment: "Overdue Payment"
       reservation_approved: "Reservation Approved"
       system_alert: "System Alert"
+      create_new_user: "New User Created"
+      lot_reserved: "Lot Reserved"
+      mailer_error: "Mailer Error"
+    messages:
+      user_account_created: "Your account has been created successfully"
+      user_temp_password: ". Temporary password: %{password}"
+      lot_reservation_success: "You have successfully reserved lot %{lot_name}"
+      lot_reserved_admin: "Lot %{lot_name} has been reserved by %{user_name}"
+      mailer_error_details: "Failed to send contract submission notification for contract %{contract_id}: %{error}"
+      lot_not_available: "Lot %{lot_name} is not available for reservation. Current status: %{status}"
 
   # Settings
   settings:

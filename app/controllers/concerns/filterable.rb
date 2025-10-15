@@ -51,12 +51,12 @@ module Filterable
 
       if params[:start_date].present?
         start_date = parse_date(params[:start_date])
-        scope_with_date_filters = scope_with_date_filters.where('created_at >= ?', start_date) if start_date
+        scope_with_date_filters = scope_with_date_filters.where('due_date >= ?', start_date) if start_date
       end
 
       if params[:end_date].present?
         end_date = parse_date(params[:end_date])
-        scope_with_date_filters = scope_with_date_filters.where('created_at <= ?', end_date.end_of_day) if end_date
+        scope_with_date_filters = scope_with_date_filters.where('due_date <= ?', end_date.end_of_day) if end_date
       end
 
       scope_with_date_filters

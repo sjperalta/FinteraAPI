@@ -43,6 +43,7 @@ class Ability
 
       # Explicitly allow access to the `payments` and `summary` actions
       can :payments, User, id: user.id
+      can :payment_history, User, id: user.id
       can :summary, User, id: user.id
 
       can :send_recovery_code, User, id: user.id

@@ -360,6 +360,16 @@ es:
       overdue_payment: "Pago Vencido"
       reservation_approved: "Reserva Aprobada"
       system_alert: "Alerta del Sistema"
+      create_new_user: "Nuevo Usuario Creado"
+      lot_reserved: "Lote Reservado"
+      mailer_error: "Error de Correo"
+    messages:
+      user_account_created: "Se ha creado tu cuenta exitosamente"
+      user_temp_password: ". Contraseña temporal: %{password}"
+      lot_reservation_success: "Has reservado el lote %{lot_name} exitosamente"
+      lot_reserved_admin: "El lote %{lot_name} ha sido reservado por %{user_name}"
+      mailer_error_details: "Error al enviar notificación de envío de contrato para el contrato %{contract_id}: %{error}"
+      lot_not_available: "El lote %{lot_name} no está disponible para reserva. Estado actual: %{status}"
 
   # Settings
   settings:
