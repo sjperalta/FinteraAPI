@@ -7,6 +7,9 @@ module Contracts
   # 2. Then calculate the remaining amount, this serve to identify how many payments to reajust
   # 3. Identify the last pending payments that cover that remaining amount
   # 4. Mark those payments as "readjustment" since they will be recalculated
+  #
+  # Performance Note: Uses update_all for bulk status updates to avoid N state machine
+  # callbacks when marking multiple payments as readjustment
   class CapitalRepaymentService
     include ContractCacheInvalidation
 
@@ -80,9 +83,15 @@ module Contracts
         remaining_balance -= payment.amount
       end
 
-      # Mark selected payments as readjustment
-      payments_to_reajust.each do |payment|
-        payment.readjustment! if payment.may_readjustment?
+      # Performance optimization: Use update_all for bulk status update
+      # This avoids N state machine callbacks and reduces database round trips
+      # Note: This bypasses AASM callbacks, so ensure no critical logic exists in those callbacks
+      if payments_to_reajust.any?
+        payment_ids = payments_to_reajust.map(&:id)
+        Payment.where(id: payment_ids).update_all(status: 'readjustment')
+
+        # Reload the payments to reflect the updated status
+        payments_to_reajust.each(&:reload)
       end
 
       payments_to_reajust
