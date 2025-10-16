@@ -23,7 +23,8 @@ Rails.application.routes.draw do
           patch :change_password
           post  :resend_confirmation
           get   :contracts         # GET /api/v1/users/:id/contracts
-          get   :payments          # GET /api/v1/users/:id/payments
+          get   :payments          # GET /api/v1/users/:id/payments (pending/submitted only)
+          get   :payment_history   # GET /api/v1/users/:id/payment_history (all payments with full details)
           get   :summary
           post  :restore
           patch :update_locale     # Route for updating user locale
@@ -81,6 +82,7 @@ Rails.application.routes.draw do
               post :approve # Aprobar un contrato
               post :reject # Rechazar un contrato
               post :cancel # Cancelar un contrato
+              post :reopen # Reabrir un contrato
               post :capital_repayment # Registrar un pago de capital
               get :ledger # Obtener el ledger del contrato
             end

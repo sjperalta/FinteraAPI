@@ -27,19 +27,32 @@ class User < ApplicationRecord
             numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 850 },
             allow_nil: true
 
-  enum :status, { active: 'active', inactive: 'inactive', suspended: 'suspended' }
-
   # Definir los roles permitidos
-  ROLES = %w[user admin seller].freeze
-  LOCALES = %w[es en].freeze
+  ROLE_USER = 'user'
+  ROLE_ADMIN = 'admin'
+  ROLE_SELLER = 'seller'
+  ROLES = [ROLE_USER, ROLE_ADMIN, ROLE_SELLER].freeze
 
   validates :role, inclusion: { in: ROLES }
+
+  # Definir los locales permitidos
+  LOCALE_ES = 'es'
+  LOCALE_EN = 'en'
+  LOCALES = [LOCALE_ES, LOCALE_EN].freeze
+
   validates :locale, inclusion: { in: LOCALES }
 
-  scope :admins, -> { where(role: 'admin') }
-  scope :sellers, -> { where(role: 'seller') }
-  scope :regular_users, -> { where(role: 'user') }
-  scope :active_users, -> { where(status: 'active') }
+  # Definir los status permitidos
+  STATUS_ACTIVE = 'active'
+  STATUS_INACTIVE = 'inactive'
+  STATUS_SUSPENDED = 'suspended'
+
+  enum :status, { active: STATUS_ACTIVE, inactive: STATUS_INACTIVE, suspended: STATUS_SUSPENDED }
+
+  scope :admins, -> { where(role: ROLE_ADMIN, status: STATUS_ACTIVE) }
+  scope :sellers, -> { where(role: ROLE_SELLER, status: STATUS_ACTIVE) }
+  scope :regular_users, -> { where(role: ROLE_USER, status: STATUS_ACTIVE) }
+  scope :active_users, -> { where(status: STATUS_ACTIVE) }
 
   # Callbacks for Normalization (Optional)
   before_validation :normalize_identity_and_rtn
@@ -50,12 +63,12 @@ class User < ApplicationRecord
 
   # Verificar si el usuario es administrador
   def admin?
-    role == 'admin'
+    role == ROLE_ADMIN
   end
 
   # Verificar si el usuario es vendedor
   def seller?
-    role == 'seller'
+    role == ROLE_SELLER
   end
 
   def generate_jwt

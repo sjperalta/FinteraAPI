@@ -260,4 +260,60 @@ RSpec.describe 'Api::V1::ContractsController', type: :request do
       end
     end
   end
+
+  path '/api/v1/projects/{project_id}/lots/{lot_id}/contracts/{id}/reopen' do
+    let!(:closed_contract) do
+      Contract.create!(
+        lot:,
+        status: 'closed',
+        applicant_user_id: user.id,
+        creator_id: user.id,
+        payment_term: 12,
+        financing_type: 'direct',
+        reserve_amount: 2000.0,
+        down_payment: 5000.0,
+        active: true,
+        approved_at: Time.current
+      )
+    end
+
+    post 'Reopen a closed contract' do
+      tags 'Contracts'
+      consumes 'application/json'
+      produces 'application/json'
+      security [bearerAuth: []]
+
+      parameter name: :project_id, in: :path, type: :integer, required: true
+      parameter name: :lot_id, in: :path, type: :integer, required: true
+      parameter name: :id, in: :path, type: :integer, required: true
+
+      response '200', 'Contract reopened' do
+        let(:project_id) { project.id }
+        let(:lot_id) { lot.id }
+        let(:id) { closed_contract.id }
+
+        run_test! do |response|
+          data = JSON.parse(response.body)
+          expect(data['message']).to eq('Contrato reabierto exitosamente')
+
+          # Verify the contract was actually reopened (closed -> approved)
+          reopened_contract = Contract.find(closed_contract.id)
+          expect(reopened_contract.status).to eq('approved')
+        end
+      end
+
+      response '422', 'Cannot reopen contract' do
+        let(:project_id) { project.id }
+        let(:lot_id) { lot.id }
+        let(:id) { closed_contract.id }
+
+        before do
+          # Set contract to a state that cannot be reopened (only closed can be reopened)
+          closed_contract.update!(status: 'cancelled')
+        end
+
+        run_test!
+      end
+    end
+  end
 end

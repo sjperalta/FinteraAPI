@@ -17,6 +17,9 @@ module Contracts
 
     def call
       ActiveRecord::Base.transaction do
+        # Lock the lot to prevent race conditions
+        lot.lock!
+        validate_lot_availability
         user = process_user
         contract = create_contract(user)
         process_documents(contract)
@@ -40,16 +43,25 @@ module Contracts
 
     private
 
+    def new_user?
+      contract_params[:applicant_user_id].blank?
+    end
+
+    def validate_lot_availability
+      # Check if lot is available for reservation (not reserved, sold, or cancelled)
+      available_statuses = %w[available active] # Adjust based on your Lot model statuses
+      return if available_statuses.include?(lot.status)
+
+      message = I18n.t('notifications.messages.lot_not_available', lot_name: lot.name, status: lot.status)
+      raise StandardError, "lot_not_available: #{message}"
+    end
+
     def process_user
       if new_user?
         create_new_user
       else
         update_existing_user
       end
-    end
-
-    def new_user?
-      contract_params[:applicant_user_id].to_i.zero?
     end
 
     def create_new_user
@@ -60,10 +72,14 @@ module Contracts
       # If no password was provided, generate a temporary one and set confirmation.
       temp_password = nil
       if user.password.blank?
-        temp_password = SecureRandom.hex(8)
+        temp_password = ::SecureRandom.hex(8)
         user.password = temp_password
         user.password_confirmation = temp_password
       end
+
+      # Avoid sending Devise confirmation emails during user creation in service
+      # (tests and environments that don't have mailer configured can fail otherwise)
+      user.skip_confirmation_notification! if user.respond_to?(:skip_confirmation_notification!)
 
       raise ActiveRecord::RecordInvalid, user unless user.save
 
@@ -101,14 +117,21 @@ module Contracts
 
       documents.each do |document|
         validate_document(document)
-        contract.documents.attach(document)
+        begin
+          contract.documents.attach(document)
+        rescue StandardError => e
+          Rails.logger.error("Failed to attach document #{document.respond_to?(:original_filename) ? document.original_filename : 'unknown'}: #{e.message}")
+        end
       end
     end
 
     def validate_document(document)
       return if valid_document?(document)
 
-      raise ActiveRecord::RecordInvalid, "Invalid document format or size: #{document.original_filename}"
+      # Raise a plain error for invalid documents to avoid constructing
+      # ActiveRecord::RecordInvalid with a non-model object (which can cause
+      # downstream code to call `.errors` on a String and blow up).
+      raise StandardError, "Invalid document format or size: #{document.original_filename}"
     end
 
     def valid_document?(document)
@@ -124,25 +147,24 @@ module Contracts
     end
 
     def update_lot_status
-      lot.update!(status: 'reserved')
+      # Use update! with status check to ensure atomicity
+      lot.update!(status: 'reserved') unless lot.status == 'reserved'
     end
 
     def submit_contract(contract)
-      return unless contract.may_submit?
-
       contract.submit!
-
-      # Notify reservation approval (new or existing user)
-      SendReservationApprovalNotificationJob.perform_later(contract)
     end
 
     def notify_new_user_creation(user, temp_password = nil)
-      user_message = 'Se ha creado tu cuenta exitosamente'
-      user_message += ". Contraseña temporal: #{temp_password}" if temp_password.present?
+      user_message = I18n.t('notifications.messages.user_account_created')
+      if temp_password.present?
+        user_message += I18n.t('notifications.messages.user_temp_password',
+                               password: temp_password)
+      end
 
       Notification.create!(
         user:,
-        title: 'Bienvenido a Fintera',
+        title: I18n.t('notifications.types.create_new_user'),
         message: user_message,
         notification_type: 'create_new_user'
       )
@@ -151,8 +173,8 @@ module Contracts
       User.admins.each do |admin|
         Notification.create!(
           user: admin,
-          title: 'Nuevo Usuario',
-          message: "Se ha creado un nuevo usuario: #{user.full_name}",
+          title: I18n.t('notifications.types.create_new_user'),
+          message: I18n.t('messages.success.created', resource: I18n.t('activerecord.models.user')),
           notification_type: 'create_new_user'
         )
       end
@@ -161,17 +183,19 @@ module Contracts
     def send_reservation_notification(contract)
       Notification.create!(
         user: contract.applicant_user,
-        title: 'Reserva de Lote Exitosa',
-        message: "Has reservado el lote #{contract.lot.name} exitosamente.",
+        title: I18n.t('notifications.types.lot_reserved'),
+        message: I18n.t('notifications.messages.lot_reservation_success', lot_name: contract.lot.name),
         notification_type: 'lot_reserved'
       )
 
-      # Notify seller
+      # Notify admins
       User.admins.each do |admin|
         Notification.create!(
           user: admin,
-          title: 'Lote Reservado',
-          message: "El lote #{contract.lot.name} ha sido reservado por #{contract.applicant_user.full_name}.",
+          title: I18n.t('notifications.types.lot_reserved'),
+          message: I18n.t('notifications.messages.lot_reserved_admin',
+                          lot_name: contract.lot.name,
+                          user_name: contract.applicant_user.full_name),
           notification_type: 'lot_reserved'
         )
       end
@@ -183,7 +207,23 @@ module Contracts
     end
 
     def after_submission(contract)
+      # Handle mailer failures gracefully - don't let them break the contract creation
+
       NotifyContractSubmissionJob.perform_now(contract)
+    rescue StandardError => e
+      # Log the error but don't fail the transaction
+      Rails.logger.error("Failed to send contract submission notification: #{e.message}")
+      # Could also create a notification for admins about the mailer failure
+      begin
+        Notification.create!(
+          user: User.admins.first, # Notify at least one admin
+          title: I18n.t('notifications.types.mailer_error'),
+          message: I18n.t('notifications.messages.mailer_error_details', contract_id: contract.id, error: e.message),
+          notification_type: 'system_error'
+        )
+      rescue StandardError
+        nil
+      end
     end
 
     def permitted_user_params

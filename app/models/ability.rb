@@ -18,6 +18,8 @@ class Ability
       can :read, Contract, creator_id: user.id
       can :update, Contract, creator_id: user.id
       can :create, Contract
+      can :cancel, Contract, creator_id: user.id
+      can :reopen, Contract, creator_id: user.id
 
       can :read, Lot
 
@@ -43,6 +45,7 @@ class Ability
 
       # Explicitly allow access to the `payments` and `summary` actions
       can :payments, User, id: user.id
+      can :payment_history, User, id: user.id
       can :summary, User, id: user.id
 
       can :send_recovery_code, User, id: user.id

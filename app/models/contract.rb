@@ -69,8 +69,14 @@ class Contract < ApplicationRecord
       transitions from: %i[rejected pending submitted], to: :cancelled, after: :handle_cancellation
     end
 
+    # may close if the balance is 0 or less
     event :close do
-      transitions from: :approved, to: :closed, after: :handle_closure
+      transitions from: :approved, to: :closed, after: :handle_closure,
+                  guard: :can_be_closed?
+    end
+
+    event :re_open do
+      transitions from: :closed, to: :approved, after: :handle_reopen
     end
   end
 
@@ -123,6 +129,7 @@ class Contract < ApplicationRecord
     record_approval
     Contracts::PaymentCreationService.new(self).call
     notify_approval
+    SendContractApprovalNotificationJob.perform_now(self)
   end
 
   def handle_cancellation
@@ -135,6 +142,12 @@ class Contract < ApplicationRecord
   def handle_closure
     notify_contract_closed
     mark_lot_as_sold
+  end
+
+  def handle_reopen
+    update!(closed_at: nil)
+    update!(note: "#{note}\nContrato reabierto #{Time.current}.\n")
+    save!
   end
 
   def acceptable_documents
@@ -160,13 +173,16 @@ class Contract < ApplicationRecord
     valid_for_submission? && %w[pending submitted rejected].include?(status)
   end
 
+  def can_be_closed?
+    balance.to_d <= 0
+  end
+
   def record_approval
     update!(
       approved_at: Time.current,
       active: true
     )
   end
-
   # Notifications
 
   def notify_contract_closed

@@ -116,19 +116,15 @@ GEM
     erubi (1.13.1)
     et-orbi (1.2.11)
       tzinfo
-    ethon (0.16.0)
-      ffi (>= 1.15.0)
-    ffi (1.17.1-aarch64-linux-gnu)
-    ffi (1.17.1-arm-linux-gnu)
-    ffi (1.17.1-arm64-darwin)
-    ffi (1.17.1-x86-linux-gnu)
-    ffi (1.17.1-x86_64-darwin)
-    ffi (1.17.1-x86_64-linux-gnu)
     fugit (1.11.1)
       et-orbi (~> 1, >= 1.2.11)
       raabro (~> 1.4)
     globalid (1.2.1)
       activesupport (>= 6.1)
+    httparty (0.23.2)
+      csv
+      mini_mime (>= 1.0.0)
+      multi_xml (>= 0.5.2)
     i18n (1.14.7)
       concurrent-ruby (~> 1.0)
     io-console (0.8.1)
@@ -158,6 +154,8 @@ GEM
     mini_portile2 (2.8.9)
     minitest (5.25.5)
     msgpack (1.7.5)
+    multi_xml (0.7.2)
+      bigdecimal (~> 3.1)
     net-imap (0.5.10)
       date
       net-protocol
@@ -181,11 +179,6 @@ GEM
       racc (~> 1.4)
     nokogiri (1.18.10-x86_64-linux-gnu)
       racc (~> 1.4)
-    onesignal (1.0.1)
-      typhoeus (~> 1.0, >= 1.0.1)
-    onesignal-rails-plugin (1.0.0)
-      onesignal (~> 1.0.1)
-      rails
     orm_adapter (0.5.0)
     ostruct (0.6.1)
     pagy (9.3.3)
@@ -216,7 +209,7 @@ GEM
       nio4r (~> 2.0)
     raabro (1.4.0)
     racc (1.8.1)
-    rack (3.2.2)
+    rack (3.2.3)
     rack-cors (2.0.2)
       rack (>= 2.0.0)
     rack-session (2.1.1)
@@ -268,6 +261,8 @@ GEM
       io-console (~> 0.5)
     request_store (1.7.0)
       rack (>= 1.4)
+    resend (0.26.0)
+      httparty (>= 0.21.0)
     responders (3.1.1)
       actionpack (>= 5.2)
       railties (>= 5.2)
@@ -344,8 +339,6 @@ GEM
     thor (1.4.0)
     tilt (2.6.0)
     timeout (0.4.3)
-    typhoeus (1.4.1)
-      ethon (>= 0.9.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     unicode-display_width (2.6.0)
@@ -382,7 +375,6 @@ DEPENDENCIES
   discard (~> 1.4)
   dotenv-rails
   jwt
-  onesignal-rails-plugin (~> 1.0.0)
   pagy
   paper_trail (~> 16.0)
   pg (~> 1.5)
@@ -392,6 +384,7 @@ DEPENDENCIES
   rack-cors
   rails (~> 8.0, >= 8.0.1)
   redis (~> 4.0)
+  resend
   rspec-rails
   rswag
   rswag-api

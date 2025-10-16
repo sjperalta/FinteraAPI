@@ -60,24 +60,25 @@ Rails.application.configure do
 
   config.action_mailer.default_url_options = { host: 'securexapp.com', protocol: 'https' }
 
-  config.hosts << 'web-production-6cf6.up.railway.app'
-  config.hosts << 'web-production-6cf6.up.railway.app'
+  config.action_mailer.delivery_method = :resend
+  config.action_mailer.default_options = {
+    from: ENV.fetch('DEFAULT_EMAIL', 'Fintera <no-reply@notifications.securexapp.com>')
+  }
+
+  config.hosts << 'fintera-staging.up.railway.app'
+  config.hosts << 'intera-staging.securexapp.com'
   config.hosts << 'fintera-api.securexapp.com'
 
   # config.hosts += ["web-production-6cf6.up.railway.app","web-production-6cf6.up.railway.app","securexapp.com", "api.securexapp.com"]
 
+  # email delivery via Resend
+  config.action_mailer.delivery_method = :resend
+
   config.action_mailer.perform_caching = false
-
-  config.action_mailer.delivery_method = :onesignal
-
-  config.action_mailer.onesignal_settings = {
-    app_key: ENV.fetch('ONE_SIGNAL_APP_KEY', nil),
-    app_id: ENV.fetch('ONE_SIGNAL_APP_ID', nil)
-  }
 
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
-  # config.action_mailer.raise_delivery_errors = false
+  config.action_mailer.raise_delivery_errors = false
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).

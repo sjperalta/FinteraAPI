@@ -7,7 +7,6 @@ class NotifyAdminPaymentReceiptJob < ApplicationJob
 
   def perform(payment)
     payment = Payment.find_by(id: payment)
-    Rails.logger.info "[NotifyAdminPaymentReceiptJob] Notifying admins for payment_id=#{payment&.id}"
     return unless payment
 
     Notifications::AdminPaymentReceiptNotificationService.new(payment).call

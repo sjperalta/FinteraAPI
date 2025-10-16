@@ -57,6 +57,8 @@ es:
       already_exists: "%{resource} ya existe."
       cannot_delete: "No se puede eliminar %{resource}."
       system_error: "Error del sistema. Por favor, intente más tarde."
+      user_params_required: "Los parámetros del usuario son requeridos."
+      unexpected_user_creation_error: "Ocurrió un error inesperado al crear el usuario."
     info:
       no_records: "No hay registros para mostrar."
       loading: "Cargando..."
@@ -97,6 +99,12 @@ es:
     pending: "Pendiente"
     approved: "Aprobado"
     rejected: "Rechazado"
+
+  # Financing types
+  financing_types:
+    direct: "Directo"
+    bank: "Bancario"
+    cash: "Contado"
     paid: "Pagado"
     overdue: "Vencido"
     completed: "Completado"
@@ -360,6 +368,19 @@ es:
       overdue_payment: "Pago Vencido"
       reservation_approved: "Reserva Aprobada"
       system_alert: "Alerta del Sistema"
+      create_new_user: "Nuevo Usuario Creado"
+      onboard_user: "Usuario Incorporado"
+      lot_reserved: "Lote Reservado"
+      mailer_error: "Error de Correo"
+    messages:
+      user_account_created: "Se ha creado tu cuenta exitosamente"
+      user_temp_password: ". Contraseña temporal: %{password}"
+      lot_reservation_success: "Has reservado el lote %{lot_name} exitosamente"
+      lot_reserved_admin: "El lote %{lot_name} ha sido reservado por %{user_name}"
+      mailer_error_details: "Error al enviar notificación de envío de contrato para el contrato %{contract_id}: %{error}"
+      lot_not_available: "El lote %{lot_name} no está disponible para reserva. Estado actual: %{status}"
+      new_user_created_admin: "Se ha creado un nuevo usuario: %{user_name}"
+      welcome_user: "Hola %{user_name}, gracias por ser parte de Fintera."
 
   # Settings
   settings:
@@ -385,3 +406,76 @@ es:
     feedback: "Enviar Comentarios"
     about: "Acerca de"
     version: "Versión %{version}"
+
+  # Mailers
+  mailers:
+    user_mailer:
+      contract_submitted:
+        subject: "Contrato Enviado"
+        title: "Contrato Enviado"
+        greeting: "Hola %{name}"
+        created_line: "Tu contrato para %{project} ha sido enviado."
+        details: "Detalles del Contrato:"
+        project: "Proyecto: %{project}"
+        lot: "Lote: %{lot} (%{length} x %{width})"
+        financing: "Financiamiento: %{type}"
+        term: "Plazo: %{term} meses"
+        reserve: "Monto de Reserva: %{amount}"
+        down_payment: "Pago Inicial: %{amount}"
+        created_at: "Creado En: %{datetime}"
+        footer: "Tu contrato está pendiente de aprobación."
+        view_platform: "Ver Plataforma"
+      contract_approved:
+        subject: "Contrato Aprobado"
+        title: "Contrato Aprobado"
+        greeting: "Hola %{name}"
+        approved_line: "Tu contrato para %{project} ha sido aprobado."
+        details: "Detalles del Contrato:"
+        project: "Proyecto: %{project}"
+        lot: "Lote: %{lot}"
+        financing: "Financiamiento: %{type}"
+        term: "Plazo: %{term} meses"
+        reserve: "Monto de Reserva: %{amount}"
+        down_payment: "Pago Inicial: %{amount}"
+        approved_at: "Aprobado En: %{datetime}"
+        footer: "Tu contrato está ahora activo."
+        view_platform: "Ver Plataforma"
+      payment_approved:
+        subject: "Pago Aprobado"
+        title: "Pago Aprobado"
+        greeting: "Hola %{name}"
+        details_intro: "Tu pago ha sido aprobado. Aquí están los detalles:"
+        project: "Proyecto: %{project}"
+        lot: "Lote: %{lot}"
+        payment_amount: "Monto: %{amount}"
+        interest_amount: "Monto de Interés: %{amount}"
+        total_amount: "Monto Total: %{amount}"
+        due_date: "Fecha de Vencimiento: %{date}"
+        approved_at: "Aprobado En: %{date}"
+        view_platform: "Ver Plataforma"
+      footer:
+        message: "Si tienes alguna pregunta, por favor contacta a nuestro equipo de soporte."
+      overdue_payment_email:
+        subject: "Aviso de Pago Vencido"
+        title: "Aviso de Pago Vencido"
+        greeting: "Hola %{name}"
+        intro: "Tienes los siguientes pagos vencidos:"
+        list_item: "Lote %{lot} - Monto: %{amount} - Vencimiento: %{date}"
+        please_pay: "Por favor realiza el pago lo antes posible para evitar cargos adicionales."
+        view_platform: "Ver Plataforma"
+      reservation_approved:
+        subject: "Reserva Aprobada"
+        title: "Reserva Aprobada"
+        greeting: "Hola %{name}"
+        approved_line: "Tu reserva para el contrato %{id} ha sido aprobada."
+        details: "Detalles de la Reserva"
+        project: "Proyecto: %{project}"
+        lot: "Lote: %{lot}"
+        amount: "Monto: %{amount}"
+        thanks: "Gracias por elegir Fintera."
+      account_created:
+        subject: "Cuenta Creada"
+      welcome:
+        subject: "Bienvenido a Fintera"
+      reset_password:
+        subject: "Restablecer Contraseña"

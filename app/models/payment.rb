@@ -79,7 +79,7 @@ class Payment < ApplicationRecord
 
   def record_approval_timestamp
     self.approved_at = Time.current
-    self.payment_date = Date.current
+    self.payment_date = Date.current if payment_date.nil?
     self.paid_amount = amount
     save!
   end
@@ -172,6 +172,6 @@ class Payment < ApplicationRecord
 
   def close_contract_if_needed
     new_balance = contract.balance - amount.to_d
-    contract.close! if new_balance <= 0 && contract.may_close?
+    contract.close! if new_balance <= 0
   end
 end

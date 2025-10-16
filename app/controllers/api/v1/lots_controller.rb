@@ -46,8 +46,7 @@ module Api
         # Map lots with calculated fields (cached for performance)
         # Include max updated_at to invalidate cache when any lot changes
         max_updated_at = @lots.maximum(:updated_at).to_i
-        cache_key = ['lots', 'index', @project.id, params[:page], params[:per_page],
-                     params[:search_term], params[:sort], max_updated_at].join('/')
+        cache_key = "lots_index_#{@project.id}_#{params[:page]}_#{params[:per_page]}_#{params[:search_term]}_#{params[:sort]}_#{max_updated_at}"
         lots_with_calculated_fields = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
           @lots.map do |lot|
             lot_json(lot)
@@ -121,27 +120,31 @@ module Api
         render json: { error: 'Lot not found' }, status: :not_found
       end
 
-      def lot_json(lot, contract = nil)
+      def lot_json(lot)
         {
           id: lot.id,
-          contract_id: contract&.id,
+          contract_id: lot.current_contract&.id,
           project_id: lot.project_id,
           project_name: lot.project&.name || 'N/A',
           name: lot.name,
           address: lot.address,
-          contract_created_by: contract&.creator&.full_name,
-          contract_created_user_id: contract&.creator_id,
-          reserved_by: contract&.applicant_user&.full_name,
-          reserved_by_user_id: contract&.applicant_user_id,
+          contract_created_by: lot.current_contract&.creator&.full_name,
+          contract_created_user_id: lot.current_contract&.creator_id,
+          reserved_by: lot.current_contract&.applicant_user&.full_name,
+          reserved_by_user_id: lot.current_contract&.applicant_user_id,
           measurement_unit: lot.measurement_unit || lot.project.measurement_unit,
-          price: lot.price,
+          price: lot.effective_price,
           override_price: lot.override_price,
+          override_area: lot.override_area,
+          north: lot.north,
+          east: lot.east,
+          west: lot.west,
           length: lot.length,
           width: lot.width,
           dimensions: "#{lot.length} x #{lot.width}",
           area: lot.area_m2,
           status: lot.status.titleize,
-          balance: contract&.balance,
+          balance: lot.current_contract&.balance,
           registration_number: lot.registration_number,
           note: lot.note,
           created_at: lot.created_at,
@@ -159,6 +162,10 @@ module Api
           :price,
           :address,
           :override_price,
+          :override_area,
+          :north,
+          :east,
+          :west,
           :status,
           :measurement_unit,
           :registration_number,

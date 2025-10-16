@@ -10,9 +10,9 @@ module Api
       include Sortable
       include Filterable
       load_and_authorize_resource
-      before_action :set_project, only: %i[create approve reject cancel capital_repayment ledger]
-      before_action :set_lot, only: %i[create approve reject cancel capital_repayment ledger]
-      before_action :set_contract, only: %i[show approve reject cancel capital_repayment ledger]
+      before_action :set_project, only: %i[create approve reject cancel reopen capital_repayment ledger]
+      before_action :set_lot, only: %i[create approve reject cancel reopen capital_repayment ledger]
+      before_action :set_contract, only: %i[show approve reject cancel reopen capital_repayment ledger]
 
       # Define sortable and searchable fields to prevent SQL injection and ensure valid operations
       SORTABLE_FIELDS = %w[applicant_user_id contracts.created_at lot_id payment_term financing_type status
@@ -102,6 +102,7 @@ module Api
 
         if @contract.may_approve?
           @contract.approve!
+
           render json: {
             message: 'Contrato aprobado exitosamente',
             contract: contract_details(@contract)
@@ -155,6 +156,25 @@ module Api
         else
           render json: {
             errors: result[:errors]
+          }, status: :unprocessable_content
+        end
+      end
+
+      # POST /api/v1/projects/:project_id/lots/:lot_id/contracts/:id/reopen
+      def reopen
+        authorize! :reopen, @contract
+
+        if @contract.may_re_open?
+          @contract.re_open!
+
+          render json: {
+            message: 'Contrato reabierto exitosamente',
+            contract: contract_details(@contract)
+          }, status: :ok
+        else
+          render json: {
+            error: 'No se puede reabrir el contrato en su estado actual',
+            status: @contract.status
           }, status: :unprocessable_content
         end
       end
@@ -300,6 +320,7 @@ module Api
           contract_id: contract.id,
           project_id: contract&.lot&.project_id,
           project_name: contract&.lot&.project&.name,
+          project_address: contract&.lot&.project&.address,
           lot_id: contract.lot_id,
           lot_name: contract&.lot&.name,
           lot_address: contract&.lot&.address,

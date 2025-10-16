@@ -21,7 +21,8 @@ module Payments
         end
 
         @payment.assign_attributes(@payment_params)
-        @payment.payment_date = Time.current
+        # in case the payment date is not set, set it to current time
+        @payment.payment_date = Date.current if @payment.payment_date.nil?
 
         if @payment.may_approve?
           @payment.approve!
@@ -31,11 +32,18 @@ module Payments
 
           { success: true, message: 'Pago Aplicado Correctamente', payment: @payment }
         else
-          message = "No se puede aprobar o aplicar el pago revise cualquier de las siguientes circunstancias:
-          - El pago ya fue aprobado o aplicado
-          - El pago no está en estado pendiente
-          - El contrato asosciado no está activo o esta cerrado
-          * Estado actual del pago: #{@payment.status}, Estado actual del contrato asociado: #{@payment.contract.status}"
+          reason = if @payment.status == 'approved'
+                     "El pago ya fue aprobado (estado actual: #{@payment.status})"
+                   elsif !%w[pending submitted].include?(@payment.status)
+                     "El pago no está en estado pendiente o enviado (estado actual: #{@payment.status})"
+                   elsif !@payment.contract.active? || @payment.contract.status == 'closed'
+                     "El contrato asociado no está activo o está cerrado (estado actual: #{@payment.contract.status})"
+                   elsif (@payment.contract.balance.to_d - @payment.paid_amount.to_d) <= 0
+                     "El pago excede el monto adeudado #{@payment.contract.balance.to_d}, monto a pagar: #{@payment.paid_amount.to_d}"
+                   else
+                     "No se puede aprobar el pago por razones desconocidas, balance: #{@payment.contract.balance.to_d}"
+                   end
+          message = "No se puede aprobar el pago: #{reason}"
           add_error(message)
           { success: false, message:, errors: }
         end

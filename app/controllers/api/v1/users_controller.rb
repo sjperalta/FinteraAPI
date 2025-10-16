@@ -20,12 +20,18 @@ module Api
       skip_load_resource only: [:restore]
       skip_authorize_resource only: [:restore]
       before_action :set_user,
-                    only: %i[show update contracts payments summary upload_receipt restore update_locale
+                    only: %i[show update contracts payments payment_history summary upload_receipt restore update_locale
                              toggle_status]
       before_action :set_payment, only: [:upload_receipt]
 
       SEARCHABLE_FIELDS = %w[email full_name phone identity rtn role].freeze
       SORTABLE_FIELDS = %w[full_name email phone identity rtn role created_at].freeze
+
+      # Fields that can be searched in payment history
+      PAYMENT_HISTORY_SEARCHABLE_FIELDS = %w[description contract.lot.name
+                                             contract.lot.project.name].freeze
+      PAYMENT_HISTORY_SORTABLE_FIELDS = %w[created_at due_date payment_date approved_at amount status
+                                           payment_type].freeze
 
       # GET /api/v1/users
       def index
@@ -264,21 +270,111 @@ module Api
 
       # GET /api/v1/user/:id/payments
       def payments
-        payments = Payment.joins(:contract).where(
+        # Get all pending or submitted payments, ordered by due_date for approved contracts belonging to this user
+        payments = Payment.includes(:contract).where(
           contracts: { applicant_user_id: @user.id, status: Contract::STATUS_APPROVED }, status: %w[pending submitted]
         )
+        payments = payments.order(due_date: :asc)
 
         # Include contract details in the JSON response.
         # Adjust the :only fields for contract according to the attributes you want to return.
         render json: payments.as_json(
           only: %i[id description amount status due_date contract_id created_at approved_at payment_date
-                   interest_amount],
+                   interest_amount rejection_reason],
           include: {
             contract: {
-              only: %i[id name status currency created_at]
+              only: %i[id balance amount status currency created_at approved_at],
+              include: {
+                lot: {
+                  only: %i[id name address]
+                }
+              }
             }
           }
         ), status: :ok
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: 'User not found' }, status: :not_found
+      end
+
+      # GET /api/v1/user/:id/payment_history
+      def payment_history
+        # Get all payments for approved contracts belonging to this user
+        payments = Payment.joins(:contract)
+                          .where(contracts: { applicant_user_id: @user.id, status: Contract::STATUS_APPROVED })
+                          .includes(contract: { lot: :project })
+
+        # Total amount: sum of all payment amounts
+        total = payments.sum(:amount)
+
+        # Balance: sum of all contract balances
+        balance = @user.contracts.where(status: Contract::STATUS_APPROVED).sum(:balance)
+
+        # Overdue amount: sum of amounts for overdue payments (pending with due_date < today)
+        overdue_amount = payments.where(status: %w[pending])
+                                 .where('due_date < ?', Date.current)
+                                 .sum('payments.amount')
+
+        # Count paid done: count of approved payments
+        count_paid_done = payments.where(status: 'paid').count
+
+        # Apply filters
+        payments = apply_payment_history_filters(payments, params)
+
+        # Apply sorting
+        payments = apply_sorting(payments, params, PAYMENT_HISTORY_SORTABLE_FIELDS)
+
+        # Apply pagination
+        @pagy, @payments = pagy(
+          payments,
+          items: (params[:per_page] || 20).to_i,
+          page: params[:page]
+        )
+
+        # Build detailed payment history
+        payment_history = @payments.map do |payment|
+          {
+            id: payment.id,
+            description: payment.description,
+            payment_type: payment.payment_type,
+            amount: payment.amount,
+            interest_amount: payment.interest_amount,
+            total_amount: payment.amount.to_f + (payment.interest_amount || 0).to_f,
+            status: payment.status,
+            due_date: payment.due_date,
+            payment_date: payment.payment_date,
+            approved_at: payment.approved_at,
+            created_at: payment.created_at,
+            updated_at: payment.updated_at,
+            has_receipt: payment.document.attached?,
+            contract: {
+              id: payment.contract.id,
+              status: payment.contract.status,
+              currency: payment.contract.currency,
+              financing_type: payment.contract.financing_type,
+              amount: payment.contract.amount,
+              balance: payment.contract.balance,
+              lot: {
+                id: payment.contract.lot.id,
+                name: payment.contract.lot.name,
+                address: payment.contract.lot.address,
+                project: {
+                  id: payment.contract.lot.project.id,
+                  name: payment.contract.lot.project.name
+                }
+              }
+            }
+          }
+        end
+
+        render json: {
+          total:,
+          balance:,
+          overdue_amount:,
+          payment_count: payments.size,
+          count_paid_done:,
+          payments: payment_history,
+          pagination: pagy_metadata(@pagy)
+        }, status: :ok
       rescue ActiveRecord::RecordNotFound
         render json: { error: 'User not found' }, status: :not_found
       end
@@ -379,6 +475,114 @@ module Api
           :credit_score,
           :locale
         )
+      end
+
+      # Apply filters specific to payment history
+      def apply_payment_history_filters(scope, params)
+        return scope if params.blank?
+
+        # Apply standard filters (status, search_term, date range, amount range)
+        scope = apply_filters(scope, params, PAYMENT_HISTORY_SEARCHABLE_FIELDS)
+
+        # Apply payment-specific filters
+        scope = apply_payment_type_filter(scope, params[:payment_type]) if params[:payment_type].present?
+        scope = apply_payment_date_filters(scope, params) if payment_date_params_present?(params)
+        scope = apply_date_range_filter(scope, params[:date_range]) if params[:date_range].present?
+
+        scope
+      end
+
+      # Filter by payment type
+      def apply_payment_type_filter(scope, payment_type_param)
+        payment_types = parse_statuses(payment_type_param) # Reuse the status parsing logic
+        return scope if payment_types.empty?
+
+        scope.where(payment_type: payment_types)
+      end
+
+      # Apply payment-specific date range filters
+      def apply_payment_date_filters(scope, params)
+        scope_with_date_filters = scope
+
+        # Payment date range
+        if params[:payment_start_date].present?
+          payment_start_date = parse_date(params[:payment_start_date])
+          if payment_start_date
+            scope_with_date_filters = scope_with_date_filters.where('payment_date >= ?',
+                                                                    payment_start_date)
+          end
+        end
+
+        if params[:payment_end_date].present?
+          payment_end_date = parse_date(params[:payment_end_date])
+          if payment_end_date
+            scope_with_date_filters = scope_with_date_filters.where('payment_date <= ?',
+                                                                    payment_end_date.end_of_day)
+          end
+        end
+
+        # Due date range
+        if params[:due_start_date].present?
+          due_start_date = parse_date(params[:due_start_date])
+          scope_with_date_filters = scope_with_date_filters.where('due_date >= ?', due_start_date) if due_start_date
+        end
+
+        if params[:due_end_date].present?
+          due_end_date = parse_date(params[:due_end_date])
+          if due_end_date
+            scope_with_date_filters = scope_with_date_filters.where('due_date <= ?',
+                                                                    due_end_date.end_of_day)
+          end
+        end
+
+        # Approved date range
+        if params[:approved_start_date].present?
+          approved_start_date = parse_date(params[:approved_start_date])
+          if approved_start_date
+            scope_with_date_filters = scope_with_date_filters.where('approved_at >= ?',
+                                                                    approved_start_date)
+          end
+        end
+
+        if params[:approved_end_date].present?
+          approved_end_date = parse_date(params[:approved_end_date])
+          if approved_end_date
+            scope_with_date_filters = scope_with_date_filters.where('approved_at <= ?',
+                                                                    approved_end_date.end_of_day)
+          end
+        end
+
+        scope_with_date_filters
+      end
+
+      # Check if payment-specific date parameters are present
+      def payment_date_params_present?(params)
+        params[:payment_start_date].present? || params[:payment_end_date].present? ||
+          params[:due_start_date].present? || params[:due_end_date].present? ||
+          params[:approved_start_date].present? || params[:approved_end_date].present?
+      end
+
+      # Apply date range filter for predefined ranges (month, quarter)
+      def apply_date_range_filter(scope, date_range)
+        return scope if date_range.blank?
+
+        case date_range.downcase
+        when 'month'
+          # Filter payments from the beginning of the current month
+          start_date = Date.current.beginning_of_month
+          scope.where('payments.due_date >= ?', start_date)
+        when 'quarter'
+          # Filter payments from the beginning of the current quarter
+          start_date = Date.current.beginning_of_quarter
+          scope.where('payments.due_date >= ?', start_date)
+        when 'year'
+          # Filter payments from the beginning of the current year
+          start_date = Date.current.beginning_of_year
+          scope.where('payments.due_date >= ?', start_date)
+        else
+          # Unknown date range, return scope unchanged
+          scope
+        end
       end
     end
   end
