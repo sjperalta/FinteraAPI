@@ -80,7 +80,7 @@ RSpec.describe Payment, type: :model do
     end
 
     it 'defines VALID_STATUSES' do
-      expect(described_class::VALID_STATUSES).to eq(%w[pending submitted paid rejected reajustment])
+      expect(described_class::VALID_STATUSES).to eq(%w[pending submitted paid rejected readjustment])
     end
   end
 
@@ -342,17 +342,17 @@ RSpec.describe Payment, type: :model do
       end
     end
 
-    context 'reajustment' do
-      it 'transitions from pending to reajustment' do
+    context 'readjustment' do
+      it 'transitions from pending to readjustment' do
         expect(subject.aasm.current_state).to eq(:pending)
 
-        subject.reajustment
-        expect(subject.aasm.current_state).to eq(:reajustment)
+        subject.readjustment
+        expect(subject.aasm.current_state).to eq(:readjustment)
       end
 
-      it 'updates the status to reajustment in the database' do
-        subject.reajustment!
-        expect(subject.reload.status).to eq('reajustment')
+      it 'updates the status to readjustment in the database' do
+        subject.readjustment!
+        expect(subject.reload.status).to eq('readjustment')
       end
     end
   end

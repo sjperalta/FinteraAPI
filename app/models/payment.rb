@@ -11,8 +11,8 @@ class Payment < ApplicationRecord
 
   # Constants
   PAYMENT_TYPES = %w[reservation down_payment installment full advance].freeze
-  # when a capital reajustment is happening we need a special payment type to handle it properly
-  VALID_STATUSES = %w[pending submitted paid rejected reajustment].freeze
+  # when a capital readjustment is happening we need a special payment type to handle it properly
+  VALID_STATUSES = %w[pending submitted paid rejected readjustment].freeze
 
   # Validations
   validates :amount, :due_date, :status, presence: true
@@ -27,7 +27,7 @@ class Payment < ApplicationRecord
     state :submitted
     state :paid
     state :rejected
-    state :reajustment
+    state :readjustment
 
     # Transition from pending to submitted when receipt is uploaded
     event :submit do
@@ -56,9 +56,9 @@ class Payment < ApplicationRecord
                   after: :handle_undo
     end
 
-    # Transition from pending to reajustment when a capital repayment is made
-    event :reajustment do
-      transitions from: :pending, to: :reajustment
+    # Transition from pending to readjustment when a capital repayment is made
+    event :readjustment do
+      transitions from: :pending, to: :readjustment
     end
   end
 

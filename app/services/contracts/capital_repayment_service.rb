@@ -6,7 +6,7 @@ module Contracts
   # 1. Apply the prepayment to reduce the contract balance
   # 2. Then calculate the remaining amount, this serve to identify how many payments to reajust
   # 3. Identify the last pending payments that cover that remaining amount
-  # 4. Mark those payments as "reajustment" since they will be recalculated
+  # 4. Mark those payments as "readjustment" since they will be recalculated
   class CapitalRepaymentService
     include ContractCacheInvalidation
 
@@ -28,8 +28,8 @@ module Contracts
           raise ActiveRecord::Rollback
         end
 
-        # Mark payments and collect reajusted payments
-        @reajusted_payments = mark_payments_for_reajustment
+        # Mark payments and collect readjusted payments
+        @readjusted_payments = mark_payments_for_readjustment
 
         # Trigger credit score update
         trigger_credit_score_update
@@ -39,14 +39,7 @@ module Contracts
       end
 
       # Build successful response
-      {
-        success: true,
-        errors: [],
-        message: 'Amortización de capital registrada exitosamente',
-        contract: @contract,
-        reajusted_payments_count: @reajusted_payments&.size || 0,
-        reajusted_payment_ids: @reajusted_payments&.map(&:id) || []
-      }
+      success_response
     rescue StandardError => e
       Rails.logger.error("Capital repayment failed: #{e.message}")
       @errors << e.message
@@ -69,13 +62,13 @@ module Contracts
     # The contract.apply_prepayment method manages ledger entries and errors
     # def apply_prepayment is removed in favor of direct contract call in #call
 
-    def mark_payments_for_reajustment
+    def mark_payments_for_readjustment
       # Get all pending payments ordered by due_date descending (last payments first)
       pending_payments = @contract.payments.pending.order(due_date: :desc)
 
       return [] if pending_payments.empty?
 
-      # Calculate which payments to mark as reajustment
+      # Calculate which payments to mark as readjustment
       # Use the remaining balance AFTER prepayment, not the original amount
       remaining_balance = @contract.reload.balance
       payments_to_reajust = []
@@ -87,9 +80,9 @@ module Contracts
         remaining_balance -= payment.amount
       end
 
-      # Mark selected payments as reajustment
+      # Mark selected payments as readjustment
       payments_to_reajust.each do |payment|
-        payment.reajustment! if payment.may_reajustment?
+        payment.readjustment! if payment.may_readjustment?
       end
 
       payments_to_reajust
@@ -102,10 +95,11 @@ module Contracts
     def success_response
       {
         success: true,
+        errors: [],
         message: 'Amortización de capital registrada exitosamente',
         contract: @contract,
-        reajusted_payments_count: @reajusted_payments&.size || 0,
-        reajusted_payments: @reajusted_payments || []
+        reajusted_payments_count: @readjusted_payments&.size || 0,
+        reajusted_payments: @readjusted_payments || []
       }
     end
 

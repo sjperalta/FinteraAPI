@@ -88,7 +88,7 @@ RSpec.describe Contracts::CapitalRepaymentService, type: :service do
     end
 
     context 'when repayment amount is valid' do
-      it 'applies prepayment and marks correct payments as reajustment' do
+      it 'applies prepayment and marks correct payments as readjustment' do
         # Initial balance: 25,000
         # User makes a capital repayment of 11,000
         # After prepayment, remaining balance: 14,000
@@ -107,9 +107,9 @@ RSpec.describe Contracts::CapitalRepaymentService, type: :service do
         expect(result[:message]).to eq('Amortización de capital registrada exitosamente')
         expect(result[:reajusted_payments_count]).to eq(3)
 
-        # Verify the last 3 payments are marked as reajustment
-        reajusted = contract.payments.where(status: 'reajustment').order(due_date: :desc)
-        expect(reajusted.count).to eq(3)
+        # Verify the last 3 payments are marked as readjustment
+        readjusted = contract.payments.where(status: 'readjustment').order(due_date: :desc)
+        expect(readjusted.count).to eq(3)
       end
 
       it 'reduces the contract balance' do
@@ -142,7 +142,7 @@ RSpec.describe Contracts::CapitalRepaymentService, type: :service do
         # Initial balance: 25,000
         # User makes a capital repayment of 20,000
         # After prepayment, remaining balance: 5,000
-        # Only the LAST payment (5,000) should be marked for reajustment
+        # Only the LAST payment (5,000) should be marked for readjustment
         # NOT the 4 payments that would cover the 20,000 repayment amount
         service = described_class.new(
           contract:,
@@ -155,10 +155,10 @@ RSpec.describe Contracts::CapitalRepaymentService, type: :service do
         expect(result[:success]).to be true
         expect(result[:reajusted_payments_count]).to eq(1)
 
-        # Verify only the last payment is marked as reajustment
-        reajusted = contract.payments.where(status: 'reajustment')
-        expect(reajusted.count).to eq(1)
-        expect(reajusted.first.description).to eq('Payment 5')
+        # Verify only the last payment is marked as readjustment
+        readjusted = contract.payments.where(status: 'readjustment')
+        expect(readjusted.count).to eq(1)
+        expect(readjusted.first.description).to eq('Payment 5')
       end
     end
 

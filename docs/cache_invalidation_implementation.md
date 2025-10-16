@@ -61,7 +61,7 @@ POST /api/v1/projects/1/lots/2/contracts/3/capital_repayment
 # Service processes the repayment
 CapitalRepaymentService.call
   ├─ Updates contract balance
-  ├─ Marks payments as reajustment
+  ├─ Marks payments as readjustment
   └─ Calls invalidate_contract_cache(@contract)
        ├─ Clears cache: contracts/index/{creator_id}/*
        └─ Clears cache: contracts/index/{admin_id}/* (for each admin)

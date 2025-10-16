@@ -4,7 +4,7 @@
 This document describes the proactive cache invalidation strategy for the contracts index endpoint.
 
 ## Problem
-The contracts index endpoint caches contract data including payment schedules. When payments are updated (e.g., marked as `reajustment` during capital repayment), the cache needs to be invalidated to show current data.
+The contracts index endpoint caches contract data including payment schedules. When payments are updated (e.g., marked as `readjustment` during capital repayment), the cache needs to be invalidated to show current data.
 
 ## Solution: Proactive Cache Invalidation
 
@@ -29,7 +29,7 @@ Instead of computing timestamps on every request to detect changes, we proactive
 
 ### Services That Should Invalidate Cache
 
-- ✅ `CapitalRepaymentService` - Marks payments as reajustment
+- ✅ `CapitalRepaymentService` - Marks payments as readjustment
 - `CreateContractService` - Creates new contracts
 - `CancelContractService` - Cancels contracts
 - `PaymentCreationService` - Creates payments
