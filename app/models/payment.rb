@@ -79,7 +79,7 @@ class Payment < ApplicationRecord
 
   def record_approval_timestamp
     self.approved_at = Time.current
-    self.payment_date = Date.current
+    self.payment_date = Date.current if payment_date.nil?
     self.paid_amount = amount
     save!
   end

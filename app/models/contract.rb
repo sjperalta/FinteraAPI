@@ -123,6 +123,7 @@ class Contract < ApplicationRecord
     record_approval
     Contracts::PaymentCreationService.new(self).call
     notify_approval
+    SendContractApprovalNotificationJob.perform_now(self)
   end
 
   def handle_cancellation

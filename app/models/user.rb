@@ -36,9 +36,9 @@ class User < ApplicationRecord
   validates :role, inclusion: { in: ROLES }
   validates :locale, inclusion: { in: LOCALES }
 
-  scope :admins, -> { where(role: 'admin') }
-  scope :sellers, -> { where(role: 'seller') }
-  scope :regular_users, -> { where(role: 'user') }
+  scope :admins, -> { where(role: 'admin', status: 'active') }
+  scope :sellers, -> { where(role: 'seller', status: 'active') }
+  scope :regular_users, -> { where(role: 'user', status: 'active') }
   scope :active_users, -> { where(status: 'active') }
 
   # Callbacks for Normalization (Optional)

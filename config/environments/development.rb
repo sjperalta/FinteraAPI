@@ -43,12 +43,8 @@ Rails.application.configure do
 
   config.action_mailer.perform_caching = false
 
-  config.action_mailer.delivery_method = :onesignal
-
-  config.action_mailer.onesignal_settings = {
-    app_key: ENV.fetch('ONE_SIGNAL_APP_KEY', nil),
-    app_id: ENV.fetch('ONE_SIGNAL_APP_ID', nil)
-  }
+  # email delivery via Resend
+  config.action_mailer.delivery_method = :resend
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log

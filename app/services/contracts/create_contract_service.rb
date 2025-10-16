@@ -153,13 +153,6 @@ module Contracts
 
     def submit_contract(contract)
       contract.submit!
-
-      # Handle reservation approval notification failures gracefully
-      begin
-        SendReservationApprovalNotificationJob.perform_later(contract)
-      rescue StandardError => e
-        Rails.logger.error("Failed to enqueue reservation approval notification: #{e.message}")
-      end
     end
 
     def notify_new_user_creation(user, temp_password = nil)
@@ -230,7 +223,7 @@ module Contracts
         )
       rescue StandardError
         nil
-      end # Don't fail if notification creation also fails
+      end
     end
 
     def permitted_user_params

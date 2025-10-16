@@ -102,6 +102,7 @@ module Api
 
         if @contract.may_approve?
           @contract.approve!
+
           render json: {
             message: 'Contrato aprobado exitosamente',
             contract: contract_details(@contract)
@@ -300,6 +301,7 @@ module Api
           contract_id: contract.id,
           project_id: contract&.lot&.project_id,
           project_name: contract&.lot&.project&.name,
+          project_address: contract&.lot&.project&.address,
           lot_id: contract.lot_id,
           lot_name: contract&.lot&.name,
           lot_address: contract&.lot&.address,

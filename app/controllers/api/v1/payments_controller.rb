@@ -23,7 +23,13 @@ module Api
         contract.applicant_user.full_name
       ].freeze
 
-      SORTABLE_FIELDS = %w[payments.created_at amount due_date status].freeze
+      SORTABLE_FIELDS = {
+        'created_at' => 'payments.created_at',
+        'updated_at' => 'payments.updated_at',
+        'amount' => 'payments.amount',
+        'due_date' => 'payments.due_date',
+        'status' => 'payments.status'
+      }.freeze
 
       # GET /payments
       def index
@@ -61,7 +67,10 @@ module Api
                 }
               }
             }
-          )
+          ).map do |payment_hash|
+            payment = @payments.find { |p| p.id == payment_hash['id'] }
+            payment_hash.merge('document_url' => payment.document.attached? ? url_for(payment.document) : nil)
+          end
         end
 
         # Prepare the JSON response with payments and pagination metadata
@@ -124,12 +133,36 @@ module Api
       def upload_receipt
         return render json: { error: 'Receipt file is required' }, status: :bad_request unless params[:receipt]
 
-        @payment.document.attach(params[:receipt])
+        # Handle paid_amount if sent by UI
+        payment_data = params.fetch(:payment, params)
+        payment_params = payment_data.permit(:paid_amount)
 
-        if @payment.may_submit? && @payment.submit!
-          render json: { message: 'Receipt uploaded and payment submitted successfully' }, status: :ok
+        service = Payments::UploadReceiptService.new(
+          payment: @payment,
+          receipt: params[:receipt],
+          user: current_user,
+          paid_amount: payment_params[:paid_amount]
+        )
+        result = service.call
+
+        if result[:success]
+          render json: {
+            message: 'Receipt uploaded and payment submitted successfully',
+            payment: result[:payment].as_json(
+              only: %i[id description amount interest_amount status due_date contract_id created_at
+                       approved_at payment_date paid_amount],
+              include: {
+                contract: {
+                  only: %i[id balance status created_at currency]
+                }
+              }
+            )
+          }, status: :ok
         else
-          render json: { error: 'Failed to process payment submission' }, status: :unprocessable_content
+          render json: {
+            error: result[:errors]&.first || 'Failed to process payment submission',
+            errors: result[:errors]
+          }, status: :unprocessable_content
         end
       end
 

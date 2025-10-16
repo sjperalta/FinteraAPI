@@ -2,6 +2,7 @@
 
 # app/services/users/user_summary_service.rb
 module Users
+  # Service to compile a summary of a user's financial and contract information.
   class UserSummaryService
     def initialize(user)
       @user = user
@@ -60,7 +61,8 @@ module Users
 
     def contract_list
       # Fetch distinct project names in a single query to avoid N+1
-      Contract.joins(lot: :project).where(applicant_user_id: @user.id).distinct.pluck('projects.name')
+      Contract.joins(lot: :project).where(applicant_user_id: @user.id,
+                                          status: 'approved').distinct.pluck('projects.name')
     end
   end
 end

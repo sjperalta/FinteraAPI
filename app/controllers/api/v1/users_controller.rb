@@ -274,7 +274,7 @@ module Api
         payments = Payment.includes(:contract).where(
           contracts: { applicant_user_id: @user.id, status: Contract::STATUS_APPROVED }, status: %w[pending submitted]
         )
-        payments = payments.order(due_date: :desc)
+        payments = payments.order(due_date: :asc)
 
         # Include contract details in the JSON response.
         # Adjust the :only fields for contract according to the attributes you want to return.

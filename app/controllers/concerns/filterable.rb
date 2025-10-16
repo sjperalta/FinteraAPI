@@ -159,9 +159,8 @@ module Filterable
         # Direct field without qualification
         column = model.columns.find { |col| col.name == field }
       end
-      return column&.type || :string
 
-      :string # Default fallback
+      column&.type || :string
     end
 
     # Ensure necessary associations are joined for searchable fields

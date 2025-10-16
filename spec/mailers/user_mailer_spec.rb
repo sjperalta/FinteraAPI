@@ -3,15 +3,26 @@
 require 'rails_helper'
 
 RSpec.describe UserMailer, type: :mailer do
-  let(:user) { double('User', email: 'user@example.com', full_name: 'Test User') }
+  let(:user) do
+    double('User', id: 1, email: 'user@example.com', full_name: 'Test User')
+  end
+
   let(:project) { double('Project', name: 'Proyecto Uno') }
-  let(:lot) { double('Lot', name: 'Lote 1', length: 10, width: 20, project:) }
+
+  let(:lot) do
+    double('Lot',
+           name: 'Lote 1',
+           length: 10,
+           width: 20,
+           address: 'Av Central 123',
+           project:)
+  end
+
   let(:contract) do
     double('Contract',
            id: 42,
            applicant_user: user,
            lot:,
-           project:,
            financing_type: 'cash',
            payment_term: 12,
            reserve_amount: 1000,
@@ -23,9 +34,38 @@ RSpec.describe UserMailer, type: :mailer do
   let(:payment) do
     double('Payment',
            amount: 1500,
+           interest_amount: 250,
            due_date: Date.new(2025, 3, 1),
            approved_at: Date.new(2025, 3, 2),
-           contract:)
+           contract:,
+           payment_type: 'installment')
+  end
+
+  let(:payments_collection) do
+    Class.new do
+      def initialize(payments)
+        @payments = payments
+      end
+
+      def where(payment_type: nil, **)
+        return self.class.new(@payments) unless payment_type
+
+        filtered = @payments.select { |payment| payment.payment_type == payment_type }
+        self.class.new(filtered)
+      end
+
+      def order(*)
+        self
+      end
+
+      def first
+        @payments.first
+      end
+    end.new([payment])
+  end
+
+  before do
+    allow(contract).to receive(:payments).and_return(payments_collection)
   end
 
   describe 'contract_submitted' do
@@ -73,7 +113,7 @@ RSpec.describe UserMailer, type: :mailer do
   end
 
   describe 'reservation_approved' do
-    it 'sends reservation approved email with reservation info' do
+    it 'sends reservation approved email with contract info' do
       mail = UserMailer.with(user:, contract:).reservation_approved
 
       expect(mail.to).to eq([user.email])

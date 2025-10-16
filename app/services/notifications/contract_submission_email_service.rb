@@ -11,12 +11,12 @@ module Notifications
     end
 
     def call
-      send_contract_approval_email
+      send_contract_submission_email
     end
 
     private
 
-    def send_contract_approval_email
+    def send_contract_submission_email
       UserMailer.with(user: @user, contract: @contract).contract_submitted.deliver_now
     end
   end

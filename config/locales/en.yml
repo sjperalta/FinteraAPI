@@ -57,6 +57,8 @@ en:
       already_exists: "%{resource} already exists."
       cannot_delete: "Cannot delete %{resource}."
       system_error: "System error. Please try again later."
+      user_params_required: "User parameters are required."
+      unexpected_user_creation_error: "An unexpected error occurred while creating the user."
     info:
       no_records: "No records to display."
       loading: "Loading..."
@@ -361,6 +363,7 @@ en:
       reservation_approved: "Reservation Approved"
       system_alert: "System Alert"
       create_new_user: "New User Created"
+      onboard_user: "User Onboarded"
       lot_reserved: "Lot Reserved"
       mailer_error: "Mailer Error"
     messages:
@@ -370,6 +373,8 @@ en:
       lot_reserved_admin: "Lot %{lot_name} has been reserved by %{user_name}"
       mailer_error_details: "Failed to send contract submission notification for contract %{contract_id}: %{error}"
       lot_not_available: "Lot %{lot_name} is not available for reservation. Current status: %{status}"
+      new_user_created_admin: "A new user has been created: %{user_name}"
+      welcome_user: "Hello %{user_name}, thank you for being part of Fintera."
 
   # Settings
   settings:
@@ -395,3 +400,82 @@ en:
     feedback: "Send Feedback"
     about: "About"
     version: "Version %{version}"
+
+  # Financing types
+  financing_types:
+    direct: "Direct"
+    bank: "Bank"
+    cash: "Cash"
+
+  # Mailers
+  mailers:
+    user_mailer:
+      contract_submitted:
+        subject: "Contract Submitted"
+        title: "Contract Submitted"
+        greeting: "Hello %{name}"
+        created_line: "Your contract for %{project} has been submitted."
+        details: "Contract Details:"
+        project: "Project: %{project}"
+        lot: "Lot: %{lot} (%{length} x %{width})"
+        financing: "Financing: %{type}"
+        term: "Term: %{term} months"
+        reserve: "Reserve Amount: %{amount}"
+        down_payment: "Down Payment: %{amount}"
+        created_at: "Created At: %{datetime}"
+        footer: "Your contract is pending approval."
+        view_platform: "View Platform"
+      contract_approved:
+        subject: "Contract Approved"
+        title: "Contract Approved"
+        greeting: "Hello %{name}"
+        approved_line: "Your contract for %{project} has been approved."
+        details: "Contract Details:"
+        project: "Project: %{project}"
+        lot: "Lot: %{lot}"
+        financing: "Financing: %{type}"
+        term: "Term: %{term} months"
+        reserve: "Reserve Amount: %{amount}"
+        down_payment: "Down Payment: %{amount}"
+        approved_at: "Approved At: %{datetime}"
+        footer: "Your contract is now active."
+        view_platform: "View Platform"
+      payment_approved:
+        subject: "Payment Approved"
+        title: "Payment Approved"
+        greeting: "Hello %{name}"
+        details_intro: "Your payment has been approved. Here are the details:"
+        project: "Project: %{project}"
+        lot: "Lot: %{lot}"
+        payment_amount: "Amount: %{amount}"
+        interest_amount: "Interest Amount: %{amount}"
+        total_amount: "Total Amount: %{amount}"
+        due_date: "Due Date: %{date}"
+        approved_at: "Approved At: %{date}"
+        view_platform: "View Platform"
+      footer:
+        message: "If you have any questions, please contact our support team."
+      overdue_payment_email:
+        subject: "Overdue Payment Notice"
+        title: "Overdue Payment Notice"
+        greeting: "Hello %{name}"
+        intro: "You have the following overdue payments:"
+        list_item: "Lot %{lot} - Amount: %{amount} - Due: %{date}"
+        please_pay: "Please make the payment as soon as possible to avoid additional charges."
+        view_platform: "View Platform"
+      reservation_approved:
+        subject: "Reservation Approved"
+        title: "Reservation Approved"
+        greeting: "Hello %{name}"
+        approved_line: "Your reservation for contract %{id} has been approved."
+        details: "Reservation Details"
+        project: "Project: %{project}"
+        lot: "Lot: %{lot}"
+        amount: "Amount: %{amount}"
+        thanks: "Thank you for choosing Fintera."
+      account_created:
+        subject: "Account Created"
+      welcome:
+        subject: "Welcome to Fintera"
+      reset_password:
+        subject: "Reset Password"

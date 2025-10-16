@@ -180,10 +180,9 @@ RSpec.describe Contracts::CreateContractService do
         expect(admin_notifications.count).to eq(expected_admins)
       end
 
-      it 'enqueues notification jobs' do
+      it 'enqueues contract submission notification job' do
         admin_user
 
-        expect(SendReservationApprovalNotificationJob).to receive(:perform_later)
         expect(NotifyContractSubmissionJob).to receive(:perform_now)
 
         service.call
@@ -311,19 +310,6 @@ RSpec.describe Contracts::CreateContractService do
         expect do
           service.call
         end.to change(Notification, :count).by_at_least(3)
-      end
-    end
-
-    context 'when reservation notification job fails' do
-      before do
-        allow(SendReservationApprovalNotificationJob).to receive(:perform_later).and_raise(StandardError.new('Job error'))
-      end
-
-      it 'logs the error but continues' do
-        expect(Rails.logger).to receive(:error).with(/Failed to enqueue reservation approval notification/)
-
-        result = service.call
-        expect(result[:success]).to be true
       end
     end
 

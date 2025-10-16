@@ -11,20 +11,22 @@ class UserMailer < ApplicationMailer
   # Método para enviar el correo de aprobación de pago
   def contract_submitted
     @contract = params[:contract]
-    mail(to: @user.email, subject: I18n.t('mailers.user_mailer.contract_submitted.subject'))
+    to_address = Rails.env.development? ? "delivered+user#{@user.id}@resend.dev" : @contract.applicant_user.email
+    mail(to: to_address, subject: I18n.t('mailers.user_mailer.contract_submitted.subject'))
   end
 
   # Método para enviar el correo de aprobación de pago
   def contract_approved
     @contract = params[:contract]
-    mail(to: @user.email, subject: I18n.t('mailers.user_mailer.contract_approved.subject'))
+    to_address = Rails.env.development? ? "delivered+user#{@user.id}@resend.dev" : @user.email
+    mail(to: to_address, subject: I18n.t('mailers.user_mailer.contract_approved.subject'))
   end
 
   # Método para enviar el correo de aprobación de pago
   def payment_approved
     @payment = params[:payment]
-    @contract = @payment.contract
-    mail(to: @user.email, subject: I18n.t('mailers.user_mailer.payment_approved.subject'))
+    to_address = Rails.env.development? ? "delivered+user#{@user.id}@resend.dev" : @user.email
+    mail(to: to_address, subject: I18n.t('mailers.user_mailer.payment_approved.subject'))
   end
 
   # Método para enviar el correo de pagos vencidos
@@ -35,8 +37,18 @@ class UserMailer < ApplicationMailer
 
   # Método para enviar el correo de reserva aprobada
   def reservation_approved
-    @contract = params[:contract]
-    mail(to: @user.email, subject: I18n.t('mailers.user_mailer.reservation_approved.subject'))
+    @contract = params[:contract] || params[:reservation]&.contract
+    @reservation = params[:reservation]
+    raise ArgumentError, 'Contract is required to send reservation approved email' unless @contract
+
+    to_address = Rails.env.development? ? "delivered+user#{@user.id}@resend.dev" : @user.email
+    mail(to: to_address, subject: I18n.t('mailers.user_mailer.reservation_approved.subject'))
+  end
+
+  def reset_code_email
+    @code = params[:code]
+    to_address = Rails.env.development? ? "delivered+user#{@user.id}@resend.dev" : @user.email
+    mail(to: to_address, subject: I18n.t('mailers.user_mailer.reset_code_email.subject'))
   end
 
   # Email sent when a new account is created by admin/service, possibly with a temporary password
@@ -48,10 +60,17 @@ class UserMailer < ApplicationMailer
     mail(to: @user.email, subject:)
   end
 
-  def reset_code_email
-    @user = params[:user]
-    @code = params[:code]
-    mail(to: @user.email, subject: I18n.t('mailers.user_mailer.reset_code_email.subject'))
+  # Welcome email for new users
+  def welcome_email(user)
+    @user = user
+    to_address = Rails.env.development? ? "delivered+user#{user.id}@resend.dev" : user.email
+    mail(to: to_address, subject: I18n.t('mailers.user_mailer.welcome.subject'))
+  end
+
+  def reset_password
+    @reset_token = params[:reset_token]
+    to_address = Rails.env.development? ? "delivered+user#{@user.id}@resend.dev" : @user.email
+    mail(to: to_address, subject: I18n.t('mailers.user_mailer.reset_password.subject'))
   end
 
   private

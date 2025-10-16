@@ -15,13 +15,14 @@ class Lot < ApplicationRecord
   LOT_STATUS = %w[available reserved sold].freeze
 
   validates :status, inclusion: { in: LOT_STATUS }
-  validates :name, presence: true
-  validates :length, :width, numericality: { greater_than: 0 }, presence: true
+  validates :length, :width, numericality: { greater_than: 0 }, presence: true, unless: -> { override_area.present? }
+  validates :override_area, numericality: { greater_than: 0 }, allow_nil: true
 
-  has_one :current_contract, -> { where(active: true) }, class_name: 'Contract'
+  # the active contract and last from the contracts
+  has_one :current_contract, -> { where(active: true).order(created_at: :desc) }, class_name: 'Contract'
 
   def area_m2
-    length * width
+    override_area.presence || (length * width)
   end
 
   def area_in_project_unit
@@ -29,7 +30,10 @@ class Lot < ApplicationRecord
   end
 
   def effective_price
-    override_price.present? ? override_price : price
+    return override_price if override_price.present?
+    return project.price_per_square_unit * override_area if override_area.present?
+
+    price
   end
 
   private
@@ -51,7 +55,7 @@ class Lot < ApplicationRecord
     # The override_price field will be used for display/billing purposes
 
     # Only calculate and set price if no override is present
-    base_area = length.to_d * width.to_d
+    base_area = area_m2.to_d
     self.price = base_area * project.price_per_square_unit.to_d
   end
 end
