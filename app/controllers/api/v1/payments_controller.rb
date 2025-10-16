@@ -10,6 +10,7 @@ module Api
       include Sortable
       include Filterable
       include ContractCacheInvalidation
+      include PaymentCacheInvalidation
 
       before_action :authenticate_user!
       load_and_authorize_resource
@@ -48,10 +49,10 @@ module Api
         @pagy, @payments = pagy(payments, items: params[:per_page] || Pagy::DEFAULT[:items], page: params[:page])
 
         # Cache the payments JSON for performance
-        # Include max updated_at to invalidate cache when any payment changes
-        max_updated_at = @payments.maximum(:updated_at).to_i
-        cache_key = ['payments', 'index', params[:page], params[:per_page],
-                     params[:search_term], params[:sort], max_updated_at].join('/')
+        # Cache is invalidated proactively when payments are modified
+        # Include current_user.id to cache per user (since regular users only see their payments)
+        cache_key = ['payments', 'index', current_user.id, params[:page], params[:per_page],
+                     params[:search_term], params[:sort]].join('/')
         payments_json = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
           @payments.as_json(
             only: %i[id description amount interest_amount status due_date contract_id created_at
@@ -102,8 +103,9 @@ module Api
         result = service.call
 
         if result[:success]
-          # Invalidate contracts cache after payment approval (affects contract balance/payments)
+          # Invalidate caches after payment approval
           invalidate_contract_cache(@payment.contract)
+          invalidate_payment_cache(@payment)
 
           render json: {
             message: result[:message],
@@ -128,8 +130,9 @@ module Api
       # POST /payments/:id/reject
       def reject
         if @payment.may_reject? && @payment.reject!
-          # Invalidate contracts cache after payment rejection (affects payment status in contract)
+          # Invalidate caches after payment rejection
           invalidate_contract_cache(@payment.contract)
+          invalidate_payment_cache(@payment)
 
           render json: { message: 'Payment rejected successfully' }, status: :ok
         else
@@ -154,8 +157,9 @@ module Api
         result = service.call
 
         if result[:success]
-          # Invalidate contracts cache after receipt upload (affects payment status in contract)
+          # Invalidate caches after receipt upload
           invalidate_contract_cache(@payment.contract)
+          invalidate_payment_cache(@payment)
 
           render json: {
             message: 'Receipt uploaded and payment submitted successfully',
@@ -181,6 +185,10 @@ module Api
       # undo a payment approval
       def undo
         if @payment.may_undo? && @payment.undo!
+          # Invalidate caches after undoing payment approval
+          invalidate_contract_cache(@payment.contract)
+          invalidate_payment_cache(@payment)
+
           render json: { message: 'Se deshizo la aprobación del pago exitosamente' }, status: :ok
         else
           render json: { error: 'No se pudo deshacer la aprobación del pago' }, status: :unprocessable_content

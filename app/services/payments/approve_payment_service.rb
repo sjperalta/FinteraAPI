@@ -4,6 +4,9 @@
 module Payments
   # Service to approve or apply a payment
   class ApprovePaymentService
+    include PaymentCacheInvalidation
+    include ContractCacheInvalidation
+
     attr_reader :payment, :errors
 
     def initialize(payment:, payment_params: nil)
