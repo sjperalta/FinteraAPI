@@ -18,6 +18,8 @@ class Ability
       can :read, Contract, creator_id: user.id
       can :update, Contract, creator_id: user.id
       can :create, Contract
+      can :cancel, Contract, creator_id: user.id
+      can :reopen, Contract, creator_id: user.id
 
       can :read, Lot
 

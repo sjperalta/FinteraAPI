@@ -82,6 +82,7 @@ Rails.application.routes.draw do
               post :approve # Aprobar un contrato
               post :reject # Rechazar un contrato
               post :cancel # Cancelar un contrato
+              post :reopen # Reabrir un contrato
               post :capital_repayment # Registrar un pago de capital
               get :ledger # Obtener el ledger del contrato
             end

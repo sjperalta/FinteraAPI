@@ -172,6 +172,6 @@ class Payment < ApplicationRecord
 
   def close_contract_if_needed
     new_balance = contract.balance - amount.to_d
-    contract.close! if new_balance <= 0 && contract.may_close?
+    contract.close! if new_balance <= 0
   end
 end
