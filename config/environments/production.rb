@@ -65,9 +65,12 @@ Rails.application.configure do
     from: ENV.fetch('DEFAULT_EMAIL', 'Fintera <no-reply@notifications.securexapp.com>')
   }
 
-  config.hosts << 'fintera-staging.up.railway.app'
-  config.hosts << 'intera-staging.securexapp.com'
+  config.hosts << 'fintera-staging-api.securexapp.com'
   config.hosts << 'fintera-api.securexapp.com'
+
+  allowed_hosts = ENV.fetch('RAILS_ALLOWED_HOSTS', '').split(',')
+
+  allowed_hosts.each { |host| config.hosts << host.strip } if allowed_hosts.any?
 
   # config.hosts += ["web-production-6cf6.up.railway.app","web-production-6cf6.up.railway.app","securexapp.com", "api.securexapp.com"]
 
