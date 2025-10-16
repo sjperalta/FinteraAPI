@@ -9,6 +9,8 @@ module Api
       include Pagy::Backend
       include Sortable
       include Filterable
+      include ContractCacheInvalidation
+
       before_action :authenticate_user!
       load_and_authorize_resource
       before_action :set_payment, only: %i[show approve reject upload_receipt undo]
@@ -100,6 +102,9 @@ module Api
         result = service.call
 
         if result[:success]
+          # Invalidate contracts cache after payment approval (affects contract balance/payments)
+          invalidate_contract_cache(@payment.contract)
+
           render json: {
             message: result[:message],
             payment: result[:payment].as_json(
@@ -123,6 +128,9 @@ module Api
       # POST /payments/:id/reject
       def reject
         if @payment.may_reject? && @payment.reject!
+          # Invalidate contracts cache after payment rejection (affects payment status in contract)
+          invalidate_contract_cache(@payment.contract)
+
           render json: { message: 'Payment rejected successfully' }, status: :ok
         else
           render json: { error: 'Failed to reject payment' }, status: :unprocessable_content
@@ -146,6 +154,9 @@ module Api
         result = service.call
 
         if result[:success]
+          # Invalidate contracts cache after receipt upload (affects payment status in contract)
+          invalidate_contract_cache(@payment.contract)
+
           render json: {
             message: 'Receipt uploaded and payment submitted successfully',
             payment: result[:payment].as_json(

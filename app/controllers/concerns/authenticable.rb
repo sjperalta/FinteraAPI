@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# app/controllers/concerns/authenticable.rb
 module Authenticable
   extend ActiveSupport::Concern
 

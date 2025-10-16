@@ -68,11 +68,18 @@ Rails.application.configure do
   config.hosts << 'fintera-staging-api.securexapp.com'
   config.hosts << 'fintera-api.securexapp.com'
 
-  allowed_hosts = ENV.fetch('RAILS_ALLOWED_HOSTS', '').split(',')
+  # Parse allowed hosts from environment variable
+  allowed_hosts = ENV.fetch('RAILS_ALLOWED_HOSTS', '').split(',').map do |host|
+    host = host.strip
+    # Extract hostname from URL if it contains protocol
+    if host.start_with?('http://', 'https://')
+      URI.parse(host).host
+    else
+      host
+    end
+  end
 
-  allowed_hosts.each { |host| config.hosts << host.strip } if allowed_hosts.any?
-
-  # config.hosts += ["web-production-6cf6.up.railway.app","web-production-6cf6.up.railway.app","securexapp.com", "api.securexapp.com"]
+  allowed_hosts.each { |host| config.hosts << host } if allowed_hosts.any?
 
   # email delivery via Resend
   config.action_mailer.delivery_method = :resend

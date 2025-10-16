@@ -5,6 +5,8 @@
 module Contracts
   # Service to handle contract cancellation and related lot status update.
   class CancelContractService
+    include ContractCacheInvalidation
+
     def initialize(contract:, current_user: nil, reason: nil)
       @contract = contract
       @current_user = current_user
@@ -30,6 +32,9 @@ module Contracts
         end
 
         @contract.cancel!
+
+        # Invalidate contracts cache after successful cancellation
+        invalidate_contract_cache(@contract)
 
         { success: true, message: 'Contrato cancelado exitosamente', contract: @contract }
       end

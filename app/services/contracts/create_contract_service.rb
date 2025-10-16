@@ -4,6 +4,8 @@
 module Contracts
   # Service to handle the creation of a contract along with associated user and documents.
   class CreateContractService
+    include ContractCacheInvalidation
+
     attr_reader :lot, :contract_params, :user_params, :documents, :current_user, :errors
 
     def initialize(lot:, contract_params:, user_params:, documents:, current_user:)
@@ -16,6 +18,7 @@ module Contracts
     end
 
     def call
+      contract = nil
       ActiveRecord::Base.transaction do
         # Lock the lot to prevent race conditions
         lot.lock!
@@ -27,18 +30,21 @@ module Contracts
         submit_contract(contract)
         send_reservation_notification(contract)
         after_submission(contract)
-
-        { success: true, contract: }
-      rescue ActiveRecord::RecordInvalid => e
-        handle_error("Validation error: #{e.message}")
-        { success: false, errors: }
-      rescue AASM::InvalidTransition => e
-        handle_error("State transition error: #{e.message}")
-        { success: false, errors: }
-      rescue StandardError => e
-        handle_error("Unexpected error: #{e.message}")
-        { success: false, errors: }
       end
+
+      # Invalidate cache after successful contract creation
+      invalidate_contract_cache(contract) if contract&.persisted?
+
+      { success: true, contract: }
+    rescue ActiveRecord::RecordInvalid => e
+      handle_error("Validation error: #{e.message}")
+      { success: false, errors: }
+    rescue AASM::InvalidTransition => e
+      handle_error("State transition error: #{e.message}")
+      { success: false, errors: }
+    rescue StandardError => e
+      handle_error("Unexpected error: #{e.message}")
+      { success: false, errors: }
     end
 
     private
