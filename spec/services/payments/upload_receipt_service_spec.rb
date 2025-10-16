@@ -84,6 +84,9 @@ RSpec.describe Payments::UploadReceiptService do
         allow(payment).to receive(:update!)
         allow_any_instance_of(described_class).to receive(:notify_admins)
         allow(NotifyAdminPaymentReceiptJob).to receive(:perform_later)
+        # Mock cache invalidation methods
+        allow_any_instance_of(described_class).to receive(:invalidate_payment_cache)
+        allow_any_instance_of(described_class).to receive(:invalidate_contract_cache)
       end
 
       it 'attaches the receipt' do

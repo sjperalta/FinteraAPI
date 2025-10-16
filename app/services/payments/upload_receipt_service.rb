@@ -4,6 +4,8 @@ module Payments
   # Service to handle the uploading of payment receipts
   class UploadReceiptService
     include Notifiable
+    include ContractCacheInvalidation
+    include PaymentCacheInvalidation
 
     class UploadError < StandardError; end
 
@@ -27,6 +29,8 @@ module Payments
       end
 
       notify_admin
+      invalidate_payment_cache(payment)
+      invalidate_contract_cache(payment.contract)
 
       success_result
     rescue UploadError => e

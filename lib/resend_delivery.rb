@@ -90,7 +90,7 @@ class ResendDelivery
   end
 
   def log_entry(entry)
-    identifier = entry.respond_to?(:dig) ? (entry.dig('id') || entry.dig(:id)) : nil
+    identifier = entry.respond_to?(:dig) ? (entry['id'] || entry[:id]) : nil
     message = identifier.present? ? "Resend email sent with id: #{identifier}" : "Resend response: #{entry.inspect}"
     Rails.logger.info(message)
   end

@@ -9,6 +9,8 @@ module Api
       include Pagy::Backend
       include Sortable
       include Filterable
+      include ContractCacheInvalidation
+
       load_and_authorize_resource
       before_action :set_project, only: %i[create approve reject cancel reopen capital_repayment ledger]
       before_action :set_lot, only: %i[create approve reject cancel reopen capital_repayment ledger]
@@ -50,10 +52,10 @@ module Api
         @pagy, @contracts = pagy(contracts, items: params[:per_page] || 20, page: params[:page])
 
         # Cache the contracts JSON mapping for performance
-        # Include max updated_at to invalidate cache when any contract changes
-        max_updated_at = @contracts.maximum(:updated_at).to_i
+        # Cache is invalidated proactively by services when contracts/payments are modified
+        # Include current_user.id to separate cache per user (admins see all, users see their own)
         cache_key = ['contracts', 'index', current_user.id, params[:page], params[:per_page],
-                     params[:search_term], params[:sort], max_updated_at].join('/')
+                     params[:search_term], params[:sort]].join('/')
         contracts_with_calculated_fields = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
           @contracts.map { |c| contract_json(c) }
         end
@@ -103,6 +105,9 @@ module Api
         if @contract.may_approve?
           @contract.approve!
 
+          # Invalidate cache after contract approval
+          invalidate_contract_cache(@contract)
+
           render json: {
             message: 'Contrato aprobado exitosamente',
             contract: contract_details(@contract)
@@ -123,6 +128,9 @@ module Api
           @contract.reject!
           @contract.rejection_reason = params[:reason] if params[:reason].present?
           @contract.save!
+
+          # Invalidate cache after contract rejection
+          invalidate_contract_cache(@contract)
 
           render json: {
             message: params[:reason].present? ? "Contrato rechazado: #{params[:reason]}" : 'Contrato rechazado exitosamente',
@@ -167,6 +175,9 @@ module Api
         if @contract.may_re_open?
           @contract.re_open!
 
+          # Invalidate cache after contract reopen
+          invalidate_contract_cache(@contract)
+
           render json: {
             message: 'Contrato reabierto exitosamente',
             contract: contract_details(@contract)
@@ -192,21 +203,25 @@ module Api
         authorize! :update, @contract
 
         params.require(:contract).permit(:capital_repayment_amount)
-        amount = params[:contract][:capital_repayment_amount].to_f
-        if amount <= 0
-          render json: { message: 'Monto de amortización inválido' }, status: :bad_request
-          return
-        end
+        amount = params[:contract][:capital_repayment_amount]
 
-        if @contract.apply_prepayment(amount)
-          @contract.save!
+        service = Contracts::CapitalRepaymentService.new(
+          contract: @contract,
+          amount:,
+          current_user:
+        )
 
-          # Trigger credit score calculation
-          UpdateCreditScoresJob.perform_later(@contract.applicant_user.id)
+        result = service.call
 
-          render json: { message: 'Amortización de capital registrada exitosamente' }, status: :ok
+        if result[:success]
+          render json: {
+            message: result[:message],
+            contract: contract_details(result[:contract]),
+            reajusted_payments_count: result[:reajusted_payments_count],
+            reajusted_payment_ids: result[:reajusted_payment_ids]
+          }, status: :ok
         else
-          render json: { errors: @contract.errors.full_messages }, status: :unprocessable_content
+          render json: { errors: result[:errors] }, status: :unprocessable_content
         end
       end
 
