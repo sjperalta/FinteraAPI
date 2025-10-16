@@ -65,9 +65,9 @@ Rails.application.configure do
     from: ENV.fetch('DEFAULT_EMAIL', 'Fintera <no-reply@notifications.securexapp.com>')
   }
 
-  config.hosts << 'https://fintera-staging.up.railway.app/'
-  config.hosts << 'https://fintera-staging.securexapp.com/'
-  config.hosts << 'https://fintera-api.securexapp.com/'
+  config.hosts << 'fintera-staging.up.railway.app'
+  config.hosts << 'intera-staging.securexapp.com'
+  config.hosts << 'fintera-api.securexapp.com'
 
   # config.hosts += ["web-production-6cf6.up.railway.app","web-production-6cf6.up.railway.app","securexapp.com", "api.securexapp.com"]
 

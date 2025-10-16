@@ -44,7 +44,7 @@ RSpec.describe Users::CreateUserService do
         allow(user).to receive(:save).and_return(true)
         allow(user).to receive(:update)
         allow(user).to receive(:send_confirmation_instructions)
-        allow(User).to receive_message_chain(:admins, :find_each).and_yield(admin)
+        expect(User).to receive_message_chain(:admins, :find_each).and_yield(admin)
         allow(Notification).to receive(:create!)
         allow(UserMailer).to receive_message_chain(:welcome_email, :deliver_later)
       end
