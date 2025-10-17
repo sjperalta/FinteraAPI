@@ -9,6 +9,8 @@ module Api
       include Pagy::Backend
       include Sortable
       include Filterable
+      include UserCacheInvalidation
+
       before_action :authenticate_user!, except: [:recover_password]
       skip_before_action :authenticate_user!, only: %i[
         send_recovery_code
@@ -58,11 +60,24 @@ module Api
           page: params[:page]
         )
 
-        # Cache the users JSON for performance
-        # Include max updated_at to invalidate cache when any user changes
-        max_updated_at = @users.maximum(:updated_at).to_i
-        cache_key = ['users', 'index', current_user.id, params[:page], params[:per_page],
-                     params[:search_term], params[:sort], max_updated_at].join('/')
+        # Cache the users JSON for performance. Use versioned keys to allow
+        # cheap invalidation by bumping the per-user or admin version counters
+        # instead of performing wildcard deletes on the cache store.
+        user_version = begin
+          users_index_version(current_user.id)
+        rescue StandardError
+          1
+        end
+        admin_version = begin
+          users_admin_version
+        rescue StandardError
+          1
+        end
+
+        version_token = current_user.admin? ? "admin_v#{admin_version}" : "user_v#{user_version}"
+
+        cache_key = ['users', 'index', current_user.id, version_token, params[:page], params[:per_page] || 20,
+                     params[:search_term], params[:sort], params[:role]].join('/')
         users_json = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
           @users.as_json(only: fields_for_render, include: { creator: { only: %i[id full_name] } })
         end
@@ -102,6 +117,7 @@ module Api
         authorize! :update, User
         # Possibly verify admin or self?
         if @user.update(user_params.except(:id))
+          invalidate_user_cache(@user)
           render json: { success: true, message: 'User updated successfully',
                          user: @user.as_json(only: fields_for_render) },
                  status: :ok
@@ -115,6 +131,7 @@ module Api
         authorize! :destroy, User
         if current_user.admin? # Ensure only admin can delete users
           if @user.soft_delete
+            invalidate_user_cache(@user)
             render json: { message: 'User soft deleted successfully' }, status: :ok
           else
             render json: { error: 'Failed to soft delete user' }, status: :unprocessable_content
@@ -129,6 +146,7 @@ module Api
         authorize! :restore, User
         if current_user.admin? # Ensure only admin can restore users
           if @user.restore
+            invalidate_user_cache(@user)
             render json: { message: 'User restored successfully' }, status: :ok
           else
             render json: { error: 'Failed to restore user' }, status: :unprocessable_content
@@ -151,6 +169,7 @@ module Api
 
         if @user.update(status: new_status)
           message = new_status == 'active' ? 'User activated' : 'User deactivated'
+          invalidate_user_cache(@user)
           render json: { success: true, message:, user: @user.as_json(only: fields_for_render) }, status: :ok
         else
           render json: { success: false, errors: @user.errors.full_messages }, status: :unprocessable_content
@@ -251,6 +270,7 @@ module Api
               recovery_code: nil,
               recovery_code_sent_at: nil
             )
+            invalidate_user_cache(user)
             render json: { success: true, message: 'Password updated successfully.' }, status: :ok
           else
             render json: { success: false, error: 'Password confirmation mismatch.' }, status: :unprocessable_content
@@ -300,7 +320,8 @@ module Api
       def payment_history
         # Get all payments for approved contracts belonging to this user
         payments = Payment.joins(:contract)
-                          .where(contracts: { applicant_user_id: @user.id, status: Contract::STATUS_APPROVED })
+                          .where(contracts: { applicant_user_id: @user.id,
+                                              status: [Contract::STATUS_APPROVED, Contract::STATUS_CLOSED] })
                           .includes(contract: { lot: :project })
 
         # Total amount: sum of all payment amounts
@@ -392,6 +413,7 @@ module Api
         if @user.update(locale: params[:locale])
           # Update the current locale for this request
           I18n.locale = @user.locale
+          invalidate_user_cache(@user)
           render json: {
             success: true,
             message: I18n.t('messages.success.updated', resource: I18n.t('activerecord.attributes.user.locale')),
@@ -430,6 +452,7 @@ module Api
 
       def handle_admin_password_change(user)
         if user.update(password: new_pass, password_confirmation: new_pass)
+          invalidate_user_cache(user)
           render json: { success: true, message: 'Password updated by admin' }, status: :ok
         else
           render json: { success: false, errors: user.errors.full_messages }, status: :unprocessable_content

@@ -9,6 +9,8 @@ module Api
       include Pagy::Backend
       include Sortable
       include Filterable
+      include LotCacheInvalidation
+
       load_and_authorize_resource
       before_action :set_project, only: %i[index show create update destroy]
       before_action :set_lot, only: %i[show update destroy]
@@ -43,10 +45,15 @@ module Api
         # Paginate using Pagy
         @pagy, @lots = pagy(lots, items: params[:per_page] || 20, page: params[:page])
 
-        # Map lots with calculated fields (cached for performance)
-        # Include max updated_at to invalidate cache when any lot changes
-        max_updated_at = @lots.maximum(:updated_at).to_i
-        cache_key = "lots_index_#{@project.id}_#{params[:page]}_#{params[:per_page]}_#{params[:search_term]}_#{params[:sort]}_#{max_updated_at}"
+        # Simplified cache key including a per-project version to avoid
+        # expensive wildcard cache scans. The version is incremented when the
+        # project lots are modified via LotCacheInvalidation#increment_lots_index_version.
+        version = begin
+          lots_index_version(@project.id)
+        rescue StandardError
+          1
+        end
+        cache_key = "lots_index_#{@project.id}_v#{version}_#{params[:page]}_#{params[:per_page]}_#{params[:search_term]}_#{params[:sort]}"
         lots_with_calculated_fields = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
           @lots.map do |lot|
             lot_json(lot)

@@ -11,17 +11,23 @@ end
 
 RSpec.describe CreditScore::CreditScoreCalculator, type: :service do
   describe '#calculate' do
-    it 'returns 40 and updates user credit_score when user has no contracts' do
+    it 'returns 70 and updates user credit_score when user has no contracts' do
       user = double('User')
 
       contracts = ContractsProxy.new([])
 
       allow(user).to receive(:contracts).and_return(contracts)
 
-      expect(user).to receive(:update).with(credit_score: 40)
+      # With no contracts:
+      # payment_history = 100 (no payments -> perfect history)
+      # credit_utilization = 0 -> converted to 100 (100 - 0)
+      # credit_age = 0 -> normalized 0
+      # total_accounts = 0 -> normalized 0
+      # score = 100*0.45 + 100*0.25 + 0*0.20 + 0*0.10 = 45 + 25 = 70
+      expect(user).to receive(:update).with(credit_score: 70)
 
       calculator = described_class.new(user)
-      expect(calculator.calculate).to eq 40
+      expect(calculator.calculate).to eq 70
     end
 
     it 'calculates score from payment history, utilization, age and accounts and updates user' do
@@ -37,17 +43,17 @@ RSpec.describe CreditScore::CreditScoreCalculator, type: :service do
 
       allow(user).to receive(:contracts).and_return(contracts)
 
-      # Expected computation from the service:
-      # payment_history = 50 (1/2 on time) -> *0.40 = 20
-      # credit_utilization = (500/1000)*100 = 50 -> *0.20 = 10
-      # credit_age = 2.0 -> *0.21 = 0.42
-      # total_accounts = 1 -> *0.19 = 0.19
-      # total = 20 + 10 + 0.42 + 0.19 = 30.61 -> round -> 31
+      # Expected computation from the service using the new normalization and weights:
+      # payment_history = 50 -> *0.45 = 22.5
+      # raw_utilization = 50 -> credit_utilization = 100 - 50 = 50 -> *0.25 = 12.5
+      # credit_age = 2.0 -> normalized = (2/10)*100 = 20 -> *0.20 = 4
+      # total_accounts = 1 -> normalized = (1/10)*100 = 10 -> *0.10 = 1
+      # total = 22.5 + 12.5 + 4 + 1 = 40 -> round -> 40
 
-      expect(user).to receive(:update).with(credit_score: 31)
+      expect(user).to receive(:update).with(credit_score: 40)
 
       calculator = described_class.new(user)
-      expect(calculator.calculate).to eq 31
+      expect(calculator.calculate).to eq 40
     end
   end
 end

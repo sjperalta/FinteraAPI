@@ -93,7 +93,7 @@ module Statistics
         counts AS (
           SELECT
             (SELECT COUNT(*) FROM users WHERE created_at BETWEEN '#{start_date}' AND '#{end_date}' AND role = 'user') AS new_customers,
-            (SELECT COUNT(*) FROM contracts WHERE created_at BETWEEN '#{start_date}' AND '#{end_date}') AS new_contracts
+            (SELECT COUNT(*) FROM contracts WHERE created_at BETWEEN '#{start_date}' AND '#{end_date}' AND status = 'approved') AS new_contracts
         )
         SELECT * FROM ledger_totals, payment_timeliness, counts
       SQL

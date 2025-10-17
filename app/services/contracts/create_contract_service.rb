@@ -5,6 +5,7 @@ module Contracts
   # Service to handle the creation of a contract along with associated user and documents.
   class CreateContractService
     include ContractCacheInvalidation
+    include LotCacheInvalidation
 
     attr_reader :lot, :contract_params, :user_params, :documents, :current_user, :errors
 
@@ -33,7 +34,10 @@ module Contracts
       end
 
       # Invalidate cache after successful contract creation
-      invalidate_contract_cache(contract) if contract&.persisted?
+      if contract&.persisted?
+        invalidate_contract_cache(contract)
+        invalidate_lot_cache(contract.lot) # Lot status changed to 'reserved'
+      end
 
       { success: true, contract: }
     rescue ActiveRecord::RecordInvalid => e
