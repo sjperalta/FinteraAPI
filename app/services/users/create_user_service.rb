@@ -3,6 +3,8 @@
 module Users
   # Service to create a new user with notifications and proper error handling
   class CreateUserService
+    include UserCacheInvalidation
+
     attr_reader :user_params, :creator
 
     def initialize(user_params:, creator: nil)
@@ -25,6 +27,8 @@ module Users
 
         # Create notifications (non-blocking)
         create_notifications(user)
+
+        invalidate_user_cache(user)
 
         { success: true, user: }
       end

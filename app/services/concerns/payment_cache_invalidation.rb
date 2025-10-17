@@ -13,6 +13,10 @@ module PaymentCacheInvalidation
     user_id = payment.contract.applicant_user_id
     Rails.cache.delete_matched("payments/index/#{user_id}/*")
 
+    # Contract stores the foreign key as `creator_id` (belongs_to :creator)
+    creator_id = payment.contract.creator_id
+    Rails.cache.delete_matched("payments/index/#{creator_id}/*")
+
     # Clear cache for all admin users (they can see all payments)
     # Use role column, not admin boolean
     User.where(role: 'admin').pluck(:id).each do |admin_id|

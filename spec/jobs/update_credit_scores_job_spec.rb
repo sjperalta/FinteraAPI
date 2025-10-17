@@ -4,39 +4,84 @@ require 'rails_helper'
 
 RSpec.describe UpdateCreditScoresJob, type: :job do
   let(:users) { [1, 2, 3] }
-  let(:active_user) { double('User', id: 1, update_credit_score: true) }
+  let(:active_user) { User.new(id: 1, email: 'test@example.com', full_name: 'Test User', role: 'user') }
+  let(:admin_user) { User.new(id: 99, email: 'admin@example.com', full_name: 'Admin User', role: 'admin') }
 
   it 'updates credit scores only for provided list of users' do
-    allow(active_user).to receive(:update_credit_score)
+    users_query = double('users_query')
+    users_kept_query = double('users_kept_query')
+    admin_query = double('admin_query')
+
+    # Mock User.where(id: users).kept.find_each
+    allow(User).to receive(:where).with(id: users).and_return(users_query)
+    allow(users_query).to receive(:kept).and_return(users_kept_query)
+    allow(users_kept_query).to receive(:find_each).and_yield(active_user)
+
+    # Mock User.where(role: 'admin').pluck(:id) for cache invalidation
+    allow(User).to receive(:where).with(role: 'admin').and_return(admin_query)
+    allow(admin_query).to receive(:pluck).with(:id).and_return([admin_user.id])
+
+    # Mock Rails.cache.delete_matched for cache invalidation
+    allow(Rails.cache).to receive(:delete_matched)
+
+    # Expect update_credit_score to be called once
     expect(active_user).to receive(:update_credit_score).once
 
-    query = double
-    query2 = double
-    allow(User).to receive(:where).with(id: users).and_return(query)
-    allow(query).to receive(:kept).and_return(query2)
-    allow(query2).to receive(:find_each).and_yield(active_user)
-
     described_class.perform_now(users)
+
+    # Verify cache invalidation was called for admin users
+    expect(Rails.cache).to have_received(:delete_matched).at_least(:once)
   end
 
   it 'does not update credit scores for non-existent users' do
-    query = double('query')
-    query2 = double('query2')
+    users_query = double('users_query')
+    users_kept_query = double('users_kept_query')
+    admin_query = double('admin_query')
 
-    allow(User).to receive(:where).with(id: users).and_return(query)
-    allow(query).to receive(:kept).and_return(query2)
-    allow(query2).to receive(:find_each).and_return([]) # No users yielded
+    allow(User).to receive(:where).with(id: users).and_return(users_query)
+    allow(users_query).to receive(:kept).and_return(users_kept_query)
+    allow(users_kept_query).to receive(:find_each).and_return([]) # No users yielded
+
+    allow(User).to receive(:where).with(role: 'admin').and_return(admin_query)
+    allow(admin_query).to receive(:pluck).with(:id).and_return([])
+
+    allow(Rails.cache).to receive(:delete_matched)
 
     described_class.perform_now(users)
+
+    # Verify no update_credit_score calls since no users were returned
   end
 
   it 'handles empty or nil user_ids gracefully' do
-    # Use a spy so any other logger calls (e.g. from integrations) don't break this test
     allow(Rails.logger).to receive(:info)
 
     described_class.perform_now(nil)
     described_class.perform_now([])
 
     expect(Rails.logger).to have_received(:info).with('No user IDs provided for credit score update. Exiting job.').twice
+  end
+
+  it 'invalidates cache for admin users after updating credit scores' do
+    admin1 = User.new(id: 10, role: 'admin')
+    admin2 = User.new(id: 11, role: 'admin')
+
+    users_query = double('users_query')
+    users_kept_query = double('users_kept_query')
+    admin_query = double('admin_query')
+
+    allow(User).to receive(:where).with(id: users).and_return(users_query)
+    allow(users_query).to receive(:kept).and_return(users_kept_query)
+    allow(users_kept_query).to receive(:find_each).and_yield(active_user)
+
+    allow(User).to receive(:where).with(role: 'admin').and_return(admin_query)
+    allow(admin_query).to receive(:pluck).with(:id).and_return([admin1.id, admin2.id])
+
+    allow(Rails.cache).to receive(:delete_matched)
+
+    described_class.perform_now(users)
+
+    # Verify cache invalidation for each admin user
+    expect(Rails.cache).to have_received(:delete_matched).with("users/index/#{admin1.id}/*")
+    expect(Rails.cache).to have_received(:delete_matched).with("users/index/#{admin2.id}/*")
   end
 end

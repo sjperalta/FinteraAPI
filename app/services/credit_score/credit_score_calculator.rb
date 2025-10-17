@@ -9,18 +9,30 @@ module CreditScore
 
     def calculate
       payment_history = calculate_payment_history
-      credit_utilization = calculate_credit_utilization
-      credit_age = calculate_credit_age
-      # Reduce the penalty for brand-new users: if the user's average contract
-      # age is less than 1 year, scale it up slightly so they aren't overly
-      # penalized for being new to the system. This increases fairness for new
-      # customers while keeping the contribution stable for experienced users.
-      credit_age = adjust_credit_age_for_new_user(credit_age)
-      total_accounts = calculate_total_accounts
 
-      # Combine the factors to calculate the credit score
-      credit_score = ((payment_history * 0.40) + (credit_utilization * 0.20) +
-                     (credit_age * 0.21) + (total_accounts * 0.19)).round
+      # Credit utilization: lower utilization is better. Convert utilization
+      # (balance / credit * 100) into a positive score where 100 means no
+      # utilization and 0 means fully utilized. This reduces the penalty for
+      # moderate utilization.
+      raw_utilization = calculate_credit_utilization
+      credit_utilization = (100.0 - raw_utilization).clamp(0.0, 100.0)
+
+      # Credit age: normalize years into a 0-100 score (10+ years => 100).
+      # Apply the small boost for very new users first, then normalize so the
+      # scale is comparable with other factors and doesn't overly penalize
+      # newcomers.
+      raw_age_years = calculate_credit_age
+      boosted_age_years = adjust_credit_age_for_new_user(raw_age_years)
+      credit_age = [(boosted_age_years / 10.0) * 100.0, 100.0].min.round(2)
+
+      # Total accounts: map counts to 0-100 (10 or more accounts => 100).
+      total_accounts = calculate_total_accounts
+      total_accounts_score = [(total_accounts.to_f / 10.0) * 100.0, 100.0].min.round(2)
+
+      # Combine the factors with slightly increased weight on payment history
+      # and reduced weight on the raw age/accounts to penalize users less.
+      credit_score = ((payment_history * 0.45) + (credit_utilization * 0.25) +
+             (credit_age * 0.20) + (total_accounts_score * 0.10)).round
 
       # Store the calculated credit score in the user's record
       @user.update(credit_score:)
@@ -57,14 +69,14 @@ module CreditScore
       total_credit = contracts.sum(&:amount).to_f
       total_balance = contracts.sum(&:balance).to_f
 
-      return 0 if total_credit.zero?
+      return 0.0 if total_credit.zero?
 
-      ((total_balance / total_credit) * 100).round(2) # Percentage
+      ((total_balance / total_credit) * 100.0).round(2) # Percentage used
     end
 
     def calculate_credit_age
       contracts = @user.contracts
-      return 0 if contracts.empty?
+      return 0.0 if contracts.empty?
 
       total_age_in_days = contracts.sum { |contract| (Date.today - contract.created_at.to_date).to_i }
       (total_age_in_days / contracts.size / 365.0).round(2) # Convert to years

@@ -3,6 +3,8 @@
 # app/jobs/update_credit_scores_job.rb
 # Job to update credit scores for specific users with role 'user'
 class UpdateCreditScoresJob < ApplicationJob
+  include UserCacheInvalidation
+
   queue_as :default
 
   def perform(user_ids = nil)
@@ -18,6 +20,7 @@ class UpdateCreditScoresJob < ApplicationJob
     updated_count = 0
     users.find_each do |user|
       user.update_credit_score
+      invalidate_user_cache(user)
       updated_count += 1
     end
 

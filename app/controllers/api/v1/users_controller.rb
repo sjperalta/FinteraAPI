@@ -9,6 +9,8 @@ module Api
       include Pagy::Backend
       include Sortable
       include Filterable
+      include UserCacheInvalidation
+
       before_action :authenticate_user!, except: [:recover_password]
       skip_before_action :authenticate_user!, only: %i[
         send_recovery_code
@@ -59,10 +61,11 @@ module Api
         )
 
         # Cache the users JSON for performance
-        # Include max updated_at to invalidate cache when any user changes
-        max_updated_at = @users.maximum(:updated_at).to_i
-        cache_key = ['users', 'index', current_user.id, params[:page], params[:per_page],
-                     params[:search_term], params[:sort], max_updated_at].join('/')
+        # Cache is invalidated proactively by services when users are modified
+        # Include current_user.id to separate cache per user (admins see all, others see filtered views)
+        # Include role and per_page in cache key since they affect the results
+        cache_key = ['users', 'index', current_user.id, params[:page], params[:per_page] || 20,
+                     params[:search_term], params[:sort], params[:role]].join('/')
         users_json = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
           @users.as_json(only: fields_for_render, include: { creator: { only: %i[id full_name] } })
         end
@@ -102,6 +105,7 @@ module Api
         authorize! :update, User
         # Possibly verify admin or self?
         if @user.update(user_params.except(:id))
+          invalidate_user_cache(@user)
           render json: { success: true, message: 'User updated successfully',
                          user: @user.as_json(only: fields_for_render) },
                  status: :ok
@@ -115,6 +119,7 @@ module Api
         authorize! :destroy, User
         if current_user.admin? # Ensure only admin can delete users
           if @user.soft_delete
+            invalidate_user_cache(@user)
             render json: { message: 'User soft deleted successfully' }, status: :ok
           else
             render json: { error: 'Failed to soft delete user' }, status: :unprocessable_content
@@ -129,6 +134,7 @@ module Api
         authorize! :restore, User
         if current_user.admin? # Ensure only admin can restore users
           if @user.restore
+            invalidate_user_cache(@user)
             render json: { message: 'User restored successfully' }, status: :ok
           else
             render json: { error: 'Failed to restore user' }, status: :unprocessable_content
@@ -151,6 +157,7 @@ module Api
 
         if @user.update(status: new_status)
           message = new_status == 'active' ? 'User activated' : 'User deactivated'
+          invalidate_user_cache(@user)
           render json: { success: true, message:, user: @user.as_json(only: fields_for_render) }, status: :ok
         else
           render json: { success: false, errors: @user.errors.full_messages }, status: :unprocessable_content
@@ -251,6 +258,7 @@ module Api
               recovery_code: nil,
               recovery_code_sent_at: nil
             )
+            invalidate_user_cache(user)
             render json: { success: true, message: 'Password updated successfully.' }, status: :ok
           else
             render json: { success: false, error: 'Password confirmation mismatch.' }, status: :unprocessable_content
@@ -393,6 +401,7 @@ module Api
         if @user.update(locale: params[:locale])
           # Update the current locale for this request
           I18n.locale = @user.locale
+          invalidate_user_cache(@user)
           render json: {
             success: true,
             message: I18n.t('messages.success.updated', resource: I18n.t('activerecord.attributes.user.locale')),
@@ -431,6 +440,7 @@ module Api
 
       def handle_admin_password_change(user)
         if user.update(password: new_pass, password_confirmation: new_pass)
+          invalidate_user_cache(user)
           render json: { success: true, message: 'Password updated by admin' }, status: :ok
         else
           render json: { success: false, errors: user.errors.full_messages }, status: :unprocessable_content
