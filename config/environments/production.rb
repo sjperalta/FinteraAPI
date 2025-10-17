@@ -55,10 +55,11 @@ Rails.application.configure do
   # config.cache_store = :mem_cache_store
 
   # Use a real queuing backend for Active Job (and separate queues per environment).
-  config.active_job.queue_adapter     = :sidekiq
+  config.active_job.queue_adapter = :solid_queue
+  config.solid_queue.connects_to = { database: { writing: :queue } }
   config.active_job.queue_name_prefix = 'FinteraAPI_production'
 
-  config.action_mailer.default_url_options = { host: 'securexapp.com', protocol: 'https' }
+  config.action_mailer.default_url_options = { host: 'notifications.securexapp.com', protocol: 'https' }
 
   config.action_mailer.delivery_method = :resend
   config.action_mailer.default_options = {

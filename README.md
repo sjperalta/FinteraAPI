@@ -25,7 +25,6 @@ and a short overview of available endpoints and developer tips.
 - Ruby (use the version in `.ruby-version`). Use `rbenv` or `rvm` to manage versions.
 - Bundler (`gem install bundler`)
 - PostgreSQL (or the DB configured via `config/database.yml`)
-- Redis (required for Sidekiq / background processing in non-inline mode)
 - Node + Yarn (only if JS/assets are used in your environment)
 
 ## Clone & install
@@ -76,9 +75,9 @@ Common variables used by the app (add to your `.env` or environment):
 
 - `DATABASE_URL` or DB config in `config/database.yml`
 - `SECRET_KEY_BASE` — Rails secret key
-- `REDIS_URL` — Redis endpoint for Sidekiq
 - `SENTRY_DSN` — (optional) Sentry DSN for error reporting
-- External API keys (payment providers, emails, etc.) depending on your deployment
+- `RESEND_API_KEY` — Resend API key for email delivery
+- External API keys (payment providers, etc.) depending on your deployment
 
 ## Database setup
 
@@ -101,48 +100,47 @@ Then visit `http://localhost:3000` (or call the API endpoints under `/api/v1`).
 
 ## Background jobs
 
-Jobs are implemented with ActiveJob and Sidekiq (Sidekiq configured under `config/sidekiq.yml`).
+Jobs are implemented with ActiveJob and **Solid Queue** (database-backed job queue, no Redis required).
 
-- To run inline jobs in development/test, configure `ActiveJob::Base.queue_adapter = :inline`.
-- To run Sidekiq locally:
+- Configuration: `config/solid_queue.yml` and `config/recurring.yml`
+- For comprehensive documentation, see [`docs/solid_queue_guide.md`](docs/solid_queue_guide.md)
+
+### Running Solid Queue Locally
+
+Start the worker process:
 
 ```bash
-bundle exec sidekiq -C config/sidekiq.yml
+bundle exec rake solid_queue:start
 ```
 
-Check `app/jobs` for scheduled tasks and recurring jobs (e.g. revenue/statistics generation).
+Or use a process manager (Overmind/Foreman) with the Procfile:
+
+```bash
+overmind start
+# or
+foreman start
+```
+
+### Monitoring Jobs
+
+- **Web UI**: Visit `http://localhost:3000/jobs` for Mission Control Jobs interface
+- **Rails Console**: See monitoring examples in `docs/solid_queue_guide.md`
 
 ### Running Jobs Manually
 
-If you need to run jobs on-demand (for debugging, backfills or manual runs) you can enqueue or execute them directly.
-
-- Start Redis (example, macOS Homebrew):
-
-```bash
-brew services start redis
-# or run foreground: redis-server /usr/local/etc/redis.conf
-```
-
-- Start Sidekiq (worker process must be running for `perform_later`):
-
-```bash
-bundle exec sidekiq -C config/sidekiq.yml
-# or fallback: bundle exec sidekiq -r ./config/environment.rb
-```
-
-- Enqueue or run a job from the Rails console (interactive):
+Enqueue or execute jobs directly from the Rails console:
 
 ```bash
 bundle exec rails console
-# enqueue to Sidekiq (async)
+# enqueue (async)
 GenerateStatisticsJob.perform_later
-# enqueue with an explicit date
-GenerateStatisticsJob.perform_later(Date.parse('2025-09-24'))
-# run immediately (synchronous) in current process
+# enqueue with arguments
+GenerateStatisticsJob.perform_later('last_hour')
+# run immediately (synchronous)
 GenerateStatisticsJob.perform_now(Date.parse('2025-09-24'))
 ```
 
-- Enqueue from a non-interactive shell using `rails runner`:
+Or using `rails runner`:
 
 ```bash
 # enqueue async
@@ -151,65 +149,69 @@ bundle exec rails runner "GenerateStatisticsJob.perform_later"
 bundle exec rails runner "GenerateStatisticsJob.perform_now(Date.parse('2025-09-24'))"
 ```
 
-- Enqueue all jobs defined in `sidekiq-scheduler`/`config/schedule.yml` programmatically (useful to trigger scheduled jobs immediately):
-
-```bash
-bundle exec rails runner 'Sidekiq.schedule.each do |name, spec|
-	cls = spec["class"] || spec[:class]
-	args = spec["args"] || spec[:args] || []
-	next unless cls
-	Object.const_get(cls).perform_async(*Array(args))
-end'
-```
-
-- Useful tips:
-	- `perform_later` enqueues the job to Sidekiq; Sidekiq must be running to execute it.
-	- `perform_now` executes the job immediately in the calling process (handy for scripts or quick runs).
-	- For test/dev convenience you can set `ActiveJob::Base.queue_adapter = :inline` to run enqueued jobs immediately without Sidekiq.
-	- Check Sidekiq logs (stdout or `log/sidekiq.log`) and the Sidekiq Web UI (if mounted) to monitor job execution.
-
 ### Common Jobs (examples)
 
-This project includes a number of background jobs under `app/jobs`. Below are the most commonly-used jobs, a short description and example commands to enqueue/run them manually.
+This project includes background jobs under `app/jobs`. Below are commonly-used jobs with example commands.
 
-- `GenerateStatisticsJob` — generates statistics for a given period (defaults to today).
-	- Enqueue async: `GenerateStatisticsJob.perform_later`
-	- Run now: `GenerateStatisticsJob.perform_now(Date.parse('2025-09-24'))`
+**Scheduled Jobs (Recurring)**:
+- `CheckPaymentsOverdueJob` — Runs daily at 8am, sends overdue payment reminders
+- `UpdateOverdueInterestJob` — Runs daily at 12am, updates interest for overdue payments
+- `GenerateStatisticsJob` — Runs hourly, generates system statistics
+- `GenerateRevenueJob` — Runs daily at 1am, aggregates revenue reports
+- `ReleaseUnpaidReservationJob` — Runs daily at 2am, releases unpaid reservations
 
-- `GenerateRevenueJob` — aggregates revenue records and persists reporting data.
-	- Enqueue async: `GenerateRevenueJob.perform_later`
-	- Run now: `GenerateRevenueJob.perform_now`
+**Manual Execution Examples**:
 
-- `CheckPaymentsOverdueJob` — scans payments and flags overdue items / enqueues notifications.
-	- Enqueue async: `CheckPaymentsOverdueJob.perform_later`
-	- Run now: `CheckPaymentsOverdueJob.perform_now`
+```ruby
+# Generate statistics
+GenerateStatisticsJob.perform_later('last_hour')
+GenerateStatisticsJob.perform_now(Date.parse('2025-09-24'))
 
-- `UpdateOverdueInterestJob` — recalculates overdue interest for eligible payments (see `app/jobs/update_overdue_interest_job.rb`).
-	- Enqueue async: `UpdateOverdueInterestJob.perform_later`
-	- Run now: `UpdateOverdueInterestJob.perform_now`
+# Generate revenue
+GenerateRevenueJob.perform_later
+GenerateRevenueJob.perform_now
 
-- `ReleaseUnpaidReservationJob` — releases reservations that were not paid within the allowed window.
-	- Enqueue async: `ReleaseUnpaidReservationJob.perform_later`
-	- Run now: `ReleaseUnpaidReservationJob.perform_now`
+# Check overdue payments
+CheckPaymentsOverdueJob.perform_later
+CheckPaymentsOverdueJob.perform_now
 
-- Notification jobs (used to send emails/notifications):
-	- `NotifyAdminPaymentReceiptJob` — notify admins about a new payment receipt.
-		- Example: `NotifyAdminPaymentReceiptJob.perform_later(payment_id)`
-	- `NotifyContractSubmissionJob` — notify admins when a contract is submitted.
-		- Example: `NotifyContractSubmissionJob.perform_later(contract_id)`
-	- `SendContractApprovalNotificationJob` — notify applicant and admins when a contract is approved.
-		- Example: `SendContractApprovalNotificationJob.perform_later(contract_id)`
-	- `SendPaymentApprovalNotificationJob` — notify when a payment is approved.
-		- Example: `SendPaymentApprovalNotificationJob.perform_later(payment_id)`
-	- `SendReservationApprovalNotificationJob` — notify when a reservation payment is approved.
-		- Example: `SendReservationApprovalNotificationJob.perform_later(payment_id)`
-	- `SendResetCodeJob` — sends a password recovery code to a user.
-		- Example: `SendResetCodeJob.perform_later(user_id, code)`
+# Update overdue interest
+UpdateOverdueInterestJob.perform_later
+UpdateOverdueInterestJob.perform_now
 
-Notes:
-- Replace `*_id` and other arguments with real IDs/values when calling `perform_later` or `perform_now`.
-- Many jobs accept arguments (IDs, dates). Check the job class in `app/jobs` for the exact signature.
-- For bulk/manual triggering of scheduled jobs, use the `Sidekiq.schedule` snippet above to enqueue entries from `config/schedule.yml`.
+# Release unpaid reservations
+ReleaseUnpaidReservationJob.perform_later
+ReleaseUnpaidReservationJob.perform_now
+```
+
+**Notification Jobs**:
+
+```ruby
+# Notify admins about payment receipt
+NotifyAdminPaymentReceiptJob.perform_later(payment_id)
+
+# Notify about contract submission
+NotifyContractSubmissionJob.perform_later(contract_id)
+
+# Notify contract approval
+SendContractApprovalNotificationJob.perform_later(contract_id)
+
+# Notify payment approval
+SendPaymentApprovalNotificationJob.perform_later(payment_id)
+
+# Notify reservation approval
+SendReservationApprovalNotificationJob.perform_later(payment_id)
+
+# Send password reset code
+SendResetCodeJob.perform_later(user_id, code)
+```
+
+**Tips**:
+- `perform_later` enqueues the job for async execution
+- `perform_now` executes the job immediately in the current process
+- Replace `*_id` and arguments with real values when calling jobs
+- For inline execution in test/dev, configure `ActiveJob::Base.queue_adapter = :inline`
+- Monitor job execution via Mission Control Jobs UI at `/jobs`
 
 ## Testing
 

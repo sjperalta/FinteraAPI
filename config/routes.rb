@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'sidekiq/web'
-
 # config/routes.rb
 # Routing configuration for the FinteraAPI application
 Rails.application.routes.draw do
@@ -108,7 +106,6 @@ Rails.application.routes.draw do
 
   mount Rswag::Ui::Engine => '/api-docs'
   mount Rswag::Api::Engine => '/api-docs'
-  mount Sidekiq::Web => '/sidekiq'
 
   get '/service-worker.js', to: proc { |_env|
     [200, { 'Content-Type' => 'application/javascript' }, ['']]
