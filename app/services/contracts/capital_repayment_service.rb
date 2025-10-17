@@ -133,8 +133,8 @@ module Contracts
         errors: [],
         message: 'Amortización de capital registrada exitosamente',
         contract: @contract,
-        reajusted_payments_count: @readjusted_payments&.size || 0,
-        reajusted_payments: @readjusted_payments || []
+        readjusted_payments_count: @readjusted_payments&.size || 0,
+        readjusted_payments: @readjusted_payments || []
       }
     end
 

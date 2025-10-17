@@ -13,13 +13,13 @@ module Lots
 
     def call
       # Store project_id before destroying the lot
-      project_id = @lot.project_id
+      # Capture a copy of the lot data we'll need for cache invalidation
+      lot_for_cache = @lot.dup
 
       @lot.destroy
 
-      # Invalidate cache after successful lot deletion
-      # Since the lot is destroyed, we need to use a project-based invalidation
-      Rails.cache.delete_matched("lots_index_#{project_id}_*")
+      # Use the shared invalidation implementation from LotCacheInvalidation
+      invalidate_lot_cache(lot_for_cache)
 
       { success: true, message: 'Lote eliminado con éxito.' }
     rescue StandardError => e

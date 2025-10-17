@@ -104,7 +104,7 @@ RSpec.describe Contracts::CapitalRepaymentService, type: :service do
         expect(result[:success]).to be true
         expect(result[:errors]).to be_empty
         expect(result[:message]).to eq('Amortización de capital registrada exitosamente')
-        expect(result[:reajusted_payments_count]).to eq(2)
+        expect(result[:readjusted_payments_count]).to eq(2)
 
         # Verify the last 2 payments are marked as readjustment
         readjusted = contract.payments.where(status: 'readjustment').order(due_date: :desc)
@@ -152,7 +152,7 @@ RSpec.describe Contracts::CapitalRepaymentService, type: :service do
         result = service.call
 
         expect(result[:success]).to be true
-        expect(result[:reajusted_payments_count]).to eq(4)
+        expect(result[:readjusted_payments_count]).to eq(4)
 
         # Verify the last 4 payments are marked as readjustment
         readjusted = contract.payments.where(status: 'readjustment').order(due_date: :desc)
@@ -175,7 +175,7 @@ RSpec.describe Contracts::CapitalRepaymentService, type: :service do
         result = service.call
 
         expect(result[:success]).to be true
-        expect(result[:reajusted_payments_count]).to eq(3)
+        expect(result[:readjusted_payments_count]).to eq(3)
 
         # Verify only the last 3 payments are marked as readjustment
         readjusted = contract.payments.where(status: 'readjustment').order(due_date: :desc)
@@ -241,7 +241,7 @@ RSpec.describe Contracts::CapitalRepaymentService, type: :service do
         result = service.call
 
         expect(result[:success]).to be true
-        expect(result[:reajusted_payments_count]).to eq(0)
+        expect(result[:readjusted_payments_count]).to eq(0)
       end
     end
   end

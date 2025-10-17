@@ -45,8 +45,15 @@ module Api
         # Paginate using Pagy
         @pagy, @lots = pagy(lots, items: params[:per_page] || 20, page: params[:page])
 
-        # Simplified cache key without max_updated_at (invalidation handles freshness)
-        cache_key = "lots_index_#{@project.id}_#{params[:page]}_#{params[:per_page]}_#{params[:search_term]}_#{params[:sort]}"
+        # Simplified cache key including a per-project version to avoid
+        # expensive wildcard cache scans. The version is incremented when the
+        # project lots are modified via LotCacheInvalidation#increment_lots_index_version.
+        version = begin
+          lots_index_version(@project.id)
+        rescue StandardError
+          1
+        end
+        cache_key = "lots_index_#{@project.id}_v#{version}_#{params[:page]}_#{params[:per_page]}_#{params[:search_term]}_#{params[:sort]}"
         lots_with_calculated_fields = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
           @lots.map do |lot|
             lot_json(lot)
