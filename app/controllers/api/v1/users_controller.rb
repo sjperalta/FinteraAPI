@@ -300,7 +300,8 @@ module Api
       def payment_history
         # Get all payments for approved contracts belonging to this user
         payments = Payment.joins(:contract)
-                          .where(contracts: { applicant_user_id: @user.id, status: Contract::STATUS_APPROVED })
+                          .where(contracts: { applicant_user_id: @user.id,
+                                              status: [Contract::STATUS_APPROVED, Contract::STATUS_CLOSED] })
                           .includes(contract: { lot: :project })
 
         # Total amount: sum of all payment amounts

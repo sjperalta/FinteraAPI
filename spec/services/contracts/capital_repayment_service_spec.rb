@@ -90,13 +90,12 @@ RSpec.describe Contracts::CapitalRepaymentService, type: :service do
     context 'when repayment amount is valid' do
       it 'applies prepayment and marks correct payments as readjustment' do
         # Initial balance: 25,000
-        # User makes a capital repayment of 11,000
-        # After prepayment, remaining balance: 14,000
-        # The service should mark the last payments that cover this remaining balance
-        # Last 3 payments (3 x 5,000 = 15,000) cover the 14,000 remaining
+        # User makes a capital repayment of 10,000
+        # The 10,000 repayment covers exactly the last 2 payments (P5+P4 = 10,000)
+        # Result: Mark P5 and P4 as readjustment
         service = described_class.new(
           contract:,
-          amount: 11_000,
+          amount: 10_000,
           current_user: user
         )
 
@@ -105,25 +104,26 @@ RSpec.describe Contracts::CapitalRepaymentService, type: :service do
         expect(result[:success]).to be true
         expect(result[:errors]).to be_empty
         expect(result[:message]).to eq('Amortización de capital registrada exitosamente')
-        expect(result[:reajusted_payments_count]).to eq(3)
+        expect(result[:reajusted_payments_count]).to eq(2)
 
-        # Verify the last 3 payments are marked as readjustment
+        # Verify the last 2 payments are marked as readjustment
         readjusted = contract.payments.where(status: 'readjustment').order(due_date: :desc)
-        expect(readjusted.count).to eq(3)
+        expect(readjusted.count).to eq(2)
+        expect(readjusted.pluck(:description)).to match_array(['Payment 5', 'Payment 4'])
       end
 
       it 'reduces the contract balance' do
         initial_balance = contract.balance
         service = described_class.new(
           contract:,
-          amount: 11_000,
+          amount: 10_000,
           current_user: user
         )
 
         result = service.call
 
         expect(result[:success]).to be true
-        expect(contract.reload.balance).to eq(initial_balance - 11_000)
+        expect(contract.reload.balance).to eq(initial_balance - 10_000)
       end
 
       it 'triggers credit score update' do
@@ -138,12 +138,11 @@ RSpec.describe Contracts::CapitalRepaymentService, type: :service do
         service.call
       end
 
-      it 'marks payments based on remaining balance, not repayment amount' do
+      it 'marks payments based on repayment amount, not remaining balance' do
         # Initial balance: 25,000
         # User makes a capital repayment of 20,000
-        # After prepayment, remaining balance: 5,000
-        # Only the LAST payment (5,000) should be marked for readjustment
-        # NOT the 4 payments that would cover the 20,000 repayment amount
+        # The 20,000 covers exactly the last 4 payments (P5+P4+P3+P2 = 20,000)
+        # Result: Mark P5, P4, P3, P2 as readjustment
         service = described_class.new(
           contract:,
           amount: 20_000,
@@ -153,12 +152,35 @@ RSpec.describe Contracts::CapitalRepaymentService, type: :service do
         result = service.call
 
         expect(result[:success]).to be true
-        expect(result[:reajusted_payments_count]).to eq(1)
+        expect(result[:reajusted_payments_count]).to eq(4)
 
-        # Verify only the last payment is marked as readjustment
-        readjusted = contract.payments.where(status: 'readjustment')
-        expect(readjusted.count).to eq(1)
-        expect(readjusted.first.description).to eq('Payment 5')
+        # Verify the last 4 payments are marked as readjustment
+        readjusted = contract.payments.where(status: 'readjustment').order(due_date: :desc)
+        expect(readjusted.count).to eq(4)
+        expect(readjusted.pluck(:description)).to match_array(['Payment 5', 'Payment 4', 'Payment 3', 'Payment 2'])
+      end
+
+      it 'does not mark partial payments' do
+        # Initial balance: 25,000
+        # User makes a capital repayment of 17,000
+        # The 17,000 would cover P5+P4+P3 = 15,000 (with 2,000 left)
+        # Adding P2 (5,000) would exceed the repayment amount (15,000 + 5,000 = 20,000 > 17,000)
+        # Result: Mark ONLY P5, P4, P3 as readjustment (we don't mark partial payments)
+        service = described_class.new(
+          contract:,
+          amount: 17_000,
+          current_user: user
+        )
+
+        result = service.call
+
+        expect(result[:success]).to be true
+        expect(result[:reajusted_payments_count]).to eq(3)
+
+        # Verify only the last 3 payments are marked as readjustment
+        readjusted = contract.payments.where(status: 'readjustment').order(due_date: :desc)
+        expect(readjusted.count).to eq(3)
+        expect(readjusted.pluck(:description)).to match_array(['Payment 5', 'Payment 4', 'Payment 3'])
       end
     end
 
