@@ -21,16 +21,16 @@ RSpec.describe UpdateCreditScoresJob, type: :job do
     allow(User).to receive(:where).with(role: 'admin').and_return(admin_query)
     allow(admin_query).to receive(:pluck).with(:id).and_return([admin_user.id])
 
-    # Mock Rails.cache.delete_matched for cache invalidation
-    allow(Rails.cache).to receive(:delete_matched)
+    # Mock Rails.cache.increment for version bumping
+    allow(Rails.cache).to receive(:increment)
 
     # Expect update_credit_score to be called once
     expect(active_user).to receive(:update_credit_score).once
 
     described_class.perform_now(users)
 
-    # Verify cache invalidation was called for admin users
-    expect(Rails.cache).to have_received(:delete_matched).at_least(:once)
+    # Verify cache version bump was called for admin/users
+    expect(Rails.cache).to have_received(:increment).at_least(:once)
   end
 
   it 'does not update credit scores for non-existent users' do
@@ -45,7 +45,7 @@ RSpec.describe UpdateCreditScoresJob, type: :job do
     allow(User).to receive(:where).with(role: 'admin').and_return(admin_query)
     allow(admin_query).to receive(:pluck).with(:id).and_return([])
 
-    allow(Rails.cache).to receive(:delete_matched)
+    allow(Rails.cache).to receive(:increment)
 
     described_class.perform_now(users)
 
@@ -76,12 +76,11 @@ RSpec.describe UpdateCreditScoresJob, type: :job do
     allow(User).to receive(:where).with(role: 'admin').and_return(admin_query)
     allow(admin_query).to receive(:pluck).with(:id).and_return([admin1.id, admin2.id])
 
-    allow(Rails.cache).to receive(:delete_matched)
+    allow(Rails.cache).to receive(:increment)
 
     described_class.perform_now(users)
 
-    # Verify cache invalidation for each admin user
-    expect(Rails.cache).to have_received(:delete_matched).with("users/index/#{admin1.id}/*")
-    expect(Rails.cache).to have_received(:delete_matched).with("users/index/#{admin2.id}/*")
+    # Verify that increment was called (admin version bump + per-user bumps)
+    expect(Rails.cache).to have_received(:increment).at_least(:once)
   end
 end

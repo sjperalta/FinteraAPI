@@ -3,6 +3,12 @@
 module CreditScore
   # Service to calculate credit score using VantageScore model
   class CreditScoreCalculator
+    # Weights for the credit score components. Tunable constants.
+    PAYMENT_HISTORY_WEIGHT = 0.45
+    CREDIT_UTILIZATION_WEIGHT = 0.25
+    CREDIT_AGE_WEIGHT = 0.20
+    TOTAL_ACCOUNTS_WEIGHT = 0.10
+
     def initialize(user)
       @user = user
     end
@@ -31,8 +37,8 @@ module CreditScore
 
       # Combine the factors with slightly increased weight on payment history
       # and reduced weight on the raw age/accounts to penalize users less.
-      credit_score = ((payment_history * 0.45) + (credit_utilization * 0.25) +
-             (credit_age * 0.20) + (total_accounts_score * 0.10)).round
+      credit_score = ((payment_history * PAYMENT_HISTORY_WEIGHT) + (credit_utilization * CREDIT_UTILIZATION_WEIGHT) +
+             (credit_age * CREDIT_AGE_WEIGHT) + (total_accounts_score * TOTAL_ACCOUNTS_WEIGHT)).round
 
       # Store the calculated credit score in the user's record
       @user.update(credit_score:)

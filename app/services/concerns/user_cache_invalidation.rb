@@ -19,24 +19,67 @@ module UserCacheInvalidation
   def invalidate_user_cache(user)
     return unless user
 
-    # Clear cache for all admin users (they see all users in the list)
-    User.where(role: 'admin').pluck(:id).each do |admin_id|
-      Rails.cache.delete_matched("users/index/#{admin_id}/*")
-    end
+    # Use versioned keys to avoid expensive wildcard cache scans.
+    # Bump the admin-wide users index version so all admin cache entries
+    # become stale. This replaces iterating all admin ids and calling
+    # delete_matched for each one.
+    increment_users_admin_version
 
-    # If the user views their own list (unlikely but possible), invalidate their cache too
-    # In practice, most users won't request the users list, but we'll be thorough
-    Rails.cache.delete_matched("users/index/#{user.id}/*")
+    # Bump the modified user's personal users-index version so any cached
+    # views scoped to that user become stale.
+    increment_users_index_version(user.id)
   end
 
   # Invalidates users index cache for all users
   # Use when you need to clear all user list views (e.g., bulk operations)
   def invalidate_users_cache
+    # Fallback for full invalidation; avoid using this frequently as it may
+    # trigger expensive scans depending on the cache store.
     Rails.cache.delete_matched('users/index/*')
   end
 
   # Alias for consistency with other cache invalidation patterns
   def invalidate_all_users_cache
     invalidate_users_cache
+  end
+
+  # Versioning helpers -------------------------------------------------
+
+  def users_index_version_key(user_id)
+    "users_index_version:#{user_id}"
+  end
+
+  def users_index_version(user_id)
+    (Rails.cache.read(users_index_version_key(user_id)) || 1).to_i
+  end
+
+  def increment_users_index_version(user_id)
+    key = users_index_version_key(user_id)
+    if Rails.cache.respond_to?(:increment)
+      Rails.cache.increment(key, 1, initial: 2)
+    else
+      current = (Rails.cache.read(key) || 1).to_i
+      Rails.cache.write(key, current + 1)
+    end
+  end
+
+  # Admin-wide version used by all admin users' index cache entries so that
+  # a single bump invalidates admin views without scanning the cache store.
+  def users_admin_version_key
+    'users_index_admin_version'
+  end
+
+  def users_admin_version
+    (Rails.cache.read(users_admin_version_key) || 1).to_i
+  end
+
+  def increment_users_admin_version
+    key = users_admin_version_key
+    if Rails.cache.respond_to?(:increment)
+      Rails.cache.increment(key, 1, initial: 2)
+    else
+      current = (Rails.cache.read(key) || 1).to_i
+      Rails.cache.write(key, current + 1)
+    end
   end
 end

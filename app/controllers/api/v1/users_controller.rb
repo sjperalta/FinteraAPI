@@ -60,11 +60,23 @@ module Api
           page: params[:page]
         )
 
-        # Cache the users JSON for performance
-        # Cache is invalidated proactively by services when users are modified
-        # Include current_user.id to separate cache per user (admins see all, others see filtered views)
-        # Include role and per_page in cache key since they affect the results
-        cache_key = ['users', 'index', current_user.id, params[:page], params[:per_page] || 20,
+        # Cache the users JSON for performance. Use versioned keys to allow
+        # cheap invalidation by bumping the per-user or admin version counters
+        # instead of performing wildcard deletes on the cache store.
+        user_version = begin
+          users_index_version(current_user.id)
+        rescue StandardError
+          1
+        end
+        admin_version = begin
+          users_admin_version
+        rescue StandardError
+          1
+        end
+
+        version_token = current_user.admin? ? "admin_v#{admin_version}" : "user_v#{user_version}"
+
+        cache_key = ['users', 'index', current_user.id, version_token, params[:page], params[:per_page] || 20,
                      params[:search_term], params[:sort], params[:role]].join('/')
         users_json = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
           @users.as_json(only: fields_for_render, include: { creator: { only: %i[id full_name] } })
