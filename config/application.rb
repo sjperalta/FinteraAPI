@@ -10,10 +10,10 @@ require 'active_record/railtie'
 require 'active_storage/engine'
 require 'action_controller/railtie'
 require 'action_mailer/railtie'
+require 'action_cable/engine'
 # require "action_mailbox/engine"
 # require "action_text/engine"
 # require "action_view/railtie"
-# require "action_cable/engine"
 # require "rails/test_unit/railtie"
 
 # Require the gems listed in Gemfile, including any gems
@@ -25,8 +25,7 @@ module FinteraAPI
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 7.0
-    # Use eager_load_paths instead of autoload_paths to avoid frozen array issues
-    config.eager_load_paths << Rails.root.join('lib')
+    config.autoload_paths << Rails.root.join('lib')
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use ActionDispatch::Session::CookieStore, key: '_fintera_session'
     # Opt-in to new to_time timezone preservation behavior (Rails 8.1 compatibility)
