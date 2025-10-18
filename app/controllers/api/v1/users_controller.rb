@@ -282,7 +282,7 @@ module Api
 
       # GET /api/v1/user/:id/contracts
       def contracts
-        contracts = @user.contracts
+        contracts = @user.contracts.where(status: Contract::STATUS_APPROVED)
         render json: contracts.as_json(only: %i[id name status financing_type created_at]), status: :ok
       rescue ActiveRecord::RecordNotFound
         render json: { error: 'User not found' }, status: :not_found
@@ -337,6 +337,9 @@ module Api
 
         # Count paid done: count of approved payments
         count_paid_done = payments.where(status: 'paid').count
+
+        # filter just pending and submitted payments
+        payments = payments.where(status: %w[pending submitted rejected])
 
         # Apply filters
         payments = apply_payment_history_filters(payments, params)

@@ -112,10 +112,14 @@ RSpec.describe 'Api::V1::NotificationsController', type: :request do
       consumes 'application/json'
       produces 'application/json'
 
-      response '204', 'All notifications marked as read' do
-        before { [notification] }
+      response '200', 'All notifications marked as read' do
+        let!(:notifications) { [notification] } # Ensure there's at least one notification
 
-        run_test!
+        run_test! do |response|
+          data = JSON.parse(response.body)
+          expect(data['message']).to eq(I18n.t('notifications.marked_as_read'))
+          expect(data['count']).to eq(1) # Should match the number of unread notifications
+        end
       end
     end
   end

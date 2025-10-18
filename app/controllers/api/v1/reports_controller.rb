@@ -5,15 +5,21 @@ module Api
     # Controller for generating various reports in CSV and PDF formats
     class ReportsController < ActionController::Base
       def commissions_csv
-        generate_csv(Reports::CommissionsReportService, 'commissions_report.csv')
+        start_date, end_date = parse_date_range
+        generate_csv(Reports::CommissionsReportService,
+                     "commissions_#{format_date(start_date)}_to_#{format_date(end_date)}.csv")
       end
 
       def total_revenue_csv
-        generate_csv(Reports::TotalRevenueReportService, 'total_revenue_report.csv')
+        start_date, end_date = parse_date_range
+        generate_csv(Reports::TotalRevenueReportService,
+                     "total_revenue_#{format_date(start_date)}_to_#{format_date(end_date)}.csv")
       end
 
       def overdue_payments_csv
-        generate_csv(Reports::OverduePaymentsReportService, 'overdue_payments_report.csv')
+        start_date, end_date = parse_date_range
+        generate_csv(Reports::OverduePaymentsReportService,
+                     "overdue_payments_#{format_date(start_date)}_to_#{format_date(end_date)}.csv")
       end
 
       def user_balance_pdf
@@ -29,7 +35,7 @@ module Api
 
         respond_to do |format|
           format.pdf do
-            render pdf: "user_balance_#{params[:user_id]}",
+            render pdf: "user_balance_#{params[:user_id]}_#{timestamp}.pdf",
                    template: 'reports/user_balance',
                    formats: [:html],
                    layout: 'pdf',
@@ -59,7 +65,7 @@ module Api
 
         respond_to do |format|
           format.pdf do
-            render pdf: "promesa_compra_venta_#{params[:contract_id]}",
+            render pdf: "promesa_compra_venta_#{params[:contract_id]}_#{timestamp}.pdf",
                    template: "reports/user_promise_contract_#{params[:financing_type]}", # tu plantilla ERB
                    formats: [:html],
                    layout: 'pdf', # layout PDF si lo usas
@@ -88,7 +94,7 @@ module Api
 
         respond_to do |format|
           format.pdf do
-            render pdf: "rescision_contrato_#{params[:contract_id]}",
+            render pdf: "rescision_contrato_#{params[:contract_id]}_#{timestamp}.pdf",
                    template: 'reports/rescission_contract',
                    formats: [:html],
                    layout: 'pdf',
@@ -114,7 +120,7 @@ module Api
 
         respond_to do |format|
           format.pdf do
-            render pdf: "ficha_cliente_#{@applicant.id}",
+            render pdf: "ficha_cliente_#{@applicant.id}_#{timestamp}.pdf",
                    template: 'reports/user_information',
                    formats: [:html],
                    layout: 'pdf',
@@ -151,6 +157,14 @@ module Api
                   filename:,
                   type: 'text/csv; charset=UTF-8; header=present',
                   disposition: 'attachment'
+      end
+
+      def timestamp
+        Time.current.strftime('%Y%m%d_%H%M%S')
+      end
+
+      def format_date(date)
+        Date.parse(date).strftime('%Y%m%d')
       end
     end
   end

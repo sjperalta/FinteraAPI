@@ -74,10 +74,15 @@ Rails.application.routes.draw do
           post :approve # Aprobar un proyecto
         end
 
+        collection do
+          post :import
+        end
+
         resources :lots do
           resources :contracts do
             member do
               post :approve # Aprobar un contrato
+              patch :update # Modificar un contrato
               post :reject # Rechazar un contrato
               post :cancel # Cancelar un contrato
               post :reopen # Reabrir un contrato
@@ -93,12 +98,6 @@ Rails.application.routes.draw do
               end
             end
           end
-        end
-      end
-
-      resources :projects do
-        collection do
-          post :import
         end
       end
     end

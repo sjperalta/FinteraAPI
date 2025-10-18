@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 # app/controllers/api/v1/contracts_controller.rb
-
 module Api
   module V1
     # Controller for managing contracts
@@ -12,9 +11,9 @@ module Api
       include ContractCacheInvalidation
 
       load_and_authorize_resource
-      before_action :set_project, only: %i[create approve reject cancel reopen capital_repayment ledger]
-      before_action :set_lot, only: %i[create approve reject cancel reopen capital_repayment ledger]
-      before_action :set_contract, only: %i[show approve reject cancel reopen capital_repayment ledger]
+      before_action :set_project, only: %i[create approve reject cancel reopen capital_repayment ledger update]
+      before_action :set_lot, only: %i[create approve reject cancel reopen capital_repayment ledger update]
+      before_action :set_contract, only: %i[show approve reject cancel reopen capital_repayment ledger update]
 
       # Define sortable and searchable fields to prevent SQL injection and ensure valid operations
       SORTABLE_FIELDS = %w[applicant_user_id contracts.created_at lot_id payment_term financing_type status
@@ -94,6 +93,38 @@ module Api
         else
           render json: {
             errors: result[:errors]
+          }, status: :unprocessable_content
+        end
+      end
+
+      # app/controllers/api/v1/contracts_con      # GET /api/v1/projects/:project_id/lots/:lot_id/contracts/:id
+      def show
+        render json: contract_details(@contract), status: :ok
+      end
+
+      # PATCH/PUT /api/v1/projects/:project_id/lots/:lot_id/contracts/:id
+      def update
+        authorize! :update, @contract
+
+        # Only allow updates for contracts in draft or pending status
+        unless @contract.status.in?(%w[pending submitted rejected])
+          return render json: {
+            error: 'Solo se pueden modificar contratos en estado pendiente, enviado o rechazado',
+            status: @contract.status
+          }, status: :unprocessable_content
+        end
+
+        if @contract.update(update_contract_params)
+          # Invalidate cache after contract update
+          invalidate_contract_cache(@contract)
+
+          render json: {
+            message: 'Contrato actualizado exitosamente',
+            contract: contract_details(@contract)
+          }, status: :ok
+        else
+          render json: {
+            errors: @contract.errors.full_messages
           }, status: :unprocessable_content
         end
       end
@@ -259,6 +290,15 @@ module Api
           :currency,
           :rejection_reason,
           :note
+        )
+      end
+
+      # Strong parameters for contract updates (limited fields)
+      def update_contract_params
+        params.require(:contract).permit(
+          :payment_term,
+          :reserve_amount,
+          :down_payment
         )
       end
 

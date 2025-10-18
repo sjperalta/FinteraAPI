@@ -357,6 +357,8 @@ es:
   notifications:
     title: "Notificaciones"
     mark_all_read: "Marcar Todas como Leídas"
+    marked_as_read: "Notificaciones marcadas como leídas"
+    not_found: "Notificación no encontrada"
     no_notifications: "No hay notificaciones"
     new: "Nueva"
     read: "Leída"

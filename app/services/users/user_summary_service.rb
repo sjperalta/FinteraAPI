@@ -27,23 +27,25 @@ module Users
       currency || 'HNL'
     end
 
+    # sum of the contract has a field balance, make sure to sum only approved contracts
     def balance
-      # aggregate amount and paid_amount in one query to avoid two SUM queries
-      totals = @user.payments.pluck(Arel.sql('COALESCE(SUM(payments.amount),0), COALESCE(SUM(payments.paid_amount),0)')).first
-      total_amount = totals&.first.to_d || 0
-      total_paid = totals&.last.to_d || 0
-      (total_amount - total_paid)
+      @user.contracts.where(status: Contract::STATUS_APPROVED).sum(:balance)
     end
 
+    # count pending payments that are overdue, sum their amounts and fees, and count them
     def overdue_aggregate
       @overdue_aggregate ||= begin
         scope = @user.payments
-                     .where(status: %w[pending submitted correction_required])
+                     .where(status: %w[pending])
                      .where('payments.due_date < ?', Date.today)
 
-        scope.pluck(Arel.sql('COALESCE(SUM(payments.amount),0), COALESCE(SUM(payments.interest_amount),0), COUNT(*)')).first || [
-          0, 0, 0
-        ]
+        # Use pluck to get the three aggregates in a single DB roundtrip: total_due, total_fees, overdue_count
+        result = scope.joins(:contract)
+                      .pluck(Arel.sql('COALESCE(SUM(payments.amount),0)'),
+                             Arel.sql('COALESCE(SUM(payments.interest_amount),0)'),
+                             Arel.sql('COUNT(payments.id)'))
+
+        result.first || [0, 0, 0]
       end
     end
 
