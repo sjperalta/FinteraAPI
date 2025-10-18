@@ -351,6 +351,8 @@ en:
   notifications:
     title: "Notifications"
     mark_all_read: "Mark All as Read"
+    marked_as_read: "Notifications marked as read"
+    not_found: "Notification not found"
     no_notifications: "No notifications"
     new: "New"
     read: "Read"

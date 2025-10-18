@@ -14,9 +14,6 @@ gem 'pg', '~> 1.5'
 # Use the Puma web server [https://github.com/puma/puma]
 gem 'puma', '>= 6.0'
 
-# Use Redis adapter to run Action Cable in production
-gem 'redis', '~> 4.0'
-
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin AJAX possible
 gem 'rack-cors'
 
@@ -35,8 +32,7 @@ gem 'rswag-specs'
 gem 'rswag-ui'
 
 # Background Job Processing
-gem 'sidekiq', '~> 7.0'
-gem 'sidekiq-scheduler'
+gem 'solid_queue'
 
 # Pagination
 gem 'pagy'
@@ -63,7 +59,6 @@ gem 'wkhtmltopdf-binary'
 # Sentry for error tracking
 gem 'sentry-rails'
 gem 'sentry-ruby'
-gem 'sentry-sidekiq'
 
 group :development, :test do
   gem 'bundler-audit', require: false

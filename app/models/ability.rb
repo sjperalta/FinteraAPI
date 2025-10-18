@@ -27,9 +27,11 @@ class Ability
       can :manage, Notification, user_id: user.id
       can :read, User, id: user.id
       can :read, User, role: 'user'
+      can :create, User, role: 'user'
       can :update, User, id: user.id # Only update their own information
       can :update, User, role: 'user' # Sellers can update users with role 'user'
       can :payments, User, id: user.id
+      can :payment_history, User, role: 'user'
       can :summary, User, id: user.id
       can :summary, User, role: 'user'
       can :resend_confirmation, User, id: user.id
