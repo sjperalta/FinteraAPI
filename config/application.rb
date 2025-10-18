@@ -25,7 +25,7 @@ module FinteraAPI
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 7.0
-    config.autoload_paths += [Rails.root.join('lib')]
+    config.autoload_paths << Rails.root.join('lib')
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use ActionDispatch::Session::CookieStore, key: '_fintera_session'
     # Opt-in to new to_time timezone preservation behavior (Rails 8.1 compatibility)
