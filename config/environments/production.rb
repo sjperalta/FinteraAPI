@@ -54,9 +54,14 @@ Rails.application.configure do
   # Use a different cache store in production.
   # config.cache_store = :mem_cache_store
 
-  # Use a real queuing backend for Active Job (and separate queues per environment).
+  # Use Solid Queue as the ActiveJob adapter
   config.active_job.queue_adapter = :solid_queue
-  config.solid_queue.connects_to = { database: { writing: :queue } }
+
+  # By default we want Solid Queue to use the primary application database
+  # (DATABASE_URL). If you prefer a dedicated queue database, add a `queue`
+  # role in config/database.yml and uncomment the connects_to line below.
+  # config.solid_queue.connects_to = { database: { writing: :queue } }
+
   config.active_job.queue_name_prefix = 'FinteraAPI_production'
 
   config.action_mailer.default_url_options = { host: 'notifications.securexapp.com', protocol: 'https' }
