@@ -239,6 +239,9 @@ If you have migrations that generate SQL, the helper `bin/rails db:append_migrat
 
 The API is versioned and organized under `/api/v1`. Below are common endpoints present in the codebase; check `config/routes.rb` for full routing.
 
+- Healthcheck
+	- `GET /api/v1/health` — healthcheck endpoint for monitoring application and database status
+
 - Authentication
 	- `POST /api/v1/auth/sign_in` — sign in (returns tokens/cookies)
 	- `POST /api/v1/auth` — sign up / registration flows

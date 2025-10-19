@@ -30,8 +30,6 @@ class ApplicationJob < ActiveJob::Base
 
       Rails.logger.warn "[#{job.class}] Swallowing exception as configured"
       # swallow and finish
-
-      # propagate to allow Sidekiq / ActiveJob to retry according to config
     end
   end
 end
