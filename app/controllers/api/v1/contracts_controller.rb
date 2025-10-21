@@ -70,11 +70,13 @@ module Api
         # Cache the contracts JSON mapping for performance
         # Cache is invalidated proactively by services when contracts/payments are modified
         # Include current_user.id to separate cache per user (admins see all, users see their own)
-        cache_key = ['contracts', 'index', current_user.id, params[:page], params[:per_page],
-                     params[:search_term], params[:sort]].join('/')
-        contracts_with_calculated_fields = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
-          @contracts.map { |c| contract_json(c) }
-        end
+        # cache_key = ['contracts', 'index', current_user.id, params[:page], params[:per_page],
+        #              params[:search_term], params[:sort]].join('/')
+        # contracts_with_calculated_fields = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
+        #  @contracts.map { |c| contract_json(c) }
+        # end
+
+        contracts_with_calculated_fields = @contracts.map { |c| contract_json(c) }
 
         # Render JSON response with contracts and pagination metadata
         render json: {
