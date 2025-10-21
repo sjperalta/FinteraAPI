@@ -1,4 +1,10 @@
 en:
+  payment_types:
+    reservation: "Reservation"
+    down_payment: "Down Payment"
+    installment: "Installment"
+    full: "Full Payment"
+    advance: "Advance"
   mailers:
     user_mailer:
       contract_submitted:
@@ -44,6 +50,7 @@ en:
         term_months: "%{term} months"
         down_payment: "Down payment: %{amount}"
         monthly_payment: "Monthly Payment"
+        balance: "Balance"
         first_payment_due: "First Payment Due: %{date}"
         approved_at: "Approved at: %{datetime}"
         financed_note: "The remaining amount is financed"

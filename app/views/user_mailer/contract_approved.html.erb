@@ -62,6 +62,7 @@
       .detail-label {
         color: #7f8c8d;
         font-size: 14px;
+        margin-right: 15px;
       }
       .detail-value {
         color: #2c3e50;
@@ -147,17 +148,19 @@
             <span class="detail-label">💳 <%= I18n.t("mailers.user_mailer.contract_approved.labels.financing") %></span>
             <span class="detail-value"><%= I18n.t("financing_types.#{@contract.financing_type}") %></span>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">📅 <%= I18n.t("mailers.user_mailer.contract_approved.labels.term") %></span>
-            <span class="detail-value"><%= I18n.t("mailers.user_mailer.contract_approved.term_months", term: @contract.payment_term) %></span>
-          </div>
+          <% if @contract.financing_type == 'direct' %>
+            <div class="detail-row">
+              <span class="detail-label">📅 <%= I18n.t("mailers.user_mailer.contract_approved.labels.term") %></span>
+              <span class="detail-value"><%= I18n.t("mailers.user_mailer.contract_approved.term_months", term: @contract.payment_term) %></span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">💰 <%= I18n.t("mailers.user_mailer.contract_approved.labels.down_payment") %></span>
+              <span class="detail-value"><%= number_to_currency(@contract.down_payment) %></span>
+            </div>
+          <% end %>
           <div class="detail-row">
             <span class="detail-label">🏦 <%= I18n.t("mailers.user_mailer.contract_approved.labels.reserve") %></span>
             <span class="detail-value"><%= number_to_currency(@contract.reserve_amount) %></span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">💰 <%= I18n.t("mailers.user_mailer.contract_approved.labels.down_payment") %></span>
-            <span class="detail-value"><%= number_to_currency(@contract.down_payment) %></span>
           </div>
         </div>
 
@@ -169,8 +172,8 @@
           </div>
         <% else %>
           <div class="highlight-box">
-            <div class="label"><%= I18n.t("mailers.user_mailer.contract_approved.labels.reserve") %></div>
-            <div class="amount"><%= number_to_currency(@contract.reserve_amount) %></div>
+            <div class="label"><%= I18n.t("mailers.user_mailer.contract_approved.balance") %></div>
+            <div class="amount"><%= number_to_currency(@contract.amount - @contract.reserve_amount) %></div>
             <div style="font-size: 12px; margin-top: 10px; opacity: 0.9;">
               <%= I18n.t("mailers.user_mailer.contract_approved.financed_note") %>
             </div>
