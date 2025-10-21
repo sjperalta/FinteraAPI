@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-# app/services/notifications/send_reset_code_service.rb
+# app/services/users/send_reset_code_service.rb
 module Users
+  # Service to send a reset code email to a user
   class SendResetCodeService
     def initialize(user, code)
       @user = user

@@ -1,0 +1,29 @@
+================================================================================
+                    <%= t('mailers.user_mailer.account_created.title') %>
+================================================================================
+
+<%= t('mailers.user_mailer.account_created.greeting', name: @user.full_name) %>
+
+<%= t('mailers.user_mailer.account_created.body') %>
+
+<% if @temp_password.present? %>
+--------------------------------------------------------------------------------
+  <%= t('mailers.user_mailer.account_created.temp_password_label') %>
+--------------------------------------------------------------------------------
+
+  <%= @temp_password %>
+
+<%= t('mailers.user_mailer.account_created.change_password_notice') %>
+
+<% end %>
+--------------------------------------------------------------------------------
+
+👉  <%= t('mailers.user_mailer.account_created.cta_text', url: ENV.fetch('APP_URL', 'https://app.fintera.com') + '/login') %>
+
+--------------------------------------------------------------------------------
+
+<%= t('mailers.user_mailer.account_created.support') %>
+
+<%= t('mailers.user_mailer.account_created.signature') %>
+
+================================================================================

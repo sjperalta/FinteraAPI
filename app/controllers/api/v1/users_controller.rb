@@ -339,7 +339,7 @@ module Api
         count_paid_done = payments.where(status: 'paid').count
 
         # filter just pending and submitted payments
-        payments = payments.where(status: %w[pending submitted rejected])
+        payments = payments.where(status: %w[pending submitted rejected paid])
 
         # Apply filters
         payments = apply_payment_history_filters(payments, params)
@@ -480,7 +480,7 @@ module Api
       end
 
       def fields_for_render
-        %i[id full_name identity rtn email address phone role status created_by created_at note locale]
+        %i[id full_name identity rtn email address phone role status created_by created_at note locale credit_score]
       end
 
       def user_params

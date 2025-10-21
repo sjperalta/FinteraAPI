@@ -188,6 +188,14 @@ module Contracts
           notification_type: 'create_new_user'
         )
       end
+
+      # Send a friendly account-created email (wrap in rescue to avoid breaking the
+      # contract creation flow if mail delivery fails).
+      begin
+        UserMailer.with(user:, temp_password:).account_created.deliver_later
+      rescue StandardError => e
+        Rails.logger.error("Failed to enqueue account_created email for user ##{user.id}: #{e.message}")
+      end
     end
 
     def send_reservation_notification(contract)

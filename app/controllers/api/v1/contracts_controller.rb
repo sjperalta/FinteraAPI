@@ -48,7 +48,24 @@ module Api
         contracts = contracts.includes(:applicant_user, :creator, :payments, lot: :project)
 
         # Paginate the contracts using Pagy (applied after filtering/sorting/includes for efficiency)
-        @pagy, @contracts = pagy(contracts, items: params[:per_page] || 20, page: params[:page])
+        per_page = (params[:per_page].presence || 20).to_i
+        per_page = 20 if per_page <= 0
+
+        requested_page = params[:page].to_i
+        requested_page = 1 if requested_page <= 0
+
+        # Calculate total pages to avoid Pagy::OverflowError when client requests too-large page
+        total_count = contracts.count
+        total_pages = (total_count.to_f / per_page).ceil
+
+        # If there are no results, use page 1. Otherwise clamp to last page when requested_page > total_pages
+        page_to_use = if total_pages.zero?
+                        1
+                      else
+                        [requested_page, total_pages].min
+                      end
+
+        @pagy, @contracts = pagy(contracts, items: per_page, page: page_to_use)
 
         # Cache the contracts JSON mapping for performance
         # Cache is invalidated proactively by services when contracts/payments are modified
