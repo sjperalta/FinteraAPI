@@ -64,11 +64,11 @@ Rails.application.configure do
 
   config.active_job.queue_name_prefix = 'FinteraAPI_production'
 
-  config.action_mailer.default_url_options = { host: 'notifications.securexapp.com', protocol: 'https' }
+  config.action_mailer.default_url_options = { host: 'updates.securexapp.com', protocol: 'https' }
 
   config.action_mailer.delivery_method = :resend
   config.action_mailer.default_options = {
-    from: ENV.fetch('DEFAULT_EMAIL', 'Fintera <no-reply@notifications.securexapp.com>')
+    from: ENV.fetch('DEFAULT_EMAIL', 'Fintera <no-reply@updates.securexapp.com>')
   }
 
   config.hosts << 'fintera-staging-api.securexapp.com'

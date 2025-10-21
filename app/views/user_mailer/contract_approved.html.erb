@@ -161,15 +161,28 @@
           </div>
         </div>
 
-        <% first_payment = @contract.payments.where(payment_type: 'installment').order(:due_date).first %>
-        <div class="highlight-box">
-          <div class="label"><%= I18n.t("mailers.user_mailer.contract_approved.monthly_payment") %></div>
-          <div class="amount"><%= number_to_currency(first_payment&.amount || 0) %></div>
-        </div>
+        <% if @contract.financing_type == 'direct' %>
+          <% first_payment = @contract.payments.where(payment_type: 'installment').order(:due_date).first %>
+          <div class="highlight-box">
+            <div class="label"><%= I18n.t("mailers.user_mailer.contract_approved.monthly_payment") %></div>
+            <div class="amount"><%= number_to_currency(first_payment&.amount || 0) %></div>
+          </div>
+        <% else %>
+          <div class="highlight-box">
+            <div class="label"><%= I18n.t("mailers.user_mailer.contract_approved.labels.reserve") %></div>
+            <div class="amount"><%= number_to_currency(@contract.reserve_amount) %></div>
+            <div style="font-size: 12px; margin-top: 10px; opacity: 0.9;">
+              <%= I18n.t("mailers.user_mailer.contract_approved.financed_note") %>
+            </div>
+          </div>
+        <% end %>
 
-        <div class="payment-info">
-          <strong>🗓️ <%= I18n.t("mailers.user_mailer.contract_approved.first_payment_due", date: first_payment&.due_date&.strftime("%d/%m/%Y") || 'N/A') %></strong>
-        </div>
+        <% if @contract.financing_type == 'bank' %>
+          <% first_payment = @contract.payments.where(payment_type: 'installment').order(:due_date).first %>
+          <div class="payment-info">
+            <strong>🗓️ <%= I18n.t("mailers.user_mailer.contract_approved.first_payment_due", date: first_payment&.due_date&.strftime("%d/%m/%Y") || 'N/A') %></strong>
+          </div>
+        <% end %>
 
         <a href="<%= ENV.fetch('APP_URL', 'https://app.fintera.com') %>/dashboard" class="cta-button"><%= I18n.t("mailers.user_mailer.contract_approved.view_platform") %></a>
       </div>

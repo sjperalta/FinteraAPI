@@ -3,7 +3,7 @@
 # app/mailers/user_mailer.rb
 # Mailer class to handle user-related email notifications.
 class UserMailer < ApplicationMailer
-  default from: ENV.fetch('DEFAULT_EMAIL', 'no-reply@notifications.securexapp.com')
+  default from: ENV.fetch('DEFAULT_EMAIL', 'no-reply@updates.securexapp.com')
 
   # Ensure @user is present for methods that rely on params[:user]
   before_action :set_user, except: %i[welcome_email]

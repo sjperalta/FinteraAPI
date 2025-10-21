@@ -63,6 +63,22 @@ module Payments
 
     def send_approval_notification
       SendPaymentApprovalNotificationJob.perform_now(@payment.id)
+    rescue StandardError => e
+      # Log the error but don't fail the payment approval
+      Rails.logger.error("Failed to send payment approval notification for payment ##{@payment.id}: #{e.message}")
+      # Could also create a notification for admins about the email failure
+      begin
+        Notification.create!(
+          user: User.admins.first,
+          title: I18n.t('notifications.types.system_error'),
+          message: I18n.t('notifications.messages.payment_notification_failed', payment_id: @payment.id,
+                                                                                error: e.message),
+          notification_type: 'system_error'
+        )
+      rescue StandardError
+        # If even the notification creation fails, just log it
+        Rails.logger.error('Failed to create admin notification for payment approval email failure')
+      end
     end
 
     def handle_error(error)
