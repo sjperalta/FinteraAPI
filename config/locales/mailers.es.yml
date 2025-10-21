@@ -44,6 +44,7 @@ es:
         term_months: "%{term} meses"
         down_payment: "Monto de la prima: %{amount}"
         monthly_payment: "Cuota Mensual"
+        balance: "Saldo"
         first_payment_due: "Primer Pago: %{date}"
         approved_at: "Fecha de aprobación: %{datetime}"
         financed_note: "El monto restante está financiado"
