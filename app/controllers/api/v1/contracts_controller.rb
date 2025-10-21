@@ -97,11 +97,6 @@ module Api
         end
       end
 
-      # app/controllers/api/v1/contracts_con      # GET /api/v1/projects/:project_id/lots/:lot_id/contracts/:id
-      def show
-        render json: contract_details(@contract), status: :ok
-      end
-
       # PATCH/PUT /api/v1/projects/:project_id/lots/:lot_id/contracts/:id
       def update
         authorize! :update, @contract
