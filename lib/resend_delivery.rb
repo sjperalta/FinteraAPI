@@ -4,7 +4,7 @@ require 'resend'
 
 # Custom ActionMailer delivery method using Resend.com
 class ResendDelivery
-  DEFAULT_FROM = 'Fintera <no-reply@notifications.securexapp.com>'
+  DEFAULT_FROM = 'Fintera <no-reply@updates.securexapp.com>'
 
   attr_reader :settings
 

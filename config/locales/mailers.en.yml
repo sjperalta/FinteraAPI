@@ -46,6 +46,7 @@ en:
         monthly_payment: "Monthly Payment"
         first_payment_due: "First Payment Due: %{date}"
         approved_at: "Approved at: %{datetime}"
+        financed_note: "The remaining amount is financed"
         footer: "If you have questions, contact us."
         view_platform: "View Platform"
       payment_approved:
@@ -57,6 +58,7 @@ en:
         lot: "Lot: %{lot}"
         payment_amount: "Payment amount: %{amount}"
         interest_amount: "Interest Amount: %{amount}"
+        payment_type: "Payment type: %{payment_type}"
         total_amount: "Total Amount: %{amount}"
         due_date: "Due date: %{date}"
         approved_at: "Approved at: %{date}"

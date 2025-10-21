@@ -4,7 +4,7 @@
 
 # Mailer class to handle admin-related email notifications.
 class AdminMailer < ApplicationMailer
-  default from: ENV.fetch('DEFAULT_EMAIL', 'no-reply@notifications.securexapp.com')
+  default from: ENV.fetch('DEFAULT_EMAIL', 'no-reply@updates.securexapp.com')
 
   # Método para enviar la notificación al administrador cuando un usuario sube un comprobante de pago
   def payment_receipt_uploaded
