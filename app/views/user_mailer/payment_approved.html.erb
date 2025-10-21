@@ -25,7 +25,7 @@
         <li><strong><%= I18n.t("mailers.user_mailer.payment_approved.lot", lot: "#{@payment.contract.lot.name} - #{@payment.contract.lot.address}") %></strong></li>
         <li><strong><%= I18n.t("mailers.user_mailer.payment_approved.payment_amount", amount: number_to_currency(@payment.amount)) %></strong></li>
         <li><strong><%= I18n.t("mailers.user_mailer.payment_approved.interest_amount", amount: number_to_currency(@payment.interest_amount || 0)) %></strong></li>
-        <li><strong><%= I18n.t("mailers.user_mailer.payment_approved.payment_type", payment_type: @payment.payment_type.to_s.humanize) %></strong></li>
+        <li><strong><%= I18n.t("mailers.user_mailer.payment_approved.payment_type", payment_type: I18n.t("payment_types.#{@payment.payment_type}")) %></strong></li>
         <li class="highlight"><strong><%= I18n.t("mailers.user_mailer.payment_approved.total_amount", amount: number_to_currency((@payment.amount || 0) + (@payment.interest_amount || 0))) %></strong></li>
         <li><strong><%= I18n.t("mailers.user_mailer.payment_approved.due_date", date: @payment.due_date.strftime('%d-%m-%Y')) %></strong></li>
         <li><strong><%= I18n.t("mailers.user_mailer.payment_approved.approved_at", date: @payment.approved_at.strftime('%d-%m-%Y')) %></strong></li>

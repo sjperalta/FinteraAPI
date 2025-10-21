@@ -1,4 +1,10 @@
 es:
+  payment_types:
+    reservation: "Reserva"
+    down_payment: "Prima"
+    installment: "Cuota"
+    full: "Pago Completo"
+    advance: "Adelanto"
   mailers:
     user_mailer:
       contract_submitted:
