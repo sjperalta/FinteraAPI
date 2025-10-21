@@ -27,6 +27,7 @@ RSpec.describe UserMailer, type: :mailer do
            payment_term: 12,
            reserve_amount: 1000,
            down_payment: 200,
+           amount: 5000,
            created_at: Time.new(2025, 1, 1, 12, 0),
            approved_at: Time.new(2025, 2, 1, 12, 0))
   end
