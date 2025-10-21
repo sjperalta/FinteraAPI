@@ -11,6 +11,9 @@ module Notifications
     end
 
     def call
+      # check if the user is active before sending email
+      return unless @user.active?
+
       send_overdue_email
     end
 
