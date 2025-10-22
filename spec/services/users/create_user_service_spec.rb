@@ -43,7 +43,7 @@ RSpec.describe Users::CreateUserService do
         allow(User).to receive(:new).and_return(user)
         allow(user).to receive(:save).and_return(true)
         allow(user).to receive(:update)
-        allow(user).to receive(:send_confirmation_instructions)
+        allow(user).to receive(:skip_confirmation!)
         expect(User).to receive_message_chain(:admins, :find_each).and_yield(admin)
         allow(Notification).to receive(:create!)
         allow(UserMailer).to receive_message_chain(:welcome_email, :deliver_later)
@@ -62,8 +62,8 @@ RSpec.describe Users::CreateUserService do
         service.call
       end
 
-      it 'sends confirmation instructions' do
-        expect(user).to receive(:send_confirmation_instructions)
+      it 'skips confirmation (created by admin/service)' do
+        expect(user).to receive(:skip_confirmation!)
 
         service.call
       end
@@ -100,7 +100,7 @@ RSpec.describe Users::CreateUserService do
         result = service.call
 
         expect(result[:success]).to be true
-        expect(result[:user]).to eq(user)
+        expect(result[:user].id).to eq(user.id)
       end
     end
 
@@ -132,27 +132,7 @@ RSpec.describe Users::CreateUserService do
       end
     end
 
-    context 'when confirmation instructions fail' do
-      let(:user) { User.new(user_params.merge(id: 3)) }
-
-      before do
-        allow(User).to receive(:new).and_return(user)
-        allow(user).to receive(:save).and_return(true)
-        allow(user).to receive(:update)
-        allow(user).to receive(:send_confirmation_instructions).and_raise(StandardError.new('Mail error'))
-        allow(User).to receive_message_chain(:admins, :find_each)
-        allow(Notification).to receive(:create!)
-        allow(UserMailer).to receive_message_chain(:welcome_email, :deliver_later)
-      end
-
-      it 'logs the error but still succeeds' do
-        expect(Rails.logger).to receive(:warn).with('Failed to send confirmation instructions: Mail error')
-
-        result = service.call
-
-        expect(result[:success]).to be true
-      end
-    end
+    # NOTE: confirmation emails are skipped for admin/service-created users via skip_confirmation!
 
     context 'when notification creation fails' do
       let(:user) { User.new(user_params.merge(id: 3)) }

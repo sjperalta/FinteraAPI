@@ -19,14 +19,35 @@ en:
     mailer:
       confirmation_instructions:
         subject: "Confirmation instructions"
+        greeting: "Welcome %{email}!"
+        intro: "You can confirm your account email through the link below:"
+        confirmation_link: "Click the button below to confirm your account"
+        confirm_button: "Confirm my account"
+        note: "If you didn't request this, please ignore this email."
       reset_password_instructions:
         subject: "Reset password instructions"
+        greeting: "Hello %{email}!"
+        intro: "Someone has requested a link to change your password. You can do this through the link below."
+        security_note: "Your password won't change until you access the link above and create a new one."
+        reset_button: "Change my password"
+        ignore_note: "If you didn't request this, please ignore this email."
       unlock_instructions:
         subject: "Unlock instructions"
+        greeting: "Hello %{email}!"
+        intro: "Click the link below to unlock your account:"
+        lock_reason: "Your account has been locked due to an excessive number of unsuccessful sign in attempts."
+        unlock_button: "Unlock my account"
       email_changed:
         subject: "Email Changed"
+        greeting: "Hello %{email}!"
+        changing_to: "We're contacting you to notify you that your email is being changed to %{new_email}."
+        changed_to: "We're contacting you to notify you that your email has been changed to %{new_email}."
+        note: "If you didn't make this change, please contact our support team immediately."
       password_change:
         subject: "Password Changed"
+        greeting: "Hello %{email}!"
+        confirmation: "Your password has been successfully changed."
+        note: "If you didn't make this change, please contact our support team immediately."
     omniauth_callbacks:
       failure: "Could not authenticate you from %{kind} because \"%{reason}\"."
       success: "Successfully authenticated from %{kind} account."

@@ -214,24 +214,14 @@ module Api
 
       # POST /api/v1/users/send_recovery_code
       def send_recovery_code
-        user = User.find_by(email: params[:email]&.downcase)
-        return render json: { success: false, error: 'No se encontro Email' }, status: :not_found unless user
+        service = Users::SendRecoveryCodeService.new(email: params[:email])
+        result = service.call
 
-        # remember this recovery code is 5 digits
-        code = if ENV['RAILS_ENV'] == 'development'
-                 99_999
-               else
-                 rand(10_000..99_999).to_s
-               end
-        user.update!(
-          recovery_code: code,
-          recovery_code_sent_at: Time.now
-        )
-
-        # Enqueue job to send the code
-        SendResetCodeJob.perform_later(user.id, code)
-
-        render json: { success: true, message: 'Verification code sent to your email.' }, status: :ok
+        if result[:success]
+          render json: { success: true, message: result[:message] }, status: :ok
+        else
+          render json: { success: false, error: result[:error] }, status: :not_found
+        end
       end
 
       # POST /api/v1/users/verify_recovery_code

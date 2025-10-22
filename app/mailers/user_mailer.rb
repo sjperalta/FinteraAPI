@@ -75,8 +75,7 @@ class UserMailer < ApplicationMailer
 
   def development_address(real_email)
     return real_email unless Rails.env.development?
-    return real_email unless @user&.id
 
-    "delivered+user#{@user.id}@resend.dev"
+    "delivered+user#{@user&.id}@resend.dev"
   end
 end

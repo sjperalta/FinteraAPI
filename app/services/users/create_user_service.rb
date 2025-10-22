@@ -15,23 +15,27 @@ module Users
     def call
       return { success: false, errors: [I18n.t('messages.errors.user_params_required')] } if user_params.blank?
 
+      user_for_email = nil
+
       ActiveRecord::Base.transaction do
         user = build_user
         return { success: false, errors: user.errors.full_messages } unless user.save
 
         # Set creator after save to ensure user has id
         user.update(created_by: creator) if creator.present?
+        user.skip_confirmation!
 
-        # Send confirmation if applicable
-        send_confirmation_instructions(user)
-
-        # Create notifications (non-blocking)
         create_notifications(user)
 
         invalidate_user_cache(user)
 
-        { success: true, user: }
+        # Capture user for email scheduling after commit
+        user_for_email = user
       end
+
+      # Send confirmation if applicable
+      schedule_account_created_email(user_for_email) if user_for_email
+      { success: true, user: user_for_email }
     rescue ActiveRecord::RecordInvalid => e
       { success: false, errors: [e.message] }
     rescue StandardError => e
@@ -45,10 +49,10 @@ module Users
       User.new(user_params)
     end
 
-    def send_confirmation_instructions(user)
-      user.send_confirmation_instructions if user.respond_to?(:send_confirmation_instructions)
+    def schedule_account_created_email(user)
+      UserMailer.with(user:).account_created.deliver_later
     rescue StandardError => e
-      Rails.logger.warn("Failed to send confirmation instructions: #{e.message}")
+      Rails.logger.error("Failed to enqueue account_created email for user ##{user.id}: #{e.message}")
     end
 
     def create_notifications(user)

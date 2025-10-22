@@ -2,6 +2,7 @@
 
 # app/services/users/resend_confirmation_service.rb
 module Users
+  # Service to resend confirmation instructions to a user
   class ResendConfirmationService
     def initialize(user_id:)
       @user_id = user_id

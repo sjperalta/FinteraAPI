@@ -19,14 +19,35 @@ es:
     mailer:
       confirmation_instructions:
         subject: "Instrucciones de confirmación"
+        greeting: "¡Bienvenido %{email}!"
+        intro: "Puedes confirmar tu cuenta de correo electrónico a través del enlace a continuación:"
+        confirmation_link: "Haz clic en el botón a continuación para confirmar tu cuenta"
+        confirm_button: "Confirmar mi cuenta"
+        note: "Si no solicitaste esto, por favor ignora este correo."
       reset_password_instructions:
         subject: "Instrucciones para restablecer la contraseña"
+        greeting: "¡Hola %{email}!"
+        intro: "Alguien ha solicitado un enlace para cambiar tu contraseña. Puedes hacerlo a través del enlace a continuación."
+        security_note: "Tu contraseña no cambiará hasta que accedas al enlace de arriba y crees una nueva."
+        reset_button: "Cambiar mi contraseña"
+        ignore_note: "Si no solicitaste esto, por favor ignora este correo."
       unlock_instructions:
         subject: "Instrucciones de desbloqueo"
+        greeting: "¡Hola %{email}!"
+        intro: "Haz clic en el enlace a continuación para desbloquear tu cuenta:"
+        lock_reason: "Tu cuenta ha sido bloqueada debido a un número excesivo de intentos de inicio de sesión fallidos."
+        unlock_button: "Desbloquear mi cuenta"
       email_changed:
         subject: "Correo electrónico cambiado"
+        greeting: "¡Hola %{email}!"
+        changing_to: "Te contactamos para notificarte que tu correo electrónico se está cambiando a %{new_email}."
+        changed_to: "Te contactamos para notificarte que tu correo electrónico ha sido cambiado a %{new_email}."
+        note: "Si no hiciste este cambio, por favor contacta a nuestro equipo de soporte inmediatamente."
       password_change:
         subject: "Contraseña cambiada"
+        greeting: "¡Hola %{email}!"
+        confirmation: "Tu contraseña ha sido cambiada exitosamente."
+        note: "Si no hiciste este cambio, por favor contacta a nuestro equipo de soporte inmediatamente."
     omniauth_callbacks:
       failure: "No se pudo autenticar desde %{kind} porque \"%{reason}\"."
       success: "Autenticación exitosa desde la cuenta %{kind}."

@@ -7,6 +7,9 @@ module Contracts
     include ContractCacheInvalidation
     include LotCacheInvalidation
 
+    UserCreationResult = Struct.new(:user, :temp_password, keyword_init: true)
+    private_constant :UserCreationResult
+
     attr_reader :lot, :contract_params, :user_params, :documents, :current_user, :errors
 
     def initialize(lot:, contract_params:, user_params:, documents:, current_user:)
@@ -20,6 +23,9 @@ module Contracts
 
     def call
       contract = nil
+      user_for_email = nil
+      temp_password_for_email = nil
+
       ActiveRecord::Base.transaction do
         # Lock the lot to prevent race conditions
         lot.lock!
@@ -31,7 +37,16 @@ module Contracts
         submit_contract(contract)
         send_reservation_notification(contract)
         after_submission(contract)
+
+        # Capture user and password for email scheduling after commit
+        if user.persisted? && user_is_new?(user)
+          user_for_email = user
+          temp_password_for_email = user.instance_variable_get(:@temp_password)
+        end
       end
+
+      # Schedule email after transaction commits
+      schedule_account_created_email(user_for_email, temp_password_for_email) if user_for_email
 
       # Invalidate cache after successful contract creation
       if contract&.persisted?
@@ -57,6 +72,10 @@ module Contracts
       contract_params[:applicant_user_id].blank?
     end
 
+    def user_is_new?(user)
+      user.created_by.present? && user.id.present?
+    end
+
     def validate_lot_availability
       # Check if lot is available for reservation (not reserved, sold, or cancelled)
       available_statuses = %w[available active] # Adjust based on your Lot model statuses
@@ -75,42 +94,54 @@ module Contracts
     end
 
     def create_new_user
-      # Build user and ensure a temporary password exists so validations pass.
-      user = User.new(permitted_user_params.merge(role: 'user'))
-      user.creator = current_user
+      result = build_user_with_credentials
+      user = result.user
+      temp_password = result.temp_password
 
-      # If no password was provided, generate a temporary one and set confirmation.
-      temp_password = nil
-      if user.password.blank?
-        temp_password = ::SecureRandom.hex(8)
-        user.password = temp_password
-        user.password_confirmation = temp_password
-      end
-
-      # Avoid sending Devise confirmation emails during user creation in service
-      # (tests and environments that don't have mailer configured can fail otherwise)
-      user.skip_confirmation_notification! if user.respond_to?(:skip_confirmation_notification!)
-
-      raise ActiveRecord::RecordInvalid, user unless user.save
-
-      # Notify the user and admins; include temporary password when generated so the user can log in
+      persist_new_user!(user)
+      # Store temp_password on user instance for later retrieval
+      user.instance_variable_set(:@temp_password, temp_password)
       notify_new_user_creation(user, temp_password)
       user
     end
 
+    def build_user_with_credentials
+      user = User.new(permitted_user_params.merge(role: 'user'))
+      user.creator = current_user
+      user.skip_confirmation!
+
+      temp_password = assign_temporary_password!(user)
+      UserCreationResult.new(user:, temp_password:)
+    end
+
+    def assign_temporary_password!(user)
+      return if user.password.present?
+
+      temp_password = ::SecureRandom.hex(8)
+      user.password = temp_password
+      user.password_confirmation = temp_password
+      temp_password
+    end
+
+    def persist_new_user!(user)
+      user.save!
+    end
+
+    def schedule_account_created_email(user, temp_password)
+      UserMailer.with(user:, temp_password:).account_created.deliver_later
+    rescue StandardError => e
+      Rails.logger.error("Failed to enqueue account_created email for user ##{user.id}: #{e.message}")
+    end
+
     def update_existing_user
       user = User.find(contract_params[:applicant_user_id])
-
-      raise ActiveRecord::RecordInvalid, user unless user.update(permitted_user_params)
-
+      user.update!(permitted_user_params)
       user
     end
 
     def create_contract(user)
       contract = lot.contracts.build(contract_attributes(user))
-
-      raise ActiveRecord::RecordInvalid, contract unless contract.save
-
+      contract.save!
       contract
     end
 
@@ -187,14 +218,6 @@ module Contracts
           message: I18n.t('messages.success.created', resource: I18n.t('activerecord.models.user')),
           notification_type: 'create_new_user'
         )
-      end
-
-      # Send a friendly account-created email (wrap in rescue to avoid breaking the
-      # contract creation flow if mail delivery fails).
-      begin
-        UserMailer.with(user:, temp_password:).account_created.deliver_later
-      rescue StandardError => e
-        Rails.logger.error("Failed to enqueue account_created email for user ##{user.id}: #{e.message}")
       end
     end
 

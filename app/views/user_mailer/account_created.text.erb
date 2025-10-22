@@ -6,21 +6,44 @@
 
 <%= t('mailers.user_mailer.account_created.body') %>
 
+================================================================================
+                         🎉  <%= t('mailers.user_mailer.account_created.welcome') %>
+================================================================================
+
 <% if @temp_password.present? %>
---------------------------------------------------------------------------------
-  <%= t('mailers.user_mailer.account_created.temp_password_label') %>
---------------------------------------------------------------------------------
 
-  <%= @temp_password %>
+┌─ TEMPORARY PASSWORD ─────────────────────────────────────────────────────┐
+│                                                                            │
+│  🔐 <%= t('mailers.user_mailer.account_created.temp_password_label') %>
+│                                                                            │
+│  <%= @temp_password %>
+│                                                                            │
+│  ⚠️  <%= t('mailers.user_mailer.account_created.security_warning') %>
+│  <%= t('mailers.user_mailer.account_created.change_password_notice') %>
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
 
-<%= t('mailers.user_mailer.account_created.change_password_notice') %>
+┌─ NEXT STEPS ─────────────────────────────────────────────────────────────┐
+│                                                                            │
+│  📋  <%= t('mailers.user_mailer.account_created.next_steps') %>
+│                                                                            │
+│  1. <%= t('mailers.user_mailer.account_created.step_login') %>
+│                                                                            │
+│  2. <%= t('mailers.user_mailer.account_created.step_change_password') %>
+│                                                                            │
+│  3. <%= t('mailers.user_mailer.account_created.step_profile') %>
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
 
 <% end %>
---------------------------------------------------------------------------------
+
+================================================================================
+                              🚀 GET STARTED
+================================================================================
 
 👉  <%= t('mailers.user_mailer.account_created.cta_text', url: ENV.fetch('APP_URL', 'https://app.fintera.com') + '/login') %>
 
---------------------------------------------------------------------------------
+================================================================================
 
 <%= t('mailers.user_mailer.account_created.support') %>
 
