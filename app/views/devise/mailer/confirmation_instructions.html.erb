@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+    <title><%= I18n.t("devise.mailer.confirmation_instructions.subject") %></title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #2c3e50;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 40px 20px;
+        margin: 0;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        overflow: hidden;
+      }
+      .header {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        padding: 30px 20px;
+        text-align: center;
+      }
+      .header h1 {
+        color: #ffffff;
+        margin: 0;
+        font-size: 28px;
+        font-weight: 600;
+      }
+      .content {
+        padding: 30px;
+      }
+      .greeting {
+        font-size: 18px;
+        color: #3498db;
+        font-weight: 600;
+        margin-bottom: 15px;
+      }
+      .intro {
+        color: #34495e;
+        line-height: 1.6;
+        margin-bottom: 25px;
+      }
+      .highlight-box {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 25px 0;
+        text-align: center;
+      }
+      .highlight-box .label {
+        font-size: 14px;
+        opacity: 0.9;
+        margin-bottom: 10px;
+      }
+      .highlight-box .code {
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: 2px;
+      }
+      .cta-button {
+        display: block;
+        width: fit-content;
+        margin: 30px auto;
+        padding: 15px 40px;
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 25px;
+        font-weight: 600;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        transition: transform 0.2s;
+      }
+      .cta-button:hover {
+        transform: translateY(-2px);
+      }
+      .footer {
+        background: #f8f9fa;
+        padding: 20px;
+        text-align: center;
+        color: #7f8c8d;
+        font-size: 12px;
+        border-top: 1px solid #e9ecef;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>📧 <%= I18n.t("devise.mailer.confirmation_instructions.subject") %></h1>
+      </div>
+
+      <div class="content">
+        <p class="greeting"><%= I18n.t("devise.mailer.confirmation_instructions.greeting", email: @email) %></p>
+
+        <p class="intro"><%= I18n.t("devise.mailer.confirmation_instructions.intro") %></p>
+
+        <div class="highlight-box">
+          <div class="label"><%= I18n.t("devise.mailer.confirmation_instructions.confirmation_link") %></div>
+        </div>
+
+        <a href="<%= confirmation_url(@resource, confirmation_token: @token) %>" class="cta-button"><%= I18n.t("devise.mailer.confirmation_instructions.confirm_button") %></a>
+
+        <p style="text-align: center; color: #7f8c8d; font-size: 14px; margin-top: 20px;">
+          <%= I18n.t("devise.mailer.confirmation_instructions.note") %>
+        </p>
+      </div>
+
+      <div class="footer">
+        <p><%= I18n.t("mailers.footer.message") %></p>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+    <title><%= I18n.t("devise.mailer.unlock_instructions.subject") %></title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #2c3e50;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 40px 20px;
+        margin: 0;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        overflow: hidden;
+      }
+      .header {
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        padding: 30px 20px;
+        text-align: center;
+      }
+      .header h1 {
+        color: #ffffff;
+        margin: 0;
+        font-size: 28px;
+        font-weight: 600;
+      }
+      .content {
+        padding: 30px;
+      }
+      .greeting {
+        font-size: 18px;
+        color: #f39c12;
+        font-weight: 600;
+        margin-bottom: 15px;
+      }
+      .intro {
+        color: #34495e;
+        line-height: 1.6;
+        margin-bottom: 25px;
+      }
+      .warning-box {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+      }
+      .warning-box strong {
+        color: #856404;
+      }
+      .cta-button {
+        display: block;
+        width: fit-content;
+        margin: 30px auto;
+        padding: 15px 40px;
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 25px;
+        font-weight: 600;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+        transition: transform 0.2s;
+      }
+      .cta-button:hover {
+        transform: translateY(-2px);
+      }
+      .footer {
+        background: #f8f9fa;
+        padding: 20px;
+        text-align: center;
+        color: #7f8c8d;
+        font-size: 12px;
+        border-top: 1px solid #e9ecef;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🔓 <%= I18n.t("devise.mailer.unlock_instructions.subject") %></h1>
+      </div>
+
+      <div class="content">
+        <p class="greeting"><%= I18n.t("devise.mailer.unlock_instructions.greeting", email: @resource.email) %></p>
+
+        <p class="intro"><%= I18n.t("devise.mailer.unlock_instructions.intro") %></p>
+
+        <div class="warning-box">
+          <strong><%= I18n.t("devise.mailer.unlock_instructions.lock_reason") %></strong>
+        </div>
+
+        <a href="<%= unlock_url(@resource, unlock_token: @token) %>" class="cta-button"><%= I18n.t("devise.mailer.unlock_instructions.unlock_button") %></a>
+      </div>
+
+      <div class="footer">
+        <p><%= I18n.t("mailers.footer.message") %></p>
+      </div>
+    </div>
+  </body>
+</html>

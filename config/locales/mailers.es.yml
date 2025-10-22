@@ -1,4 +1,11 @@
 es:
+  activerecord:
+    errors:
+      messages:
+        record_invalid: "La validación falló: %{errors}"
+        restrict_dependent_destroy:
+          has_one: "No se puede eliminar el registro porque existe una dependencia %{record}"
+          has_many: "No se puede eliminar el registro porque existen dependencias %{record}"
   payment_types:
     reservation: "Reserva"
     down_payment: "Prima"
@@ -111,7 +118,12 @@ es:
         welcome: "¡Bienvenido a Fintera!"
         body: "Tu cuenta ha sido creada exitosamente. ¡Estamos emocionados de tenerte con nosotros!"
         temp_password_label: "Contraseña temporal"
-        change_password_notice: "Te recomendamos cambiar esta contraseña temporal después de tu primer inicio de sesión."
+        security_warning: "Aviso importante de seguridad"
+        change_password_notice: "Te recomendamos cambiar esta contraseña temporal después de tu primer inicio de sesión por razones de seguridad."
+        next_steps: "Próximos pasos"
+        step_login: "Inicia sesión usando la contraseña temporal a continuación"
+        step_change_password: "Cambia tu contraseña por una segura que solo tú conozcas"
+        step_profile: "Completa tu perfil y comienza a explorar Fintera"
         cta: "Inicia sesión en tu cuenta usando el botón abajo"
         cta_text: "Inicia sesión: %{url}"
         support: "Si tienes alguna pregunta, no dudes en comunicarte con nuestro equipo de soporte."
@@ -119,8 +131,12 @@ es:
         signature: "Saludos cordiales,\nEl equipo de Fintera"
       welcome:
         subject: "¡Bienvenido a Fintera!"
+        title: "¡Bienvenido a Fintera!"
         greeting: "¡Bienvenido a Fintera, %{name}!"
+        welcome: "¡Bienvenido a Fintera!"
         body: "Tu cuenta ha sido creada exitosamente. ¡Estamos emocionados de tenerte con nosotros!"
+        cta_text: "Comenzar: %{url}"
+        button: "Comenzar"
         support: "Si tienes alguna pregunta, no dudes en comunicarte con nuestro equipo de soporte."
         signature: "Saludos cordiales,\nEl equipo de Fintera"
     footer:
