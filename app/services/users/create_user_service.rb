@@ -29,12 +29,12 @@ module Users
 
         invalidate_user_cache(user)
 
-        # Capture user and password for email scheduling after commit
-        user_for_email = user if user.persisted?
+        # Capture user for email scheduling after commit
+        user_for_email = user
       end
 
       # Send confirmation if applicable
-      schedule_account_created_email(user_for_email)
+      schedule_account_created_email(user_for_email) if user_for_email
       { success: true, user: user_for_email }
     rescue ActiveRecord::RecordInvalid => e
       { success: false, errors: [e.message] }

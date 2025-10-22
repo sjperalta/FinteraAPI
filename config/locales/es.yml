@@ -47,6 +47,7 @@ es:
       approved: "%{resource} aprobado exitosamente."
       rejected: "%{resource} rechazado exitosamente."
       paid: "Pago marcado como pagado exitosamente."
+      recovery_code_sent: "Código de verificación enviado a su correo electrónico."
     errors:
       not_found: "%{resource} no encontrado."
       unauthorized: "No autorizado para realizar esta acción."
@@ -59,6 +60,9 @@ es:
       system_error: "Error del sistema. Por favor, intente más tarde."
       user_params_required: "Los parámetros del usuario son requeridos."
       unexpected_user_creation_error: "Ocurrió un error inesperado al crear el usuario."
+      email_required: "El correo electrónico es requerido."
+      email_not_found: "Correo electrónico no encontrado."
+      unexpected_error: "Ocurrió un error inesperado. Por favor, inténtelo de nuevo."
     info:
       no_records: "No hay registros para mostrar."
       loading: "Cargando..."

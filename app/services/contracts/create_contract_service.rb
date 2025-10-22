@@ -133,12 +133,6 @@ module Contracts
       Rails.logger.error("Failed to enqueue account_created email for user ##{user.id}: #{e.message}")
     end
 
-    def send_account_created_email(user, temp_password)
-      UserMailer.with(user:, temp_password:).account_created.deliver_later
-    rescue StandardError => e
-      Rails.logger.error("Failed to enqueue account_created email for user ##{user.id}: #{e.message}")
-    end
-
     def update_existing_user
       user = User.find(contract_params[:applicant_user_id])
       user.update!(permitted_user_params)
