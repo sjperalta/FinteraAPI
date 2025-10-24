@@ -4,8 +4,11 @@
 module Reports
   # Service to gather comprehensive data about a user's promise contract
   class UserPromiseContractService
-    def initialize(contract_id)
+    ALLOWED_FINANCING = %w[direct bank cash].freeze
+
+    def initialize(contract_id, financing_type = 'direct')
       @contract_id = contract_id
+      @financing_type = financing_type.to_s
       @locale = I18n.default_locale
     end
 
@@ -32,6 +35,31 @@ module Reports
       first_payment = payments.first
       last_payment  = payments.last
 
+      # Validate financing type
+      unless ALLOWED_FINANCING.include?(@financing_type)
+        return { success: false,
+                 error: I18n.t('reports.user_promise.errors.invalid_financing', financing: @financing_type,
+                                                                                locale: @locale) }
+      end
+
+      # Ensure template exists for the financing type
+      template_name = "reports/user_promise_contract_#{@financing_type}"
+
+      # Robust template existence check: search Rails view paths for common template extensions
+      view_paths = ActionController::Base.view_paths.map { |p| p.to_path }
+      basename = "user_promise_contract_#{@financing_type}"
+      exts = %w[.html.erb .erb .html.haml .html.slim]
+      found = view_paths.any? do |vp|
+        exts.any? { |ext| File.exist?(File.join(vp, 'reports', "#{basename}#{ext}")) }
+      end
+
+      unless found
+        Rails.logger.error "Missing Promesa template (searched paths): #{template_name}"
+        return { success: false,
+                 error: I18n.t('reports.user_promise.errors.template_missing', template: template_name,
+                                                                               locale: @locale) }
+      end
+
       # 5. Retorna todos los datos que la plantilla podría necesitar
       {
         success: true,
@@ -41,7 +69,8 @@ module Reports
         lot:,
         financing_amount: contract.calculate_financing_amount,
         first_payment:,
-        last_payment:
+        last_payment:,
+        template_name:
       }
     rescue StandardError => e
       Rails.logger.error I18n.t('reports.user_promise.errors.not_found', message: e.message, locale: @locale)
