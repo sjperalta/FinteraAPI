@@ -1,0 +1,56 @@
+<div class="container border p-4 rounded">
+  <h2 class="text-center fw-bold"><%= I18n.t('reports.user_information.title') %></h2>
+  
+  <h5 class="fw-bold mt-4"><%= I18n.t('reports.user_information.client_info') %></h5>
+  <ul class="list-group mb-3">
+    <li class="list-group-item"><%= I18n.t('reports.user_information.full_name') %> <strong><%= @applicant.full_name %></strong></li>
+    <li class="list-group-item"><%= I18n.t('reports.user_information.identification') %> <strong><%= @applicant.identity %></strong></li>
+    <li class="list-group-item"><%= I18n.t('reports.user_information.phone') %> <strong><%= @applicant.phone %></strong></li>
+    <li class="list-group-item"><%= I18n.t('reports.user_information.email') %> <strong><%= @applicant.email %></strong></li>
+    <li class="list-group-item"><%= I18n.t('reports.user_information.address') %> <strong><%= @applicant.address || '_______________________' %></strong></li>
+  </ul>
+
+  <h5 class="fw-bold mt-4"><%= I18n.t('reports.user_information.lot_info') %></h5>
+  <ul class="list-group mb-3">
+    <li class="list-group-item"><%= I18n.t('reports.user_information.project_name') %> <strong><%= @project.name %></strong></li>
+    <li class="list-group-item"><%= I18n.t('reports.user_information.lot_no') %> <strong><%= @lot.name %></strong></li>
+    <li class="list-group-item"><%= I18n.t('reports.user_information.dimensions') %> <strong><%= @lot.length %>m x <%= @lot.width %>m</strong></li>
+    <li class="list-group-item"><%= I18n.t('reports.user_information.area') %> <strong><%= @lot.area_in_project_unit %> <%= (@lot.measurement_unit || @project.measurement_unit).upcase %></strong></li>
+    <li class="list-group-item"><%= I18n.t('reports.user_information.contract_number') %> <strong><%= @contract.id %></strong></li>
+    <li class="list-group-item"><%= I18n.t('reports.user_information.financing_type') %> <strong><%= I18n.t("reports.user_information.financing_types.#{@contract.financing_type}", default: @contract.financing_type.capitalize) %></strong></li>
+    <li class="list-group-item"><%= I18n.t('reports.user_information.price') %> <strong><%= @contract.currency %> <%= number_to_currency(@lot.effective_price, unit: '') %></strong></li>
+    <% if @lot.override_price.present? %>
+      <li class="list-group-item"><%= I18n.t('reports.user_information.base_price') %> <strong><%= @contract.currency %> <%= number_to_currency(@lot.price, unit: '') %></strong></li>
+      <li class="list-group-item"><%= I18n.t('reports.user_information.custom_price') %> <strong><%= @contract.currency %> <%= number_to_currency(@lot.override_price, unit: '') %></strong></li>
+    <% end %>
+    <li class="list-group-item"><%= I18n.t('reports.user_information.reservation') %> <strong><%= @contract.currency %> <%= number_to_currency(@contract.reserve_amount, unit: '') %></strong></li>
+    <li class="list-group-item"><%= I18n.t('reports.user_information.down_payment') %> <strong><%= @contract.currency %> <%= number_to_currency(@contract.down_payment, unit: '') %></strong></li>
+    <li class="list-group-item"><%= I18n.t('reports.user_information.installment') %> <strong><%= @contract.currency %> <%= number_to_currency(@contract.monthly_payment, unit: '') %></strong></li>
+    <li class="list-group-item"><%= I18n.t('reports.user_information.term') %> <strong><%= @contract.payment_term %></strong></li>
+    <li class="list-group-item"><%= I18n.t('reports.user_information.start_date') %> <strong><%= @contract.created_at.strftime('%d/%m/%Y') %></strong></li>
+    <li class="list-group-item"><%= I18n.t('reports.user_information.end_date') %> <strong><%= @payment.due_date&.strftime('%d/%m/%Y') || 'N/A' %></strong></li>
+  </ul>
+
+  <h5 class="fw-bold mt-4"><%= I18n.t('reports.user_information.additional_info') %></h5>
+  <ul class="list-group mb-3">
+    <li class="list-group-item border-top mt-2"><%= I18n.t('reports.user_information.reference_full_name') %> <strong>_______________________</strong></li>
+    <li class="list-group-item border-top mt-2"><%= I18n.t('reports.user_information.reference_identification') %> <strong>_______________________</strong></li>
+    <li class="list-group-item border-top mt-2"><%= I18n.t('reports.user_information.reference_mobile') %> <strong>___________________________</strong></li>
+    <li class="list-group-item border-top mt-2"><%= I18n.t('reports.user_information.reference_relationship') %> <strong>___________________________</strong></li>
+  </ul>
+
+  <footer class="text-center mt-5">
+    <p class="fw-bold"><%= I18n.t('reports.user_information.footer') %> <%= Date.today.strftime('%d/%m/%Y') %></p>
+  </footer>
+
+  <div class="d-flex justify-content-between mt-10">
+    <div class="text-center">
+      <p class="fw-bold"><%= I18n.t('reports.user_information.client_signature') %></p>
+      <p class="border-top mt-2">___________________________</p>
+    </div>
+    <div class="text-center">
+      <p class="fw-bold"><%= I18n.t('reports.user_information.seller_signature') %></p>
+      <p class="border-top mt-2">___________________________</p>
+    </div>
+  </div>
+</div>

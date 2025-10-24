@@ -48,27 +48,27 @@ module Api
       end
 
       def user_promise_contract_pdf
-        service = Reports::UserPromiseContractService.new(params[:contract_id])
+        financing_type = params[:financing_type].to_s
+        service = Reports::UserPromiseContractService.new(params[:contract_id], financing_type)
         result = service.call
 
         return render json: { error: result[:error] }, status: :not_found unless result[:success]
 
-        # Asignar variables de instancia para la plantilla PDF
-        @contract         = result[:contract]
-        @applicant        = result[:applicant]
-        @project          = result[:project]
-        @lot              = result[:lot]
+        # Assign instance variables expected by the template
+        @contract = result[:contract]
+        @applicant = result[:applicant]
+        @project = result[:project]
+        @lot = result[:lot]
         @financing_amount = result[:financing_amount]
-        @first_payment    = result[:first_payment]
-        @last_payment     = result[:last_payment]
-        @interest_rate    = result[:interest_rate]
+        @first_payment = result[:first_payment]
+        @last_payment = result[:last_payment]
 
         respond_to do |format|
           format.pdf do
             render pdf: "promesa_compra_venta_#{params[:contract_id]}_#{timestamp}.pdf",
-                   template: "reports/user_promise_contract_#{params[:financing_type]}", # tu plantilla ERB
+                   template: result[:template_name],
                    formats: [:html],
-                   layout: 'pdf', # layout PDF si lo usas
+                   layout: 'pdf',
                    disposition: 'attachment'
           end
         end
@@ -107,6 +107,9 @@ module Api
       end
 
       def user_information_pdf
+        I18n.locale = params[:locale].to_s.downcase.to_sym if params[:locale].present? && %w[en
+                                                                                             es].include?(params[:locale].downcase)
+
         service = Reports::UserInformationService.new(params[:contract_id])
         result = service.call
 

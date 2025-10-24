@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'ostruct'
+
 module Reports
   # Service to gather comprehensive data about a user's information based on a contract
   class UserInformationService
@@ -21,13 +23,15 @@ module Reports
                  error: I18n.t('reports.user_information.errors.user_not_found', locale: @locale) }
       end
 
+      payment = contract.payments&.last
+
       {
         success: true,
         applicant:,
         contract:,
         lot: contract.lot,
         project: contract.lot.project,
-        payment: contract.payments&.last
+        payment:
       }
     rescue StandardError => e
       Rails.logger.error I18n.t('reports.user_information.errors.not_found', message: e.message, locale: @locale)

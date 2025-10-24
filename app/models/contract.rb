@@ -86,6 +86,17 @@ class Contract < ApplicationRecord
     ledger_entries.total_balance || 0
   end
 
+  def calculate_financing_amount
+    amount - (down_payment.to_f + reserve_amount.to_f)
+  end
+
+  def monthly_payment
+    financing_amount = calculate_financing_amount
+    return 0 if financing_amount <= 0 || payment_term.to_i <= 0
+
+    (financing_amount / payment_term.to_i).round(2)
+  end
+
   def apply_prepayment(amount_paid)
     unless amount_paid.present? && amount_paid.to_d.positive?
       errors.add(:base, 'El monto del prepago debe ser un número positivo.')
