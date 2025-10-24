@@ -40,9 +40,14 @@ module Api
         # Base scope
         users = User.includes(:creator).all
 
-        # Apply role-based filtering for sellers (only show users with role 'user')
-        # users = users.where(role: 'user') if current_user.seller?
-        # Admins see all users (no filter applied)
+        # Restrict access: only admins and sellers may access the users index.
+        # Sellers may only see users with role 'user'. Regular users are forbidden.
+        unless current_user.admin? || current_user.seller?
+          return render json: { error: 'Not authorized' }, status: :forbidden
+        end
+
+        # Sellers see only users with role 'user'
+        users = users.where(role: 'user') if current_user.seller?
 
         # Apply role-based filtering by query parameter params[:role]
         users = users.where(role: params[:role].to_s.downcase) if params[:role].present?

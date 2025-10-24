@@ -121,7 +121,7 @@
           <strong>⏰ <%= I18n.t("mailers.user_mailer.reset_code_email.body", code: @code, minutes: 15) %></strong>
         </div>
 
-        <a href="<%= ENV.fetch('APP_URL', 'https://app.fintera.com') %>/login" class="cta-button"><%= I18n.t("mailers.user_mailer.reset_code_email.view_platform") %></a>
+        <a href="<%= ENV.fetch('APP_URL', 'https://app.fintera.com') %>" class="cta-button"><%= I18n.t("mailers.user_mailer.reset_code_email.view_platform") %></a>
       </div>
 
       <div class="footer">
