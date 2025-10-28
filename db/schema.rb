@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_17_225000) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_28_082902) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -102,6 +102,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_17_225000) do
     t.text "north"
     t.text "east"
     t.text "west"
+    t.string "south"
     t.index ["name"], name: "index_lots_on_name"
     t.index ["project_id"], name: "index_lots_on_project_id"
     t.index ["registration_number"], name: "index_lots_on_registration_number"

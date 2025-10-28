@@ -107,7 +107,8 @@ RSpec.describe 'Api::V1::LotsController', type: :request do
           width: { type: :integer },
           price: { type: :number },
           registration_number: { type: :string },
-          note: { type: :string }
+          note: { type: :string },
+          south: { type: :string }
         },
         required: %w[name length width price]
       }
@@ -121,7 +122,8 @@ RSpec.describe 'Api::V1::LotsController', type: :request do
             width: 30,
             price: 12_000,
             registration_number: 'REG-001',
-            note: 'Corner lot'
+            note: 'Corner lot',
+            south: 'Neighboring street'
           }
         end
 
@@ -145,7 +147,8 @@ RSpec.describe 'Api::V1::LotsController', type: :request do
           name: { type: :string },
           length: { type: :integer },
           width: { type: :integer },
-          price: { type: :number }
+          price: { type: :number },
+          south: { type: :string }
         }
       }
 
@@ -157,7 +160,8 @@ RSpec.describe 'Api::V1::LotsController', type: :request do
             name: 'Lote Actualizado',
             length: 55,
             width: 35,
-            price: 15_000
+            price: 15_000,
+            south: 'Updated neighboring street'
           }
         end
 

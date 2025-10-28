@@ -29,7 +29,7 @@ class UpdateOverdueInterestJob < ApplicationJob
     # Only include payment types that accrue overdue interest: installment, full, advance.
     overdue_payments = Payment.joins(contract: { lot: :project })
                               .where('payments.due_date < ? AND payments.status = ?', Date.current, 'pending')
-                              .where(payment_type: %w[installment full advance])
+                              .where(payment_type: %w[installment])
 
     processed_count = 0
     overdue_payments.each do |payment|
