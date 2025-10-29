@@ -71,9 +71,6 @@ Rails.application.configure do
     from: ENV.fetch('DEFAULT_EMAIL', 'Fintera <no-reply@updates.securexapp.com>')
   }
 
-  config.hosts << 'fintera-staging-api.securexapp.com'
-  config.hosts << 'fintera-api.securexapp.com'
-
   # Parse allowed hosts from environment variable
   allowed_hosts = ENV.fetch('RAILS_ALLOWED_HOSTS', '').split(',').map do |host|
     host = host.strip
